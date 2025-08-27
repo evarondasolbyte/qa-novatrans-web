@@ -35,55 +35,55 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
         { numero: 35, nombre: 'TC035 - Reinicio de filtros al recargar', funcion: reinicioFiltros },
     ];
 
-    // Hook para procesar los resultados agregados después de que terminen todas las pruebas
+    // Resumen al final
     after(() => {
         cy.log('Procesando resultados finales para Taller y Gastos (Peajes)');
         cy.procesarResultadosPantalla('Taller y Gastos (Peajes)');
     });
 
+    // Iterador de casos con protección anti-doble-registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Reseteo el flag de error al inicio de cada test
-            cy.resetearErrorFlag();
-            
-            // Si algo falla durante la ejecución del test, capturo el error automáticamente
-            // y lo registro en el Excel con todos los datos del caso.
+            // Reset de flags por test
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
-                    numero,                    // Número de caso de prueba
-                    nombre,                    // Nombre del test (título del caso)
-                    esperado: 'Comportamiento correcto',  // Qué se esperaba que ocurriera
-                    archivo,                   // Nombre del archivo Excel donde se guarda todo
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
                     pantalla: 'Taller y Gastos (Peajes)'
                 });
-                return false; // Previene que Cypress corte el flujo y nos permite seguir registrando
+                return false;
             });
 
-            // Inicio sesión antes de ejecutar el caso, usando la sesión compartida (cy.login)
-            // y espero unos milisegundos por seguridad antes de continuar
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función correspondiente al test (ya definida arriba)
-            funcion();
-
-            // Si todo salió bien y no se registró manualmente, registro el resultado como OK en el Excel
-            if (!resultadoYaRegistrado) {
-                cy.registrarResultados({
-                    numero,                   // Número del caso
-                    nombre,                   // Nombre del test
-                    esperado: 'Comportamiento correcto',  // Qué esperaba que hiciera
-                    obtenido: 'Comportamiento correcto',  // Qué hizo realmente (si coincide, marca OK)
-                    resultado: 'OK',          // Marca manualmente como OK
-                    archivo,                  // Archivo Excel donde se registra
-                    pantalla: 'Taller y Gastos (Peajes)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Taller y Gastos (Peajes)'
+                        });
+                    }
                 });
-            }
+            });
         });
     });
 
     // === FUNCIONES DE VALIDACIÓN ===
-    
+
     function cargarPantalla() {
         cy.navegarAMenu('TallerYGastos', 'Peajes');
         cy.url().should('include', '/dashboard/tolls');
@@ -206,42 +206,42 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
     function ordenarPorFecha() {
         cy.navegarAMenu('TallerYGastos', 'Peajes');
         cy.url().should('include', '/dashboard/tolls');
-        
+
         // Ordenar ascendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha').click();
         cy.wait(1000);
-        
+
         // Ordenar descendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha').click();
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function ordenarPorVehiculo() {
         cy.navegarAMenu('TallerYGastos', 'Peajes');
         cy.url().should('include', '/dashboard/tolls');
-        
+
         // Ordenar ascendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Vehículo').click();
         cy.wait(1000);
-        
+
         // Ordenar descendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Vehículo').click();
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function ordenarPorImporte() {
         cy.navegarAMenu('TallerYGastos', 'Peajes');
         cy.url().should('include', '/dashboard/tolls');
-        
+
         // Ordenar ascendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe').click();
         cy.wait(1000);
-        
+
         // Ordenar descendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe').click();
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -446,7 +446,7 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
         cy.navegarAMenu('TallerYGastos', 'Peajes');
         cy.url().should('include', '/dashboard/tolls');
         cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
-        
+
         const maxScrolls = 10;
         let intentos = 0;
 

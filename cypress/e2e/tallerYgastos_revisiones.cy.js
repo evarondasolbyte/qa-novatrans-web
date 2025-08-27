@@ -35,52 +35,64 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         { numero: 31, nombre: 'TC031 - Buscar caracteres especiales en el buscador de Revisiones', funcion: TC031 },
     ];
 
-    // Hook para procesar los resultados agregados después de que terminen todas las pruebas
+    // Resumen al final
     after(() => {
+        cy.log('Procesando resultados finales para Taller y Gastos (Revisiones)');
         cy.procesarResultadosPantalla('Taller y Gastos (Revisiones)');
     });
 
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Reseteo el flag de error al inicio de cada test
-            cy.resetearErrorFlag();
-            
-            // Si algo falla durante la ejecución del test, capturo el error automáticamente
-            // y lo registro en el Excel con todos los datos del caso.
+            // ✅ reset estándar
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
-                    numero,                    // Número de caso de prueba
-                    nombre,                    // Nombre del test (título del caso)
-                    esperado: 'Comportamiento correcto',  // Qué se esperaba que ocurriera
-                    archivo,                   // Nombre del archivo Excel donde se guarda todo
-                    pantalla: 'Taller y Gastos (Revisiones)'
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
+                    pantalla: 'Taller y Gastos (Revisiones)',
                 });
-                return false; // Previene que Cypress corte el flujo y nos permite seguir registrando
+                return false;
             });
 
-            // Inicio sesión antes de ejecutar el caso, usando la sesión compartida (cy.login)
-            // y espero unos milisegundos por seguridad antes de continuar
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función correspondiente al test (ya definida arriba)
-            funcion().then(() => {
-                // Solo registro automáticamente si la función no lo ha hecho ya
-                // Los tests 12, 13 y 14 manejan su propio registro
-                if (numero !== 12 && numero !== 13 && numero !== 14) {
+            // Ejecuta el caso y solo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                if (typeof cy.estaRegistrado === 'function') {
+                    cy.estaRegistrado().then((ya) => {
+                        if (!ya && ![12, 13, 14].includes(numero)) {
+                            cy.registrarResultados({
+                                numero,
+                                nombre,
+                                esperado: 'Comportamiento correcto',
+                                obtenido: 'Comportamiento correcto',
+                                resultado: 'OK',
+                                archivo,
+                                pantalla: 'Taller y Gastos (Revisiones)',
+                            });
+                        }
+                    });
+                } else if (![12, 13, 14].includes(numero)) {
                     cy.registrarResultados({
-                        numero,                   // Número del caso
-                        nombre,                   // Nombre del test
-                        esperado: 'Comportamiento correcto',  // Qué esperaba que hiciera
-                        obtenido: 'Comportamiento correcto',  // Qué hizo realmente (si coincide, marca OK)
-                        resultado: 'OK',          // Marca manualmente como OK
-                        archivo,                  // Archivo Excel donde se registra
-                        pantalla: 'Taller y Gastos (Revisiones)'
+                        numero,
+                        nombre,
+                        esperado: 'Comportamiento correcto',
+                        obtenido: 'Comportamiento correcto',
+                        resultado: 'OK',
+                        archivo,
+                        pantalla: 'Taller y Gastos (Revisiones)',
                     });
                 }
             });
         });
     });
+
+    // ====== FUNCIONES ======
 
     function TC001() {
         cy.navegarAMenu('TallerYGastos', 'Revisiones');
@@ -98,7 +110,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
             .find('button').eq(1).click({ force: true });
 
         cy.get('li[role="menuitem"][data-value="asc"]').click({ force: true });
-        cy.wait(1000);
+        cy.wait(500);
 
         return cy.get('.MuiDataGrid-cell[data-field="name"]').then($cells => {
             const textos = [...$cells].map(c => c.innerText.trim().toLowerCase());
@@ -117,7 +129,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
             .find('button').eq(1).click({ force: true });
 
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
-        cy.wait(1000);
+        cy.wait(500);
 
         return cy.get('.MuiDataGrid-cell[data-field="name"]').then($cells => {
             const textos = [...$cells].map(c => c.innerText.trim().toLowerCase());
@@ -143,10 +155,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('40000{enter}', { force: true });
 
         return cy.get('.MuiDataGrid-row:visible').each(($row) => {
-            cy.wrap($row)
-                .find('[data-field="kms"]')
-                .invoke('text')
-                .should('equal', '40000');
+            cy.wrap($row).find('[data-field="kms"]').invoke('text').should('equal', '40000');
         });
     }
 
@@ -168,14 +177,11 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         return cy.get('body').then($body => {
             const filas = $body.find('.MuiDataGrid-row:visible');
             if (filas.length > 0) {
-                cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                    cy.wrap($row)
-                        .find('[data-field="tyre"] input[type="checkbox"]')
-                        .should('be.checked');
+                return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                    cy.wrap($row).find('[data-field="tyre"] input[type="checkbox"]').should('be.checked');
                 });
-            } else {
-                cy.contains('No rows').should('exist');
             }
+            return cy.contains('No rows').should('exist');
         });
     }
 
@@ -209,6 +215,87 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('exist');
         cy.get('select[name="column"]').select('Mecánica');
         return cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
+    }
+
+    function TC012() {
+        cy.navegarAMenu('TallerYGastos', 'Revisiones');
+        cy.url().should('include', '/dashboard/inspections');
+        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        cy.get('select[name="column"]').select('Aceites');
+        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
+
+        return cy.get('body').then($body => {
+            if ($body.text().includes('No rows')) {
+                cy.registrarResultados({
+                    numero: 12, nombre: 'TC012 - Filtrar por "Aceites"',
+                    esperado: 'Se muestran las filas donde está marcada la casilla Aceites',
+                    obtenido: 'Hay filas pero muestra "No rows"', resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Revisiones)', archivo
+                });
+                return cy.contains('No rows').should('be.visible');
+            }
+            cy.registrarResultados({
+                numero: 12, nombre: 'TC012 - Filtrar por "Aceites"',
+                esperado: 'Se muestran las filas donde está marcada la casilla Aceites',
+                obtenido: 'Comportamiento correcto', resultado: 'OK',
+                pantalla: 'Taller y Gastos (Revisiones)', archivo
+            });
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        });
+    }
+
+    function TC013() {
+        cy.navegarAMenu('TallerYGastos', 'Revisiones');
+        cy.url().should('include', '/dashboard/inspections');
+        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        cy.get('select[name="column"]').select('Filtros');
+        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
+
+        return cy.get('body').then($body => {
+            if ($body.text().includes('No rows')) {
+                cy.registrarResultados({
+                    numero: 13, nombre: 'TC013 - Filtrar por "Filtros"',
+                    esperado: 'Se muestran las filas donde está marcada la casilla Filtros',
+                    obtenido: 'Hay filas pero muestra "No rows"', resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Revisiones)', archivo
+                });
+                return cy.contains('No rows').should('be.visible');
+            }
+            cy.registrarResultados({
+                numero: 13, nombre: 'TC013 - Filtrar por "Filtros"',
+                esperado: 'Se muestran las filas donde está marcada la casilla Filtros',
+                obtenido: 'Comportamiento correcto', resultado: 'OK',
+                pantalla: 'Taller y Gastos (Revisiones)', archivo
+            });
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        });
+    }
+
+    function TC014() {
+        cy.navegarAMenu('TallerYGastos', 'Revisiones');
+        cy.url().should('include', '/dashboard/inspections');
+        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        cy.get('select[name="column"]').select('Otros');
+        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
+
+        return cy.get('body').then($body => {
+            if ($body.text().includes('No rows')) {
+                cy.registrarResultados({
+                    numero: 14, nombre: 'TC014 - Filtrar por "Otros"',
+                    esperado: 'Se muestran las filas donde está marcada la casilla Otros',
+                    obtenido: 'Hay filas pero muestra "No rows"', resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Revisiones)', archivo
+                });
+                return cy.contains('No rows').should('be.visible');
+            }
+            cy.registrarResultados({
+                numero: 14, nombre: 'TC014 - Filtrar por "Otros"',
+                esperado: 'Se muestran las filas donde está marcada la casilla Otros',
+                obtenido: 'Comportamiento correcto', resultado: 'OK',
+                pantalla: 'Taller y Gastos (Revisiones)', archivo
+            });
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        });
     }
 
     function TC015() {
@@ -275,12 +362,15 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
             }
 
             cy.wrap($filas[0]).as('filaRevision');
-            cy.get('@filaRevision').find('.MuiDataGrid-cell').then($celdas => {
+            return cy.get('@filaRevision').find('.MuiDataGrid-cell').then($celdas => {
                 const valores = [...$celdas].map(c => c.innerText.trim()).filter(t => t);
                 const identificador = valores[0];
 
                 cy.get('@filaRevision').click({ force: true });
                 cy.get('button').filter(':visible').eq(-2).click({ force: true });
+
+                // (opcional) verifica desaparición
+                return cy.contains('.MuiDataGrid-row', identificador).should('not.exist');
             });
         });
     }
@@ -288,8 +378,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
     function TC022() {
         cy.navegarAMenu('TallerYGastos', 'Revisiones');
         cy.url().should('include', '/dashboard/inspections');
-        cy.get('button').contains('Añadir').should('be.visible').and('not.be.disabled');
-        cy.get('button').contains('Añadir').click();
+        cy.get('button').contains('Añadir').should('be.visible').and('not.be.disabled').click();
         return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/inspections\/form(\/\d+)?$/);
     }
 
@@ -301,8 +390,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.get('div[role="columnheader"]').contains('Nombre').should('be.visible');
 
         cy.get('div[role="columnheader"][data-field="name"]')
-            .find('button[aria-label="Nombre column menu"]')
-            .click({ force: true });
+            .find('button[aria-label="Nombre column menu"]').click({ force: true });
 
         cy.contains('li', 'Hide column').click({ force: true });
 
@@ -314,25 +402,20 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.url({ timeout: 15000 }).should('include', '/dashboard/inspections');
         cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         cy.get('div[role="row"]').should('have.length.greaterThan', 1);
-        cy.get('div[role="columnheader"]').contains('Nombre').should('be.visible');
 
         cy.get('div[role="columnheader"][data-field="name"]')
-            .find('button[aria-label="Nombre column menu"]')
-            .click({ force: true });
+            .find('button[aria-label="Nombre column menu"]').click({ force: true });
 
         cy.contains('li', 'Hide column').click({ force: true });
         cy.get('div[role="columnheader"]').contains('Nombre').should('not.exist');
 
         cy.get('div[role="columnheader"][data-field="kms"]')
-            .find('button[aria-label="Kms column menu"]')
-            .click({ force: true });
+            .find('button[aria-label="Kms column menu"]').click({ force: true });
 
         cy.contains('li', 'Manage columns').click({ force: true });
 
-        cy.get('label').contains('Nombre')
-            .parent()
-            .find('input[type="checkbox"]')
-            .check({ force: true }).should('be.checked');
+        cy.get('label').contains('Nombre').parents('label')
+            .find('input[type="checkbox"]').check({ force: true }).should('be.checked');
 
         cy.get('body').click(0, 0);
         return cy.get('div[role="columnheader"]').contains('Nombre').should('be.visible');
@@ -357,13 +440,12 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
                     });
                     cy.get('.MuiDataGrid-virtualScroller').scrollTo('right');
                     return cy.get('.MuiDataGrid-columnHeaders').should('exist');
-                } else {
-                    intentos++;
-                    return cy.get('.MuiDataGrid-virtualScroller')
-                        .scrollTo('bottom', { duration: 400 })
-                        .wait(400)
-                        .then(() => hacerScrollVertical(currentScrollHeight));
                 }
+                intentos++;
+                return cy.get('.MuiDataGrid-virtualScroller')
+                    .scrollTo('bottom', { duration: 400 })
+                    .wait(400)
+                    .then(() => hacerScrollVertical(currentScrollHeight));
             });
         }
 
@@ -434,14 +516,11 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.navegarAMenu('TallerYGastos', 'Revisiones');
         cy.url().should('include', '/dashboard/inspections');
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        const textoBusqueda = 'BaTeRiA';
         cy.get('select[name="column"]').select('Todos');
-        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type(`${textoBusqueda}{enter}`, { force: true });
+        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('BaTeRiA{enter}', { force: true });
 
         return cy.get('.MuiDataGrid-row:visible').then($filas => {
-            const coincidencias = [...$filas].filter(fila =>
-                fila.innerText.toLowerCase().includes('bateria')
-            );
+            const coincidencias = [...$filas].filter(fila => fila.innerText.toLowerCase().includes('bateria'));
             expect(coincidencias.length).to.be.greaterThan(0);
         });
     }
@@ -455,122 +534,4 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
         return cy.contains('No rows').should('be.visible');
     }
-
-    function TC012() {
-        cy.navegarAMenu('TallerYGastos', 'Revisiones');
-        cy.url().should('include', '/dashboard/inspections');
-        
-        // Verificamos si hay filas antes de aplicar el filtro
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        
-        cy.get('select[name="column"]').select('Aceites');
-        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
-        
-        return cy.get('body').then($body => {
-            if ($body.text().includes('No rows')) {
-                // Si hay filas en la tabla pero el filtro muestra "No rows", es un ERROR
-                cy.registrarResultados({
-                    numero: 12,
-                    nombre: 'TC012 - Filtrar por "Aceites"',
-                    esperado: 'Se muestran las filas donde está marcada la casilla Aceites',
-                    obtenido: 'Hay filas pero muestra "No rows"',
-                    resultado: 'ERROR',
-                    pantalla: 'Taller y Gastos (Revisiones)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                cy.contains('No rows').should('be.visible');
-            } else {
-                // Si muestra filas, el filtro funciona correctamente
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.registrarResultados({
-                    numero: 12,
-                    nombre: 'TC012 - Filtrar por "Aceites"',
-                    esperado: 'Se muestran las filas donde está marcada la casilla Aceites',
-                    obtenido: 'Comportamiento correcto',
-                    resultado: 'OK',
-                    pantalla: 'Taller y Gastos (Revisiones)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-            }
-        });
-    }
-
-    function TC013() {
-        cy.navegarAMenu('TallerYGastos', 'Revisiones');
-        cy.url().should('include', '/dashboard/inspections');
-        
-        // Verificamos si hay filas antes de aplicar el filtro
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        
-        cy.get('select[name="column"]').select('Filtros');
-        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
-        
-        return cy.get('body').then($body => {
-            if ($body.text().includes('No rows')) {
-                // Si hay filas en la tabla pero el filtro muestra "No rows", es un ERROR
-                cy.registrarResultados({
-                    numero: 13,
-                    nombre: 'TC013 - Filtrar por "Filtros"',
-                    esperado: 'Se muestran las filas donde está marcada la casilla Filtros',
-                    obtenido: 'Hay filas pero muestra "No rows"',
-                    resultado: 'ERROR',
-                    pantalla: 'Taller y Gastos (Revisiones)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                cy.contains('No rows').should('be.visible');
-            } else {
-                // Si muestra filas, el filtro funciona correctamente
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.registrarResultados({
-                    numero: 13,
-                    nombre: 'TC013 - Filtrar por "Filtros"',
-                    esperado: 'Se muestran las filas donde está marcada la casilla Filtros',
-                    obtenido: 'Comportamiento correcto',
-                    resultado: 'OK',
-                    pantalla: 'Taller y Gastos (Revisiones)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-            }
-        });
-    }
-
-    function TC014() {
-        cy.navegarAMenu('TallerYGastos', 'Revisiones');
-        cy.url().should('include', '/dashboard/inspections');
-        
-        // Verificamos si hay filas antes de aplicar el filtro
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        
-        cy.get('select[name="column"]').select('Otros');
-        cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
-        
-        return cy.get('body').then($body => {
-            if ($body.text().includes('No rows')) {
-                // Si hay filas en la tabla pero el filtro muestra "No rows", es un ERROR
-                cy.registrarResultados({
-                    numero: 14,
-                    nombre: 'TC014 - Filtrar por "Otros"',
-                    esperado: 'Se muestran las filas donde está marcada la casilla Otros',
-                    obtenido: 'Hay filas pero muestra "No rows"',
-                    resultado: 'ERROR',
-                    pantalla: 'Taller y Gastos (Revisiones)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                cy.contains('No rows').should('be.visible');
-            } else {
-                // Si muestra filas, el filtro funciona correctamente
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.registrarResultados({
-                    numero: 14,
-                    nombre: 'TC014 - Filtrar por "Otros"',
-                    esperado: 'Se muestran las filas donde está marcada la casilla Otros',
-                    obtenido: 'Comportamiento correcto',
-                    resultado: 'OK',
-                    pantalla: 'Taller y Gastos (Revisiones)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-            }
-        });
-    }
-
 });

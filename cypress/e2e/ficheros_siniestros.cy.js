@@ -33,46 +33,47 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
         { numero: 32, nombre: 'TC032 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol }
     ];
 
-    // Hook para procesar los resultados agregados después de que terminen todas las pruebas
+    // Resumen al final
     after(() => {
         cy.procesarResultadosPantalla('Ficheros (Siniestros)');
     });
 
+    // Iterador con protección anti doble registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Reseteo el flag de error al inicio de cada test
-            cy.resetearErrorFlag();
-            
-            // Si algo falla durante la ejecución del test, capturo el error automáticamente
-            // y lo registro en el Excel con todos los datos del caso.
+            // Reset de flags por test
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
-                    numero,                    // Número de caso de prueba
-                    nombre,                    // Nombre del test (título del caso)
-                    esperado: 'Comportamiento correcto',  // Qué se esperaba que ocurriera
-                    archivo,                   // Nombre del archivo Excel donde se guarda todo
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
                     pantalla: 'Ficheros (Siniestros)'
                 });
-                return false; // Previene que Cypress corte el flujo y nos permite seguir registrando
+                return false;
             });
 
-            // Inicio sesión antes de ejecutar el caso, usando la sesión compartida (cy.login)
-            // y espero unos milisegundos por seguridad antes de continuar
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función correspondiente al test (ya definida arriba)
-            funcion();
-
-            // Si todo salió bien, registro el resultado como OK en el Excel
-            cy.registrarResultados({
-                numero,                   // Número del caso
-                nombre,                   // Nombre del test
-                esperado: 'Comportamiento correcto',  // Qué esperaba que hiciera
-                obtenido: 'Comportamiento correcto',  // Qué hizo realmente (si coincide, marca OK)
-                resultado: 'OK',          // Marca manualmente como OK
-                archivo,                  // Archivo Excel donde se registra
-                pantalla: 'Ficheros (Siniestros)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Ficheros (Siniestros)'
+                        });
+                    }
+                });
             });
         });
     });
@@ -85,82 +86,50 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
     }
 
     function filtrarPorIDExacto() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "ID" (o "Código" si no está)
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('id')) {
-                cy.wrap($sel).select('ID', { force: true });
-            } else {
-                cy.wrap($sel).select('Código', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                cy.wrap($sel).select(opts.includes('id') ? 'ID' : 'Código', { force: true });
 
-        // Buscar ID exacto = 1
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('1{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]')
+                    .should('be.visible')
+                    .clear({ force: true })
+                    .type('1{enter}', { force: true });
 
-        cy.wait(1000); // esperar a que aplique el filtro
+                cy.wait(1000);
 
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
 
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 2,
-                    nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta',
-                    esperado: 'Se muestran solo las filas con el ID exacto ingresado',
-                    obtenido: 'No se muestran filas y sí existen registros con ese ID',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 2, nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta',
+                            esperado: 'Se muestran solo las filas con el ID exacto ingresado',
+                            obtenido: 'No se muestran filas y sí existen registros con ese ID',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    }
+
+                    const tieneColumnaId = $body.find('div.MuiDataGrid-cell[data-field="id"]').length > 0;
+                    const obtenerTexto = tieneColumnaId
+                        ? cy.get('.MuiDataGrid-row:visible').first().find('div.MuiDataGrid-cell[data-field="id"]').invoke('text')
+                        : cy.get('.MuiDataGrid-row:visible').first().find('div.MuiDataGrid-cell').eq(0).invoke('text');
+
+                    return obtenerTexto.then(t => {
+                        const ok = t.trim() === '1';
+                        return cy.registrarResultados({
+                            numero: 2,
+                            nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta',
+                            esperado: 'Se muestran solo las filas con el ID exacto ingresado',
+                            obtenido: ok ? 'Comportamiento correcto' : `La primera celda/columna no es 1 (es ${t.trim()})`,
+                            resultado: ok ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
                 });
-                return;
-            }
-
-            // Hay filas: verificar que el ID de la primera coincide con 1
-            const tieneColumnaId = $body.find('div.MuiDataGrid-cell[data-field="id"]').length > 0;
-
-            if (tieneColumnaId) {
-                cy.get('.MuiDataGrid-row:visible').first()
-                    .find('div.MuiDataGrid-cell[data-field="id"]')
-                    .invoke('text')
-                    .then(t => {
-                        const ok = t.trim() === '1';
-                        cy.registrarResultados({
-                            numero: 2,
-                            nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta',
-                            esperado: 'Se muestran solo las filas con el ID exacto ingresado',
-                            obtenido: ok ? 'Comportamiento correcto' : `La primera fila no tiene ID = 1 (tiene ${t.trim()})`,
-                            resultado: ok ? 'OK' : 'ERROR',
-                            pantalla: 'Ficheros (Siniestros)',
-                            archivo: 'reportes_pruebas_novatrans.xlsx'
-                        });
-                    });
-            } else {
-                // Fallback: usar la primera celda de la fila si no hay data-field="id"
-                cy.get('.MuiDataGrid-row:visible').first()
-                    .find('div.MuiDataGrid-cell').eq(0)
-                    .invoke('text')
-                    .then(t => {
-                        const ok = t.trim() === '1';
-                        cy.registrarResultados({
-                            numero: 2,
-                            nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta',
-                            esperado: 'Se muestran solo las filas con el ID exacto ingresado',
-                            obtenido: ok ? 'Comportamiento correcto' : `La primera celda no es 1 (es ${t.trim()})`,
-                            resultado: ok ? 'OK' : 'ERROR',
-                            pantalla: 'Ficheros (Siniestros)',
-                            archivo: 'reportes_pruebas_novatrans.xlsx'
-                        });
-                    });
-            }
+            });
         });
     }
 
@@ -370,638 +339,394 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
     }
 
     function filtrarPorTipo() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "Tipo"
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('tipo')) {
-                cy.wrap($sel).select('Tipo', { force: true });
-            } else {
-                cy.wrap($sel).select('Type', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                cy.wrap($sel).select(opts.includes('tipo') ? 'Tipo' : 'Type', { force: true });
 
-        // Buscar tipo "Incendio"
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('Incendio{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]')
+                    .should('be.visible')
+                    .clear({ force: true })
+                    .type('Incendio{enter}', { force: true });
 
-        cy.wait(1000); // esperar a que aplique el filtro
+                cy.wait(1000);
 
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 3,
-                    nombre: 'TC003 - Filtrar por "Tipo" (Incendio)',
-                    esperado: 'Se muestran solo las filas del tipo seleccionado',
-                    obtenido: 'No se muestra nada y si hay filas con ese tipo',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                return;
-            }
-
-            // Hay filas: verificar que todas contengan "Incendio"
-            cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
-                    const textoFila = $cells.text().toLowerCase();
-                    const contieneIncendio = textoFila.includes('incendio');
-                    
-                    if (!contieneIncendio) {
-                        cy.registrarResultados({
-                            numero: 3,
-                            nombre: 'TC003 - Filtrar por "Tipo" (Incendio)',
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 3, nombre: 'TC003 - Filtrar por "Tipo" (Incendio)',
                             esperado: 'Se muestran solo las filas del tipo seleccionado',
-                            obtenido: `Fila encontrada no contiene "Incendio": ${textoFila}`,
-                            resultado: 'ERROR',
-                            pantalla: 'Ficheros (Siniestros)',
-                            archivo: 'reportes_pruebas_novatrans.xlsx'
+                            obtenido: 'No se muestra nada y si hay filas con ese tipo',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
                         });
                     }
-                });
-            });
 
-            // Si llegamos aquí, todas las filas contienen "Incendio"
-            cy.registrarResultados({
-                numero: 3,
-                nombre: 'TC003 - Filtrar por "Tipo" (Incendio)',
-                esperado: 'Se muestran solo las filas del tipo seleccionado',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                pantalla: 'Ficheros (Siniestros)',
-                archivo: 'reportes_pruebas_novatrans.xlsx'
+                    let todasOK = true;
+                    return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                        cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
+                            if (!$cells.text().toLowerCase().includes('incendio')) todasOK = false;
+                        });
+                    }).then(() => {
+                        return cy.registrarResultados({
+                            numero: 3, nombre: 'TC003 - Filtrar por "Tipo" (Incendio)',
+                            esperado: 'Se muestran solo las filas del tipo seleccionado',
+                            obtenido: todasOK ? 'Comportamiento correcto' : 'Algunas filas no contienen "Incendio"',
+                            resultado: todasOK ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
+                });
             });
         });
     }
 
     function filtrarPorUbicacion() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "Ubicación"
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('ubicación') || opts.includes('ubicacion')) {
-                cy.wrap($sel).select('Ubicación', { force: true });
-            } else if (opts.includes('location')) {
-                cy.wrap($sel).select('Location', { force: true });
-            } else {
-                cy.wrap($sel).select('Ubicació', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                const label = opts.includes('ubicación') || opts.includes('ubicacion') ? 'Ubicación' : (opts.includes('location') ? 'Location' : 'Ubicació');
+                cy.wrap($sel).select(label, { force: true });
 
-        // Buscar ubicación con coincidencia parcial "Ma"
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('Ma{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]').should('be.visible').clear({ force: true }).type('Ma{enter}', { force: true });
+                cy.wait(1000);
 
-        cy.wait(1000); // esperar a que aplique el filtro
-
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 4,
-                    nombre: 'TC004 - Filtrar por "Ubicación" con coincidencia parcial',
-                    esperado: 'Se muestran las filas donde la ubicación contenga el texto ingresado',
-                    obtenido: 'No se muestra nada y si hay filas que contienen esa ubicación',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                return;
-            }
-
-            // Hay filas: verificar que todas contengan "Ma" en la ubicación
-            let todasContienenMa = true;
-            cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
-                    const textoFila = $cells.text().toLowerCase();
-                    const contieneMa = textoFila.includes('ma');
-                    
-                    if (!contieneMa) {
-                        todasContienenMa = false;
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 4, nombre: 'TC004 - Filtrar por "Ubicación" con coincidencia parcial',
+                            esperado: 'Se muestran las filas donde la ubicación contenga el texto ingresado',
+                            obtenido: 'No se muestra nada existiendo filas coincidentes',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
                     }
-                });
-            }).then(() => {
-                cy.registrarResultados({
-                    numero: 4,
-                    nombre: 'TC004 - Filtrar por "Ubicación" con coincidencia parcial',
-                    esperado: 'Se muestran las filas donde la ubicación contenga el texto ingresado',
-                    obtenido: todasContienenMa ? 'Comportamiento correcto' : 'Algunas filas no contienen "Ma" en la ubicación',
-                    resultado: todasContienenMa ? 'OK' : 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+
+                    let todasOK = true;
+                    return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                        cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
+                            if (!$cells.text().toLowerCase().includes('ma')) todasOK = false;
+                        });
+                    }).then(() => {
+                        return cy.registrarResultados({
+                            numero: 4, nombre: 'TC004 - Filtrar por "Ubicación" con coincidencia parcial',
+                            esperado: 'Se muestran las filas donde la ubicación contenga el texto ingresado',
+                            obtenido: todasOK ? 'Comportamiento correcto' : 'Algunas filas no contienen "Ma" en la ubicación',
+                            resultado: todasOK ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
                 });
             });
         });
     }
 
     function filtrarPorMatricula() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "Matrícula"
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('matrícula') || opts.includes('matricula')) {
-                cy.wrap($sel).select('Matrícula', { force: true });
-            } else if (opts.includes('plate')) {
-                cy.wrap($sel).select('Plate', { force: true });
-            } else {
-                cy.wrap($sel).select('Matrícula', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                const label = opts.includes('matrícula') || opts.includes('matricula') ? 'Matrícula' : (opts.includes('plate') ? 'Plate' : 'Matrícula');
+                cy.wrap($sel).select(label, { force: true });
 
-        // Buscar matrícula "013"
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('013{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]').should('be.visible').clear({ force: true }).type('013{enter}', { force: true });
+                cy.wait(1000);
 
-        cy.wait(1000); // esperar a que aplique el filtro
-
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 5,
-                    nombre: 'TC005 - Filtrar por "Matrícula"',
-                    esperado: 'Se muestran los siniestros de la matrícula indicada',
-                    obtenido: 'No se muestra nada y si hay filas que contienen esa matrícula',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                return;
-            }
-
-            // Hay filas: verificar que todas contengan "013" en la matrícula
-            let todasContienen013 = true;
-            cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
-                    const textoFila = $cells.text();
-                    const contiene013 = textoFila.includes('013');
-                    
-                    if (!contiene013) {
-                        todasContienen013 = false;
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 5, nombre: 'TC005 - Filtrar por "Matrícula"',
+                            esperado: 'Se muestran los siniestros de la matrícula indicada',
+                            obtenido: 'No se muestra nada existiendo filas coincidentes',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
                     }
-                });
-            }).then(() => {
-                cy.registrarResultados({
-                    numero: 5,
-                    nombre: 'TC005 - Filtrar por "Matrícula"',
-                    esperado: 'Se muestran los siniestros de la matrícula indicada',
-                    obtenido: todasContienen013 ? 'Comportamiento correcto' : 'Algunas filas no contienen "013" en la matrícula',
-                    resultado: todasContienen013 ? 'OK' : 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+
+                    let todasOK = true;
+                    return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                        cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
+                            if (!$cells.text().includes('013')) todasOK = false;
+                        });
+                    }).then(() => {
+                        return cy.registrarResultados({
+                            numero: 5, nombre: 'TC005 - Filtrar por "Matrícula"',
+                            esperado: 'Se muestran los siniestros de la matrícula indicada',
+                            obtenido: todasOK ? 'Comportamiento correcto' : 'Algunas filas no contienen "013" en la matrícula',
+                            resultado: todasOK ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
                 });
             });
         });
     }
 
     function filtrarPorConductor() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "Conductor"
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('conductor')) {
-                cy.wrap($sel).select('Conductor', { force: true });
-            } else if (opts.includes('driver')) {
-                cy.wrap($sel).select('Driver', { force: true });
-            } else {
-                cy.wrap($sel).select('Conductor', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                const label = opts.includes('conductor') ? 'Conductor' : (opts.includes('driver') ? 'Driver' : 'Conductor');
+                cy.wrap($sel).select(label, { force: true });
 
-        // Buscar conductor "Jose"
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('Jose{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]').should('be.visible').clear({ force: true }).type('Jose{enter}', { force: true });
+                cy.wait(1000);
 
-        cy.wait(1000); // esperar a que aplique el filtro
-
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 6,
-                    nombre: 'TC006 - Filtrar por "Conductor"',
-                    esperado: 'Se muestran los siniestros del conductor indicado',
-                    obtenido: 'No se muestra nada y si hay filas que contienen el nombre de ese conductor',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                return;
-            }
-
-            // Hay filas: verificar que todas contengan "Jose" en el conductor
-            let todasContienenJose = true;
-            cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
-                    const textoFila = $cells.text().toLowerCase();
-                    const contieneJose = textoFila.includes('jose');
-                    
-                    if (!contieneJose) {
-                        todasContienenJose = false;
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 6, nombre: 'TC006 - Filtrar por "Conductor"',
+                            esperado: 'Se muestran los siniestros del conductor indicado',
+                            obtenido: 'No se muestra nada existiendo filas coincidentes',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
                     }
-                });
-            }).then(() => {
-                cy.registrarResultados({
-                    numero: 6,
-                    nombre: 'TC006 - Filtrar por "Conductor"',
-                    esperado: 'Se muestran los siniestros del conductor indicado',
-                    obtenido: todasContienenJose ? 'Comportamiento correcto' : 'Algunas filas no contienen "Jose" en el conductor',
-                    resultado: todasContienenJose ? 'OK' : 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+
+                    let todasOK = true;
+                    return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                        cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
+                            if (!$cells.text().toLowerCase().includes('jose')) todasOK = false;
+                        });
+                    }).then(() => {
+                        return cy.registrarResultados({
+                            numero: 6, nombre: 'TC006 - Filtrar por "Conductor"',
+                            esperado: 'Se muestran los siniestros del conductor indicado',
+                            obtenido: todasOK ? 'Comportamiento correcto' : 'Algunas filas no contienen "Jose"',
+                            resultado: todasOK ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
                 });
             });
         });
     }
 
     function filtrarPorCosteReparacion() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "Coste de reparación"
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('coste') || opts.includes('coste de reparación')) {
-                cy.wrap($sel).select('Coste de reparación', { force: true });
-            } else if (opts.includes('cost') || opts.includes('repair cost')) {
-                cy.wrap($sel).select('Repair Cost', { force: true });
-            } else {
-                cy.wrap($sel).select('Coste de reparación', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                const label = (opts.includes('coste') || opts.includes('coste de reparación')) ? 'Coste de reparación'
+                    : (opts.includes('cost') || opts.includes('repair cost')) ? 'Repair Cost'
+                        : 'Coste de reparación';
+                cy.wrap($sel).select(label, { force: true });
 
-        // Buscar coste de reparación exacto "800"
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('800{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]').should('be.visible').clear({ force: true }).type('800{enter}', { force: true });
+                cy.wait(1000);
 
-        cy.wait(1000); // esperar a que aplique el filtro
-
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 7,
-                    nombre: 'TC007 - Filtrar por "Coste de reparación" exacto',
-                    esperado: 'Se muestran solo las filas con el coste indicado',
-                    obtenido: 'No se muestra nada y si hay filas con ese coste de reparación',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                return;
-            }
-
-            // Hay filas: verificar que todas contengan exactamente "800" en el coste
-            let todasContienen800 = true;
-            cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
-                    const textoFila = $cells.text();
-                    const contiene800 = textoFila.includes('800');
-                    
-                    if (!contiene800) {
-                        todasContienen800 = false;
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 7, nombre: 'TC007 - Filtrar por "Coste de reparación" exacto',
+                            esperado: 'Se muestran solo las filas con el coste indicado',
+                            obtenido: 'No se muestra nada existiendo filas coincidentes',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
                     }
-                });
-            }).then(() => {
-                cy.registrarResultados({
-                    numero: 7,
-                    nombre: 'TC007 - Filtrar por "Coste de reparación" exacto',
-                    esperado: 'Se muestran solo las filas con el coste indicado',
-                    obtenido: todasContienen800 ? 'Comportamiento correcto' : 'Algunas filas no contienen "800" en el coste de reparación',
-                    resultado: todasContienen800 ? 'OK' : 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+
+                    let todasOK = true;
+                    return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                        cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
+                            if (!$cells.text().includes('800')) todasOK = false;
+                        });
+                    }).then(() => {
+                        return cy.registrarResultados({
+                            numero: 7, nombre: 'TC007 - Filtrar por "Coste de reparación" exacto',
+                            esperado: 'Se muestran solo las filas con el coste indicado',
+                            obtenido: todasOK ? 'Comportamiento correcto' : 'Algunas filas no contienen "800"',
+                            resultado: todasOK ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
                 });
             });
         });
     }
 
     function filtrarPorResponsable() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Seleccionar columna "Responsable"
-        cy.get('select[name="column"]').then($sel => {
-            const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
-            if (opts.includes('responsable')) {
-                cy.wrap($sel).select('Responsable', { force: true });
-            } else if (opts.includes('responsible')) {
-                cy.wrap($sel).select('Responsible', { force: true });
-            } else {
-                cy.wrap($sel).select('Responsable', { force: true });
-            }
-        });
+            return cy.get('select[name="column"]').then($sel => {
+                const opts = [...$sel[0].options].map(o => o.text.trim().toLowerCase());
+                const label = opts.includes('responsable') ? 'Responsable' : (opts.includes('responsible') ? 'Responsible' : 'Responsable');
+                cy.wrap($sel).select(label, { force: true });
 
-        // Buscar responsable "conductor"
-        cy.get('input#search[placeholder="Buscar"]')
-            .should('be.visible')
-            .clear({ force: true })
-            .type('conductor{enter}', { force: true });
+                cy.get('input#search[placeholder="Buscar"]').should('be.visible').clear({ force: true }).type('conductor{enter}', { force: true });
+                cy.wait(1000);
 
-        cy.wait(1000); // esperar a que aplique el filtro
-
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 8,
-                    nombre: 'TC008 - Filtrar por "Responsable"',
-                    esperado: 'Se muestran los siniestros donde el responsable coincida',
-                    obtenido: 'No se muestra nada y si hay filas con el nombre de ese responsable',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
-                });
-                return;
-            }
-
-            // Hay filas: verificar que todas contengan "conductor" en el responsable
-            let todasContienenConductor = true;
-            cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
-                    const textoFila = $cells.text().toLowerCase();
-                    const contieneConductor = textoFila.includes('conductor');
-                    
-                    if (!contieneConductor) {
-                        todasContienenConductor = false;
+                return cy.get('body').then($body => {
+                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                    if (!hayFilas) {
+                        return cy.registrarResultados({
+                            numero: 8, nombre: 'TC008 - Filtrar por "Responsable"',
+                            esperado: 'Se muestran los siniestros donde el responsable coincida',
+                            obtenido: 'No se muestra nada existiendo filas coincidentes',
+                            resultado: 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
                     }
-                });
-            }).then(() => {
-                cy.registrarResultados({
-                    numero: 8,
-                    nombre: 'TC008 - Filtrar por "Responsable"',
-                    esperado: 'Se muestran los siniestros donde el responsable coincida',
-                    obtenido: todasContienenConductor ? 'Comportamiento correcto' : 'Algunas filas no contienen "conductor" en el responsable',
-                    resultado: todasContienenConductor ? 'OK' : 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+
+                    let todasOK = true;
+                    return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                        cy.wrap($row).find('div.MuiDataGrid-cell').then($cells => {
+                            if (!$cells.text().toLowerCase().includes('conductor')) todasOK = false;
+                        });
+                    }).then(() => {
+                        return cy.registrarResultados({
+                            numero: 8, nombre: 'TC008 - Filtrar por "Responsable"',
+                            esperado: 'Se muestran los siniestros donde el responsable coincida',
+                            obtenido: todasOK ? 'Comportamiento correcto' : 'Algunas filas no contienen "conductor"',
+                            resultado: todasOK ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
+                        });
+                    });
                 });
             });
         });
     }
 
     function filtrarPorRangoFechas() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Fecha desde: 01/01/2014
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .first()
-            .within(() => {
+            cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
                 cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
                 cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
                 cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2014');
             });
 
-        // Fecha hasta: 31/12/2015
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .eq(1)
-            .within(() => {
+            cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
                 cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
                 cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
                 cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2015');
             });
 
-        cy.wait(1000); // esperar a que aplique el filtro
+            cy.wait(1000);
 
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 13,
-                    nombre: 'TC013 - Ingresar rango de fechas válido en "Desde" y "Hasta"',
+            return cy.get('body').then($body => {
+                const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                return cy.registrarResultados({
+                    numero: 13, nombre: 'TC013 - Ingresar rango de fechas válido en "Desde" y "Hasta"',
                     esperado: 'Se muestran los siniestros dentro del rango de fechas',
-                    obtenido: 'No se muestran siniestros dentro del rango de fechas',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    obtenido: hayFilas ? 'Comportamiento correcto' : 'No se muestran siniestros dentro del rango de fechas',
+                    resultado: hayFilas ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
                 });
-                return;
-            }
-
-            // Hay filas: registrar OK
-            cy.registrarResultados({
-                numero: 13,
-                nombre: 'TC013 - Ingresar rango de fechas válido en "Desde" y "Hasta"',
-                esperado: 'Se muestran los siniestros dentro del rango de fechas',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                pantalla: 'Ficheros (Siniestros)',
-                archivo: 'reportes_pruebas_novatrans.xlsx'
             });
         });
     }
 
     function filtrarPorFechaDesde() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Fecha desde: 01/01/2014
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .first()
-            .within(() => {
+            cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
                 cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
                 cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
                 cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2014');
             });
 
-        // Limpiar fecha hasta
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .eq(1)
-            .within(() => {
+            cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
                 cy.get('span[aria-label="Day"]').type('{selectall}{backspace}');
                 cy.get('span[aria-label="Month"]').type('{selectall}{backspace}');
                 cy.get('span[aria-label="Year"]').type('{selectall}{backspace}');
             });
 
-        cy.wait(1000); // esperar a que aplique el filtro
+            cy.wait(1000);
 
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 14,
-                    nombre: 'TC014 - Ingresar solo fecha "Desde"',
+            return cy.get('body').then($body => {
+                const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                return cy.registrarResultados({
+                    numero: 14, nombre: 'TC014 - Ingresar solo fecha "Desde"',
                     esperado: 'Se muestran siniestros desde esa fecha en adelante',
-                    obtenido: 'No se muestran siniestros desde esa fecha en adelante',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    obtenido: hayFilas ? 'Comportamiento correcto' : 'No se muestran siniestros desde esa fecha en adelante',
+                    resultado: hayFilas ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
                 });
-                return;
-            }
-
-            // Hay filas: registrar OK
-            cy.registrarResultados({
-                numero: 14,
-                nombre: 'TC014 - Ingresar solo fecha "Desde"',
-                esperado: 'Se muestran siniestros desde esa fecha en adelante',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                pantalla: 'Ficheros (Siniestros)',
-                archivo: 'reportes_pruebas_novatrans.xlsx'
             });
         });
     }
 
     function filtrarPorFechaHasta() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root').should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Limpiar fecha desde
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .first()
-            .within(() => {
+            cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
                 cy.get('span[aria-label="Day"]').type('{selectall}{backspace}');
                 cy.get('span[aria-label="Month"]').type('{selectall}{backspace}');
                 cy.get('span[aria-label="Year"]').type('{selectall}{backspace}');
             });
 
-        // Fecha hasta: 31/12/2015
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .eq(1)
-            .within(() => {
+            cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
                 cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
                 cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
                 cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2015');
             });
 
-        cy.wait(1000); // esperar a que aplique el filtro
+            cy.wait(1000);
 
-        cy.get('body').then($body => {
-            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-
-            if (!hayFilas) {
-                // No hay filas: registrar KO
-                cy.registrarResultados({
-                    numero: 15,
-                    nombre: 'TC015 - Ingresar solo fecha "Hasta"',
+            return cy.get('body').then($body => {
+                const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+                return cy.registrarResultados({
+                    numero: 15, nombre: 'TC015 - Ingresar solo fecha "Hasta"',
                     esperado: 'Se muestran siniestros hasta esa fecha',
-                    obtenido: 'No se muestran siniestros hasta esa fecha',
-                    resultado: 'ERROR',
-                    pantalla: 'Ficheros (Siniestros)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    obtenido: hayFilas ? 'Comportamiento correcto' : 'No se muestran siniestros hasta esa fecha',
+                    resultado: hayFilas ? 'OK' : 'ERROR', pantalla: 'Ficheros (Siniestros)', archivo
                 });
-                return;
-            }
-
-            // Hay filas: registrar OK
-            cy.registrarResultados({
-                numero: 15,
-                nombre: 'TC015 - Ingresar solo fecha "Hasta"',
-                esperado: 'Se muestran siniestros hasta esa fecha',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                pantalla: 'Ficheros (Siniestros)',
-                archivo: 'reportes_pruebas_novatrans.xlsx'
             });
         });
     }
 
     function ordenarCosteReparacionAsc() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
 
-        // Hacer scroll horizontal para hacer visible la columna "Coste de reparación"
-        cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
-        cy.wait(500);
+            cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
+            cy.wait(500);
+            cy.contains('.MuiDataGrid-columnHeaderTitle', 'Coste de reparación').should('be.visible').click({ force: true });
+            cy.wait(1000);
 
-        // Hacer clic en el encabezado de la columna "Coste de reparación"
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Coste de reparación')
-            .should('be.visible')
-            .click({ force: true });
-
-        cy.wait(1000);
-
-        // Verificar que el ordenamiento se aplicó correctamente
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        
-        // Registrar como OK ya que el ordenamiento se aplicó sin errores
-        cy.registrarResultados({
-            numero: 19,
-            nombre: 'TC019 - Ordenar por "Coste de reparación" ascendente',
-            esperado: 'Las filas se ordenan por coste de reparación de menor a mayor',
-            obtenido: 'Comportamiento correcto - Ordenamiento aplicado exitosamente',
-            resultado: 'OK',
-            pantalla: 'Ficheros (Siniestros)',
-            archivo: 'reportes_pruebas_novatrans.xlsx'
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0).then(() => {
+                return cy.registrarResultados({
+                    numero: 19, nombre: 'TC019 - Ordenar por "Coste de reparación" ascendente',
+                    esperado: 'Las filas se ordenan por coste de reparación de menor a mayor',
+                    obtenido: 'Comportamiento correcto - Ordenamiento aplicado exitosamente',
+                    resultado: 'OK', pantalla: 'Ficheros (Siniestros)', archivo
+                });
+            });
         });
     }
 
     function ordenarCosteReparacionDesc() {
-        cy.navegarAMenu('Ficheros', 'Siniestros');
-        cy.url().should('include', '/dashboard/crash-reports');
-        cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+        return cy.navegarAMenu('Ficheros', 'Siniestros').then(() => {
+            cy.url().should('include', '/dashboard/crash-reports');
+            cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
 
-        // Hacer scroll horizontal para hacer visible la columna "Coste de reparación"
-        cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
-        cy.wait(500);
+            cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
+            cy.wait(500);
+            cy.contains('.MuiDataGrid-columnHeaderTitle', 'Coste de reparación').should('be.visible').click({ force: true }).click({ force: true });
+            cy.wait(1000);
 
-        // Hacer clic en el encabezado de la columna "Coste de reparación" dos veces para ordenar descendente
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Coste de reparación')
-            .should('be.visible')
-            .click({ force: true })
-            .click({ force: true });
-
-        cy.wait(1000);
-
-        // Verificar que el ordenamiento se aplicó correctamente
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        
-        // Registrar como OK ya que el ordenamiento se aplicó sin errores
-        cy.registrarResultados({
-            numero: 20,
-            nombre: 'TC020 - Ordenar por "Coste de reparación" descendente',
-            esperado: 'Las filas se ordenan por coste de reparación de mayor a menor',
-            obtenido: 'Comportamiento correcto - Ordenamiento aplicado exitosamente',
-            resultado: 'OK',
-            pantalla: 'Ficheros (Siniestros)',
-            archivo: 'reportes_pruebas_novatrans.xlsx'
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0).then(() => {
+                return cy.registrarResultados({
+                    numero: 20, nombre: 'TC020 - Ordenar por "Coste de reparación" descendente',
+                    esperado: 'Las filas se ordenan por coste de reparación de mayor a menor',
+                    obtenido: 'Comportamiento correcto - Ordenamiento aplicado exitosamente',
+                    resultado: 'OK', pantalla: 'Ficheros (Siniestros)', archivo
+                });
+            });
         });
     }
 

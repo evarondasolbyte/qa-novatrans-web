@@ -41,7 +41,7 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
         { numero: 38, nombre: 'TC038 - Ingresar rango de fechas válido en "Desde" y "Hasta"', funcion: filtroRangoFechas },
     ];
 
-    // Hook para procesar los resultados agregados después de que terminen todas las pruebas
+    // Resumen al final
     after(() => {
         cy.log('Procesando resultados finales para Taller y Gastos (Repostajes)');
         cy.procesarResultadosPantalla('Taller y Gastos (Repostajes)');
@@ -49,43 +49,57 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Reseteo el flag de error al inicio de cada test
-            cy.resetearErrorFlag();
-            
-            // Si algo falla durante la ejecución del test, capturo el error automáticamente
-            // y lo registro en el Excel con todos los datos del caso.
+            // ✅ reset de flags como en tu patrón estándar
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
-                    numero,                    // Número de caso de prueba
-                    nombre,                    // Nombre del test (título del caso)
-                    esperado: 'Comportamiento correcto',  // Qué se esperaba que ocurriera
-                    archivo,                   // Nombre del archivo Excel donde se guarda todo
-                    pantalla: 'Taller y Gastos (Repostajes)'
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
+                    pantalla: 'Taller y Gastos (Repostajes)',
                 });
-                return false; // Previene que Cypress corte el flujo y nos permite seguir registrando
+                return false;
             });
 
-            // Inicio sesión antes de ejecutar el caso, usando la sesión compartida (cy.login)
-            // y espero unos milisegundos por seguridad antes de continuar
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función correspondiente al test (ya definida arriba)
-            funcion().then(() => {
-                // Si todo salió bien, registro el resultado como OK en el Excel
-                cy.log(`Registrando resultado para test ${numero}: ${nombre}`);
-                cy.registrarResultados({
-                    numero,                   // Número del caso
-                    nombre,                   // Nombre del test
-                    esperado: 'Comportamiento correcto',  // Qué esperaba que hiciera
-                    obtenido: 'Comportamiento correcto',  // Qué hizo realmente (si coincide, marca OK)
-                    resultado: 'OK',          // Marca manualmente como OK
-                    archivo,                  // Archivo Excel donde se registra
-                    pantalla: 'Taller y Gastos (Repostajes)'
-                });
+            // Ejecuta el caso y solo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                if (typeof cy.estaRegistrado === 'function') {
+                    cy.estaRegistrado().then((ya) => {
+                        if (!ya) {
+                            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                            cy.registrarResultados({
+                                numero,
+                                nombre,
+                                esperado: 'Comportamiento correcto',
+                                obtenido: 'Comportamiento correcto',
+                                resultado: 'OK',
+                                archivo,
+                                pantalla: 'Taller y Gastos (Repostajes)',
+                            });
+                        }
+                    });
+                } else {
+                    cy.registrarResultados({
+                        numero,
+                        nombre,
+                        esperado: 'Comportamiento correcto',
+                        obtenido: 'Comportamiento correcto',
+                        resultado: 'OK',
+                        archivo,
+                        pantalla: 'Taller y Gastos (Repostajes)',
+                    });
+                }
             });
         });
     });
+
+    // ====== FUNCIONES ======
 
     function cargaInicial() {
         cy.navegarAMenu('TallerYGastos', 'Repostajes');
@@ -102,18 +116,12 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con fecha 2009');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                    cy.wrap($row)
-                        .invoke('text')
-                        .then((text) => {
-                            expect(text).to.include('2009');
-                        });
-                });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                cy.wrap($row).invoke('text').should('include', '2009');
+            });
         });
     }
 
@@ -125,14 +133,12 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con vehículo 002');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                    cy.wrap($row).should('contain.text', '002');
-                });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                cy.wrap($row).should('contain.text', '002');
+            });
         });
     }
 
@@ -144,14 +150,12 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con PT 4717');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                    cy.wrap($row).should('contain.text', '4717');
-                });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                cy.wrap($row).should('contain.text', '4717');
+            });
         });
     }
 
@@ -163,11 +167,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con AdBlue true');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+                return cy.contains('No rows').should('be.visible');
             }
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         });
     }
 
@@ -179,18 +181,13 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con estación que contenga "gasoil"');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible')
-                    .first()
-                    .find('div[data-field="petrolStation"]')
-                    .invoke('text')
-                    .then((text) => {
-                        expect(text.toLowerCase()).to.include('gasoil');
-                    });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').first().find('div[data-field="petrolStation"]')
+                .invoke('text').then((text) => {
+                    expect(text.toLowerCase()).to.include('gasoil');
+                });
         });
     }
 
@@ -202,18 +199,13 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con tarjeta que contenga "conductor"');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible')
-                    .first()
-                    .find('div[data-field="card"]')
-                    .invoke('text')
-                    .then((text) => {
-                        expect(text.toLowerCase()).to.include('conductor');
-                    });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').first().find('div[data-field="card"]')
+                .invoke('text').then((text) => {
+                    expect(text.toLowerCase()).to.include('conductor');
+                });
         });
     }
 
@@ -225,18 +217,13 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con 12000 kilómetros/hora');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible')
-                    .first()
-                    .find('div[data-field="kilometersHours"]')
-                    .invoke('text')
-                    .then((text) => {
-                        expect(text.trim()).to.equal('12000');
-                    });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').first().find('div[data-field="kilometersHours"]')
+                .invoke('text').then((text) => {
+                    expect(text.trim()).to.equal('12000');
+                });
         });
     }
 
@@ -248,18 +235,13 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con 123 litros');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible')
-                    .first()
-                    .find('div[data-field="liters"]')
-                    .invoke('text')
-                    .then((text) => {
-                        expect(text.trim()).to.equal('123');
-                    });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').first().find('div[data-field="liters"]')
+                .invoke('text').then((text) => {
+                    expect(text.trim()).to.equal('123');
+                });
         });
     }
 
@@ -271,11 +253,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con importe 94.1');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+                return cy.contains('No rows').should('be.visible');
             }
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         });
     }
 
@@ -287,11 +267,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con lleno true');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+                return cy.contains('No rows').should('be.visible');
             }
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         });
     }
 
@@ -303,11 +281,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con factura 67');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+                return cy.contains('No rows').should('be.visible');
             }
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         });
     }
 
@@ -319,21 +295,16 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes con precio 0.681');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+                return cy.contains('No rows').should('be.visible');
             }
+            return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         });
     }
 
     function filtroSoloLlenos() {
         cy.navegarAMenu('TallerYGastos', 'Repostajes');
         cy.url().should('include', '/dashboard/refueling');
-        cy.contains('span', 'Sólo Llenos')
-            .parents('label')
-            .find('input[type="checkbox"]')
-            .check({ force: true });
+        cy.contains('span', 'Sólo Llenos').parents('label').find('input[type="checkbox"]').check({ force: true });
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -341,24 +312,13 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
         cy.navegarAMenu('TallerYGastos', 'Repostajes');
         cy.url().should('include', '/dashboard/refueling');
 
-        // Activar "Sólo llenos"
-        cy.contains('span', 'Sólo Llenos')
-            .parents('label')
-            .find('input[type="checkbox"]')
-            .check({ force: true });
-
-        // Verificar que hay resultados
+        cy.contains('span', 'Sólo Llenos').parents('label').find('input[type="checkbox"]').check({ force: true });
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
 
-        // Limpiar todos los filtros
         cy.get('select[name="column"]').select('Todos');
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('{enter}');
-        cy.contains('span', 'Sólo Llenos')
-            .parents('label')
-            .find('input[type="checkbox"]')
-            .uncheck({ force: true });
+        cy.contains('span', 'Sólo Llenos').parents('label').find('input[type="checkbox"]').uncheck({ force: true });
 
-        // Verificar que se muestran registros
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -368,17 +328,15 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Fecha').click();
 
-        return cy.get('.MuiDataGrid-row:visible')
-            .find('div[data-field="date"]')
-            .then(($fechas) => {
-                const fechas = [...$fechas].map(el => el.innerText.trim());
-                const fechasConvertidas = fechas.map(f => {
-                    const [day, month, year] = f.split('/').map(Number);
-                    return new Date(year, month - 1, day);
-                });
-                const ordenadas = [...fechasConvertidas].sort((a, b) => a - b);
-                expect(fechasConvertidas).to.deep.equal(ordenadas);
+        return cy.get('.MuiDataGrid-row:visible').find('div[data-field="date"]').then(($fechas) => {
+            const fechas = [...$fechas].map(el => el.innerText.trim());
+            const fechasConvertidas = fechas.map(f => {
+                const [d, m, y] = f.split('/').map(Number);
+                return new Date(y, m - 1, d);
             });
+            const ordenadas = [...fechasConvertidas].sort((a, b) => a - b);
+            expect(fechasConvertidas).to.deep.equal(ordenadas);
+        });
     }
 
     function ordenarFechaDesc() {
@@ -387,17 +345,15 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Fecha').click().click();
 
-        return cy.get('.MuiDataGrid-row:visible')
-            .find('div[data-field="date"]')
-            .then(($fechas) => {
-                const fechas = [...$fechas].map(el => el.innerText.trim());
-                const fechasConvertidas = fechas.map(f => {
-                    const [day, month, year] = f.split('/').map(Number);
-                    return new Date(year, month - 1, day);
-                });
-                const ordenadas = [...fechasConvertidas].sort((a, b) => b - a);
-                expect(fechasConvertidas).to.deep.equal(ordenadas);
+        return cy.get('.MuiDataGrid-row:visible').find('div[data-field="date"]').then(($fechas) => {
+            const fechas = [...$fechas].map(el => el.innerText.trim());
+            const fechasConvertidas = fechas.map(f => {
+                const [d, m, y] = f.split('/').map(Number);
+                return new Date(y, m - 1, d);
             });
+            const ordenadas = [...fechasConvertidas].sort((a, b) => b - a);
+            expect(fechasConvertidas).to.deep.equal(ordenadas);
+        });
     }
 
     function ordenarLitrosAsc() {
@@ -406,13 +362,11 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Litros').click();
 
-        return cy.get('.MuiDataGrid-row:visible')
-            .find('div[data-field="liters"]')
-            .then(($litros) => {
-                const litros = [...$litros].map(el => parseFloat(el.innerText.trim().replace(',', '.')));
-                const ordenados = [...litros].sort((a, b) => a - b);
-                expect(litros).to.deep.equal(ordenados);
-            });
+        return cy.get('.MuiDataGrid-row:visible').find('div[data-field="liters"]').then(($litros) => {
+            const litros = [...$litros].map(el => parseFloat(el.innerText.trim().replace(',', '.')));
+            const ordenados = [...litros].sort((a, b) => a - b);
+            expect(litros).to.deep.equal(ordenados);
+        });
     }
 
     function ordenarLitrosDesc() {
@@ -421,13 +375,11 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Litros').click().click();
 
-        return cy.get('.MuiDataGrid-row:visible')
-            .find('div[data-field="liters"]')
-            .then(($litros) => {
-                const litros = [...$litros].map(el => parseFloat(el.innerText.trim().replace(',', '.')));
-                const ordenados = [...litros].sort((a, b) => b - a);
-                expect(litros).to.deep.equal(ordenados);
-            });
+        return cy.get('.MuiDataGrid-row:visible').find('div[data-field="liters"]').then(($litros) => {
+            const litros = [...$litros].map(el => parseFloat(el.innerText.trim().replace(',', '.')));
+            const ordenados = [...litros].sort((a, b) => b - a);
+            expect(litros).to.deep.equal(ordenados);
+        });
     }
 
     function seleccionarFila() {
@@ -474,18 +426,16 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
             }
 
             cy.wrap($filas[0]).as('filaRepostaje');
-            cy.get('@filaRepostaje')
-                .find('.MuiDataGrid-cell')
-                .then($celdas => {
-                    const valores = [...$celdas].map(c => c.innerText.trim()).filter(t => t);
-                    const identificador = valores[0];
+            return cy.get('@filaRepostaje').find('.MuiDataGrid-cell').then($celdas => {
+                const valores = [...$celdas].map(c => c.innerText.trim()).filter(t => t);
+                const identificador = valores[0];
 
-                    cy.get('@filaRepostaje').click({ force: true });
-                    cy.get('button').filter(':visible').eq(-2).click({ force: true });
+                cy.get('@filaRepostaje').click({ force: true });
+                cy.get('button').filter(':visible').eq(-2).click({ force: true });
 
-                    cy.wait(1000);
-                    return cy.contains('.MuiDataGrid-row', identificador).should('not.exist');
-                });
+                cy.wait(1000);
+                return cy.contains('.MuiDataGrid-row', identificador).should('not.exist');
+            });
         });
     }
 
@@ -516,15 +466,14 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
                     cy.get('.MuiDataGrid-virtualScroller').scrollTo('right');
 
-                    cy.get('.MuiDataGrid-columnHeaders').should('exist').and($el => {
+                    return cy.get('.MuiDataGrid-columnHeaders').should('exist').and($el => {
                         const rect = $el[0].getBoundingClientRect();
                         expect(rect.top).to.be.greaterThan(0);
                         expect(rect.height).to.be.greaterThan(0);
                     });
-
                 } else {
                     intentos++;
-                    cy.get('.MuiDataGrid-virtualScroller')
+                    return cy.get('.MuiDataGrid-virtualScroller')
                         .scrollTo('bottom', { duration: 400 })
                         .wait(400)
                         .then(() => hacerScrollVertical(currentScrollHeight));
@@ -620,7 +569,7 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
             cy.contains('Targeta').should('exist');
             cy.contains('Quilòmetres/hora').should('exist');
         }).then(() => {
-            cy.contains('button', 'Afegir').should('be.visible');
+            return cy.contains('button', 'Afegir').should('be.visible');
         });
     }
 
@@ -642,13 +591,12 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.text().includes('No rows')) {
-                cy.contains('No rows').should('be.visible');
-            } else {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-                cy.get('.MuiDataGrid-row:visible').each(($row) => {
-                    cy.wrap($row).invoke('text').should('match', /gasoil/i);
-                });
+                return cy.contains('No rows').should('be.visible');
             }
+            cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+            return cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                cy.wrap($row).invoke('text').should('match', /gasoil/i);
+            });
         });
     }
 
@@ -660,10 +608,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
         return cy.get('body').then(($body) => {
             if ($body.find('.MuiDataGrid-row:visible').length > 0) {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-            } else {
-                cy.contains('No rows').should('exist');
+                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             }
+            return cy.contains('No rows').should('exist');
         });
     }
 
@@ -677,18 +624,16 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
         return cy.get('body').then($body => {
             const filas = $body.find('.MuiDataGrid-row:visible');
             if (filas.length > 0) {
-                cy.get('.MuiDataGrid-row:visible').each(($row) => {
+                return cy.get('.MuiDataGrid-row:visible').each(($row) => {
                     cy.wrap($row)
                         .find('div[data-field="petrolStation"], div[data-field="adblue"]')
                         .invoke('text')
                         .then(texto => {
-                            expect(texto.toLowerCase()).to.include('ad blue'); // coincide aunque sea "ADITIVO AD BLUE"
+                            expect(texto.toLowerCase()).to.include('ad blue');
                         });
                 });
-            } else {
-                cy.contains('No rows').should('be.visible');
-                cy.log('No se encontraron repostajes de tipo AdBlue');
             }
+            return cy.contains('No rows').should('be.visible');
         });
     }
 
@@ -696,15 +641,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
         cy.navegarAMenu('TallerYGastos', 'Repostajes');
         cy.url().should('include', '/dashboard/refueling');
 
-        // Seleccionar el check de "Sólo sin factura recibida"
-        cy.contains('span', 'Sólo sin factura recibida')
-            .parents('label')
-            .find('input[type="checkbox"]')
-            .check({ force: true });
-
+        cy.contains('span', 'Sólo sin factura recibida').parents('label').find('input[type="checkbox"]').check({ force: true });
         cy.wait(500);
 
-        // Verificar que se muestran solo los repostajes sin factura recibida
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -712,27 +651,20 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
         cy.navegarAMenu('TallerYGastos', 'Repostajes');
         cy.url().should('include', '/dashboard/refueling');
 
-        // Ingresar fecha "Desde": 2010
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .first()
-            .within(() => {
-                cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
-                cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
-                cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2010');
-            });
+        cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2010');
+        });
 
-        // Ingresar fecha "Hasta": 2011
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .eq(1)
-            .within(() => {
-                cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
-                cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
-                cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2011');
-            });
+        cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2011');
+        });
 
         cy.wait(500);
 
-        // Verificar que se muestran los repostajes dentro del rango de fechas
         return cy.get('.MuiDataGrid-row:visible').should('exist');
     }
 });
