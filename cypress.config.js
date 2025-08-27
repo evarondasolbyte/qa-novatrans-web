@@ -46,6 +46,7 @@ module.exports = defineConfig({
          *   archivo: permite elegir nombre de Excel local (opcional)
          *   pantalla: módulo/pantalla a la que pertenece el caso
          *   observacion: notas adicionales (stacktrace resumido, causa, etc.)
+         *   ok/warning/error: solo para "Resultados Pruebas"
          */
         async guardarEnExcel({ numero, nombre, esperado, obtenido, resultado, fechaHora, archivo, pantalla, observacion, ok, warning, error }) {
           // Default a excel para entornos sin credenciales o cuando quiero “modo offline”
@@ -54,74 +55,73 @@ module.exports = defineConfig({
           // ============== SINK: GOOGLE SHEETS ==============
           if (sink === 'sheets') {
             // 1) Autenticación OAuth2 con Service Account
-            // IMPORTANTE:
-            // - GS_CLIENT_EMAIL y GS_PRIVATE_KEY deben estar definidos en el entorno/secretos del CI.
-            // - La PRIVATE_KEY suele venir con '\n' escapados; los convierto a saltos de línea reales.
-            // - La SA debe tener permiso de edición sobre el Spreadsheet (compartir por email).
             const auth = new GoogleAuth({
               credentials: {
                 client_email: process.env.GS_CLIENT_EMAIL,
                 private_key: (process.env.GS_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
               },
-              // Scope mínimo necesario para escribir en Sheets
               scopes: ['https://www.googleapis.com/auth/spreadsheets'],
             });
             const client = await auth.getClient();
             const { token } = await client.getAccessToken();
             if (!token) throw new Error('No se pudo obtener access token');
 
-            // 2) Determinar qué hoja usar y construir la fila según el tipo
-            let fila, encodedRange;
-            
+            // Helper: escribe en la siguiente fila REAL (debajo del último registro)
+            const appendExactRow = async ({ sheetName, endColLetter, rowValues }) => {
+              // Leo la columna A para contar filas reales (incluye cabecera si existe)
+              const getUrl =
+                `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/` +
+                `${encodeURIComponent(`${sheetName}!A:A`)}?majorDimension=COLUMNS`;
+              const getRes = await fetchCompat(getUrl, { headers: { Authorization: `Bearer ${token}` } });
+              const getJson = await getRes.json();
+              const colA = (getJson.values && getJson.values[0]) ? getJson.values[0] : [];
+              const currentRows = colA.length;       // nº de filas actualmente ocupadas en A
+              const nextRow = currentRows + 1;       // siguiente fila exacta
+
+              // PUT en el rango exacto (RAW)
+              const range = `${sheetName}!A${nextRow}:${endColLetter}${nextRow}`;
+              const putUrl =
+                `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/` +
+                `${encodeURIComponent(range)}?valueInputOption=RAW`;
+              const putRes = await fetchCompat(putUrl, {
+                method: 'PUT',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ values: [rowValues] }),
+              });
+              const putTxt = await putRes.text();
+              if (!putRes.ok) throw new Error(`Sheets REST error (update ${range}): ${putRes.status} ${putTxt}`);
+            };
+
+            // 2) Construir fila y escribir en hoja exacta
             if (pantalla === 'Resultados Pruebas') {
-              // Para "Resultados Pruebas" usar formato especial con columnas adicionales
-              fila = [
-                numero ?? '',                                 // Test-ID
-                (fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19)), // Fecha y Hora
-                esperado ?? '',                               // Test
-                obtenido ?? '',                               // Nombre
-                resultado ?? '',                              // Resultado
-                (ok ?? '').toString(),                        // OK
-                (warning ?? '').toString(),                   // WARNING
-                (error ?? '').toString()                      // ERROR
+              // Formato especial Resumen
+              const row = [
+                numero ?? '',                                                   // A: Test-ID
+                (fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19)), // B: Fecha y Hora
+                esperado ?? '',                                                 // C: Test
+                obtenido ?? '',                                                 // D: Nombre
+                resultado ?? '',                                                // E: Resultado
+                (ok ?? '').toString(),                                          // F: OK
+                (warning ?? '').toString(),                                     // G: WARNING
+                (error ?? '').toString(),                                       // H: ERROR
               ];
-              encodedRange = encodeURIComponent('Resultados Pruebas!A:H');
+              await appendExactRow({ sheetName: 'Resultados Pruebas', endColLetter: 'H', rowValues: row });
             } else {
-              // Para otras hojas usar el formato estándar
-              fila = [
-                numero ?? '',
-                nombre ?? '',
-                esperado ?? '',
-                obtenido ?? '',
-                resultado ?? '',
-                (fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19)),
-                pantalla || '',
-                observacion || ''
+              // Formato estándar para "Log"
+              const row = [
+                numero ?? '',                                                   // A: Nº
+                nombre ?? '',                                                   // B: Nombre
+                esperado ?? '',                                                 // C: Resultado Esperado
+                obtenido ?? '',                                                 // D: Resultado Obtenido
+                resultado ?? '',                                                // E: Resultado
+                (fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19)), // F: Fecha y Hora
+                pantalla || '',                                                 // G: Test (pantalla)
+                observacion || ''                                               // H: Observaciones
               ];
-              encodedRange = encodeURIComponent('Log!A:H');
-            }
-
-            // 3) Llamada REST: append al rango correspondiente
-            //    valueInputOption=RAW => lo mete tal cual (sin interpretación de fórmulas).
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/${encodedRange}:append?valueInputOption=RAW`;
-
-            const res = await fetchCompat(url, {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ values: [fila] }),
-            });
-
-            // Leo el texto para informes de error más ricos
-            const txt = await res.text();
-            if (!res.ok) {
-              // Errores comunes:
-              // - 403/404: la SA no tiene acceso al Spreadsheet o ID incorrecto.
-              // - 400: hoja o rango no existe ("Log"), revisar nombre y mayúsculas.
-              // - 401: token inválido (credenciales mal o scope).
-              throw new Error(`Sheets REST error: ${res.status} ${txt}`);
+              await appendExactRow({ sheetName: 'Log', endColLetter: 'H', rowValues: row });
             }
             return 'OK';
           }
@@ -142,7 +142,6 @@ module.exports = defineConfig({
           if (pantalla === 'Resultados Pruebas') {
             console.log(`Guardando en "Resultados Pruebas": numero=${numero}, nombre=${nombre}, esperado=${esperado}, obtenido=${obtenido}, resultado=${resultado}, ok=${ok}, warning=${warning}, error=${error}`);
             
-            // Para "Resultados Pruebas" usar formato especial con columnas adicionales
             if (workbook.SheetNames.includes('Resultados Pruebas')) {
               worksheet = workbook.Sheets['Resultados Pruebas'];
             } else {
@@ -152,35 +151,27 @@ module.exports = defineConfig({
               xlsx.utils.book_append_sheet(workbook, worksheet, 'Resultados Pruebas');
             }
             
-            // Para "Resultados Pruebas" usar el formato correcto
             const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-            data.push([numero, nombre, esperado, obtenido, resultado, ok || '', warning || '', error || '']);
-            
+            data.push([numero, fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19), esperado, obtenido, resultado, ok || '', warning || '', error || '']);
             const nuevaHoja = xlsx.utils.aoa_to_sheet(data);
             workbook.Sheets['Resultados Pruebas'] = nuevaHoja;
           } else {
-            // Para otras hojas usar el formato estándar
-            if (workbook.SheetNames.includes(pantalla)) {
-              worksheet = workbook.Sheets[pantalla];
+            if (workbook.SheetNames.includes('Log')) {
+              worksheet = workbook.Sheets['Log'];
             } else {
               worksheet = xlsx.utils.aoa_to_sheet([[
                 'Nº', 'Nombre', 'Resultado Esperado', 'Resultado Obtenido', 'Resultado', 'Fecha y Hora', 'Test', 'Observaciones'
               ]]);
-              xlsx.utils.book_append_sheet(workbook, worksheet, pantalla);
+              xlsx.utils.book_append_sheet(workbook, worksheet, 'Log');
             }
             
-            // Timestamp coherente (ISO friendly sin zona T)
             const fechaHoraFinal = fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19);
-            
-            // Convierto la hoja a matriz de filas, pusheo y reescribo
             const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
             data.push([numero, nombre, esperado, obtenido, resultado, fechaHoraFinal, pantalla || '', observacion || '']);
-            
             const nuevaHoja = xlsx.utils.aoa_to_sheet(data);
-            workbook.Sheets[pantalla] = nuevaHoja;
+            workbook.Sheets['Log'] = nuevaHoja;
           }
 
-          // IMPORTANTE en Windows/CI: asegurar permisos de escritura en cypress/resultados
           xlsx.writeFile(workbook, rutaExcel);
           return 'OK';
         },
@@ -218,9 +209,35 @@ module.exports = defineConfig({
             const { token } = await client.getAccessToken();
             if (!token) throw new Error('No se pudo obtener access token');
 
-            // Construyo la fila con 9 columnas (A:I) para la hoja "Log"
-            // A: Test-ID, B: Test, C: Paso, D: Fecha y Hora, E: Resultado, F: Nombre, G: Resultado Esperado, H: Resultado Obtenido, I: Observaciones
-            const fila = [
+            // Helper común: escribe en la fila exacta debajo del último registro
+            const appendExactRow = async ({ sheetName, endColLetter, rowValues }) => {
+              const getUrl =
+                `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/` +
+                `${encodeURIComponent(`${sheetName}!A:A`)}?majorDimension=COLUMNS`;
+              const getRes = await fetchCompat(getUrl, { headers: { Authorization: `Bearer ${token}` } });
+              const getJson = await getRes.json();
+              const colA = (getJson.values && getJson.values[0]) ? getJson.values[0] : [];
+              const currentRows = colA.length;
+              const nextRow = currentRows + 1;
+
+              const range = `${sheetName}!A${nextRow}:${endColLetter}${nextRow}`;
+              const putUrl =
+                `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/` +
+                `${encodeURIComponent(range)}?valueInputOption=RAW`;
+              const putRes = await fetchCompat(putUrl, {
+                method: 'PUT',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ values: [rowValues] }),
+              });
+              const putTxt = await putRes.text();
+              if (!putRes.ok) throw new Error(`Sheets REST error (update ${range}): ${putRes.status} ${putTxt}`);
+            };
+
+            // A: Test-ID, B: Test, C: Paso, D: Fecha y Hora, E: Resultado, F: Nombre, G: Esperado, H: Obtenido, I: Observaciones
+            const row = [
               testId ?? '',
               test ?? '',
               paso ?? '',
@@ -232,23 +249,7 @@ module.exports = defineConfig({
               observacion ?? ''
             ];
 
-            // Llamada REST: append al rango Log!A:I del Spreadsheet
-            const encodedRange = encodeURIComponent('Log!A:I');
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/${encodedRange}:append?valueInputOption=RAW`;
-
-            const res = await fetchCompat(url, {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ values: [fila] }),
-            });
-
-            const txt = await res.text();
-            if (!res.ok) {
-              throw new Error(`Sheets REST error: ${res.status} ${txt}`);
-            }
+            await appendExactRow({ sheetName: 'Log', endColLetter: 'I', rowValues: row });
             return 'OK';
           }
 
@@ -259,7 +260,6 @@ module.exports = defineConfig({
           let workbook, worksheet;
           if (fs.existsSync(rutaExcel)) {
             workbook = xlsx.readFile(rutaExcel);
-            // Buscar la hoja "Log" o crear una nueva
             if (workbook.SheetNames.includes('Log')) {
               worksheet = workbook.Sheets['Log'];
             } else {
@@ -276,17 +276,14 @@ module.exports = defineConfig({
             xlsx.utils.book_append_sheet(workbook, worksheet, 'Log');
           }
 
-          // Convierto la hoja a matriz de filas, pusheo y reescribo
           const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
           data.push([testId, test, paso, fechaHora, resultado, nombre, esperado, obtenido, observacion]);
-
           const nuevaHoja = xlsx.utils.aoa_to_sheet(data);
           workbook.Sheets['Log'] = nuevaHoja;
 
           xlsx.writeFile(workbook, rutaExcel);
           return 'OK';
         },
-
 
       });
     },

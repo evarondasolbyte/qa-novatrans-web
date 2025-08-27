@@ -43,7 +43,10 @@ describe('ALQUILERES VEHÍCULOS - Validación completa con gestión de errores y
     // Itero por cada caso individualmente
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Registro automático de errores si algo falla dentro del test
+            // Reset de flags por test
+            cy.resetearFlagsTest();
+
+            // Captura de errores -> registra y marca flags
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
                     numero,
@@ -52,23 +55,28 @@ describe('ALQUILERES VEHÍCULOS - Validación completa con gestión de errores y
                     archivo: 'reportes_pruebas_novatrans.xlsx',
                     pantalla: 'Ficheros (Alquileres Vehículos)'
                 });
-                return false; // Evita que Cypress corte el resto del flujo del test
+                return false; // seguir ejecutando hooks de registro
             });
 
-            // Hago login y espero un poco antes de empezar la acción
+            // Login y pequeña espera
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función de prueba correspondiente al caso
-            funcion().then(() => {
-                // Si todo va bien, registro el resultado como OK automáticamente
-                cy.registrarResultados({
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    obtenido: 'Comportamiento correcto',
-                    archivo: 'reportes_pruebas_novatrans.xlsx',
-                    pantalla: 'Ficheros (Alquileres Vehículos)'
+            // Ejecutar la función del caso (debe devolver una cadena de Cypress)
+            return funcion().then(() => {
+                // Solo registrar OK si NADIE registró antes en este test
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo: 'reportes_pruebas_novatrans.xlsx',
+                            pantalla: 'Ficheros (Alquileres Vehículos)'
+                        });
+                    }
                 });
             });
         });

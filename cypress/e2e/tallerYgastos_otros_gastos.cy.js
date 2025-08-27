@@ -37,54 +37,55 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         { numero: 33, nombre: 'TC033 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas },
     ];
 
-    // Hook para procesar los resultados agregados después de que terminen todas las pruebas
+    // Resumen al final
     after(() => {
         cy.log('Procesando resultados finales para Taller y Gastos (Otros Gastos)');
         cy.procesarResultadosPantalla('Taller y Gastos (Otros Gastos)');
     });
 
+    // Iterador de casos con protección anti-doble-registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Reseteo el flag de error al inicio de cada test
-            cy.resetearErrorFlag();
-            
-            // Si algo falla durante la ejecución del test, capturo el error automáticamente
-            // y lo registro en el Excel con todos los datos del caso.
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
-                    numero,                    // Número de caso de prueba
-                    nombre,                    // Nombre del test (título del caso)
-                    esperado: 'Comportamiento correcto',  // Qué se esperaba que ocurriera
-                    archivo,                   // Nombre del archivo Excel donde se guarda todo
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
                     pantalla: 'Taller y Gastos (Otros Gastos)'
                 });
-                return false; // Previene que Cypress corte el flujo y nos permite seguir registrando
+                return false;
             });
 
-            // Inicio sesión antes de ejecutar el caso, usando la sesión compartida (cy.login)
-            // y espero unos milisegundos por seguridad antes de continuar
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función correspondiente al test (ya definida arriba)
-            funcion().then(() => {
-                // Si todo salió bien, registro el resultado como OK en el Excel
-                cy.log(`Registrando resultado para test ${numero}: ${nombre}`);
-                cy.registrarResultados({
-                    numero,                   // Número del caso
-                    nombre,                   // Nombre del test
-                    esperado: 'Comportamiento correcto',  // Qué esperaba que hiciera
-                    obtenido: 'Comportamiento correcto',  // Qué hizo realmente (si coincide, marca OK)
-                    resultado: 'OK',          // Marca manualmente como OK
-                    archivo,                  // Archivo Excel donde se registra
-                    pantalla: 'Taller y Gastos (Otros Gastos)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Taller y Gastos (Otros Gastos)'
+                        });
+                    }
                 });
             });
         });
     });
 
     // === FUNCIONES DE VALIDACIÓN ===
-    
+
     function cargarPantalla() {
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
@@ -156,7 +157,7 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
         cy.get('select[name="column"]').select('Motivo', { force: true });
-        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('Multienergía Andamur{enter}', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('otro gasto{enter}', { force: true });
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -194,7 +195,7 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
     function buscarTextoParcial() {
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
-        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('Andamur{enter}', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('gast{enter}', { force: true });
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -223,42 +224,33 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
     function ordenarPorFecha() {
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
-        
-        // Ordenar ascendente
+
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha').click();
         cy.wait(1000);
-        
-        // Ordenar descendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha').click();
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function ordenarPorTipo() {
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
-        
-        // Ordenar ascendente
+
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Tipo').click();
         cy.wait(1000);
-        
-        // Ordenar descendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Tipo').click();
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function ordenarPorImporte() {
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
-        
-        // Ordenar ascendente
+
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe').click();
         cy.wait(1000);
-        
-        // Ordenar descendente
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe').click();
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
@@ -273,13 +265,14 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.url().should('include', '/dashboard/other-expenses');
         cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
         cy.wait(500);
-        return cy.get('button').contains('Eliminar').click({ force: true });
+        // devolvemos la cadena para que Cypress espere
+        return cy.get('button.css-1cbe274').click({ force: true });
     }
 
     function eliminarSinSeleccion() {
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
-        cy.get('button').contains('Eliminar').click({ force: true });
+        cy.get('button.css-1cbe274').click({ force: true });
         return cy.contains('No hay ningún elemento seleccionado para eliminar').should('be.visible');
     }
 
@@ -294,7 +287,7 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
         cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
-        
+
         const maxScrolls = 10;
         let intentos = 0;
 
@@ -344,21 +337,16 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
 
-        // Seleccionar fecha "Desde": 2020
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .first()
-            .within(() => {
-                cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
-                cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
-                cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2020');
-            });
+        cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2020');
+        });
 
         cy.wait(500);
 
-        // Verificar que se muestran gastos a partir del 2020
         cy.get('body').then($body => {
             if ($body.find('.MuiDataGrid-row:visible').length === 0) {
-                // No se muestran gastos → registramos como ERROR
                 cy.registrarResultados({
                     numero: 28,
                     nombre: 'TC028 - Filtrar por Fecha Desde',
@@ -366,10 +354,9 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
                     obtenido: 'No se muestra nada',
                     resultado: 'ERROR',
                     pantalla: 'Taller y Gastos (Otros Gastos)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    archivo
                 });
             } else {
-                // Se muestran gastos → registramos como OK
                 cy.registrarResultados({
                     numero: 28,
                     nombre: 'TC028 - Filtrar por Fecha Desde',
@@ -377,7 +364,7 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
                     obtenido: 'Se muestran gastos a partir del 2020',
                     resultado: 'OK',
                     pantalla: 'Taller y Gastos (Otros Gastos)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    archivo
                 });
             }
         });
@@ -389,21 +376,16 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
 
-        // Seleccionar fecha "Hasta": 2019
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .eq(1)
-            .within(() => {
-                cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
-                cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
-                cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2019');
-            });
+        cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2019');
+        });
 
         cy.wait(500);
 
-        // Verificar que se muestran gastos hasta el 2019
         cy.get('body').then($body => {
             if ($body.find('.MuiDataGrid-row:visible').length === 0) {
-                // No se muestran gastos → registramos como ERROR
                 cy.registrarResultados({
                     numero: 29,
                     nombre: 'TC029 - Filtrar por Fecha Hasta',
@@ -411,10 +393,9 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
                     obtenido: 'No se muestra nada',
                     resultado: 'ERROR',
                     pantalla: 'Taller y Gastos (Otros Gastos)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    archivo
                 });
             } else {
-                // Se muestran gastos → registramos como OK
                 cy.registrarResultados({
                     numero: 29,
                     nombre: 'TC029 - Filtrar por Fecha Hasta',
@@ -422,7 +403,7 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
                     obtenido: 'Se muestran gastos hasta el 2019',
                     resultado: 'OK',
                     pantalla: 'Taller y Gastos (Otros Gastos)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    archivo
                 });
             }
         });
@@ -434,30 +415,22 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
 
-        // Seleccionar fecha "Desde": 2019
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .first()
-            .within(() => {
-                cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
-                cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
-                cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2019');
-            });
+        cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2019');
+        });
 
-        // Seleccionar fecha "Hasta": 2021
-        cy.get('.MuiPickersInputBase-sectionsContainer')
-            .eq(1)
-            .within(() => {
-                cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
-                cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
-                cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2021');
-            });
+        cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2021');
+        });
 
         cy.wait(500);
 
-        // Verificar que se muestran registros dentro del rango
         cy.get('body').then($body => {
             if ($body.find('.MuiDataGrid-row:visible').length === 0) {
-                // No se muestran registros → registramos como ERROR
                 cy.registrarResultados({
                     numero: 30,
                     nombre: 'TC030 - Filtrar por Fecha Desde + Hasta (rango completo)',
@@ -465,10 +438,9 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
                     obtenido: 'No se muestra nada',
                     resultado: 'ERROR',
                     pantalla: 'Taller y Gastos (Otros Gastos)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    archivo
                 });
             } else {
-                // Se muestran registros → registramos como OK
                 cy.registrarResultados({
                     numero: 30,
                     nombre: 'TC030 - Filtrar por Fecha Desde + Hasta (rango completo)',
@@ -476,7 +448,7 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
                     obtenido: 'Se muestran únicamente los registros que caen dentro del rango de fechas definido',
                     resultado: 'OK',
                     pantalla: 'Taller y Gastos (Otros Gastos)',
-                    archivo: 'reportes_pruebas_novatrans.xlsx'
+                    archivo
                 });
             }
         });
@@ -488,7 +460,6 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
 
-        // Hacer clic en el menú de la columna Motivo
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Motivo')
             .parents('[role="columnheader"]')
             .trigger('mouseover');
@@ -496,7 +467,6 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.get('[aria-label="Motivo column menu"]').click({ force: true });
         cy.get('li').contains('Filter').click({ force: true });
 
-        // Escribir en el campo Value
         cy.get('input[placeholder="Filter value"]')
             .should('exist')
             .clear()
@@ -509,7 +479,6 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
 
-        // Hacer clic en el menú de la columna Motivo
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Motivo')
             .parents('[role="columnheader"]')
             .trigger('mouseover');
@@ -528,7 +497,6 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.navegarAMenu('TallerYGastos', 'Otros Gastos');
         cy.url().should('include', '/dashboard/other-expenses');
 
-        // Hacer clic en el menú de la columna Fecha
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha')
             .parents('[role="columnheader"]')
             .trigger('mouseover');
@@ -536,7 +504,6 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
         cy.get('[aria-label="Fecha column menu"]').click({ force: true });
         cy.get('li').contains('Manage columns').click({ force: true });
 
-        // Marcar Motivo para que vuelva a ser visible
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')
             .find('label')
