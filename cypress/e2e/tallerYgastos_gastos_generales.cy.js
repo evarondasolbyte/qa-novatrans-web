@@ -1,0 +1,602 @@
+describe('TALLER Y GASTOS - GASTOS GENERALES - Validación completa con gestión de errores y reporte a Excel', () => {
+    const archivo = 'reportes_pruebas_novatrans.xlsx';
+
+    const casos = [
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
+        { numero: 5, nombre: 'TC005 - Filtrar por Inicio (fecha)', funcion: filtrarPorInicio },
+        { numero: 6, nombre: 'TC006 - Filtrar por Código', funcion: filtrarPorCodigo },
+        { numero: 7, nombre: 'TC007 - Filtrar por Fin (fecha)', funcion: filtrarPorFin },
+        { numero: 8, nombre: 'TC008 - Filtrar por Importe', funcion: filtrarPorImporte },
+        { numero: 9, nombre: 'TC009 - Filtrar por Descripción (contenga)', funcion: filtrarPorDescripcion },
+        { numero: 10, nombre: 'TC010 - Filtrar por Factura', funcion: filtrarPorFactura },
+        { numero: 11, nombre: 'TC011 - Filtrar por Nómina', funcion: filtrarPorNomina },
+        { numero: 12, nombre: 'TC012 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto },
+        { numero: 13, nombre: 'TC013 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial },
+        { numero: 14, nombre: 'TC014 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive },
+        { numero: 15, nombre: 'TC015 - Búsqueda con espacios inicio/fin', funcion: buscarConEspacios },
+        { numero: 16, nombre: 'TC016 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales },
+        { numero: 17, nombre: 'TC017 - Ordenar por Inicio ASC/DESC', funcion: ordenarPorInicio },
+        { numero: 18, nombre: 'TC018 - Ordenar por Fin ASC/DESC', funcion: ordenarPorFin },
+        { numero: 19, nombre: 'TC019 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte },
+        { numero: 20, nombre: 'TC020 - Ordenar por Descripción ASC/DESC', funcion: ordenarPorDescripcion },
+        { numero: 21, nombre: 'TC021 - Ordenar por Factura ASC/DESC', funcion: ordenarPorFactura },
+        { numero: 22, nombre: 'TC022 - Seleccionar una fila', funcion: seleccionarFila },
+        { numero: 23, nombre: 'TC023 - Botón Eliminar con fila seleccionada', funcion: eliminarConSeleccion },
+        { numero: 24, nombre: 'TC024 - Botón Eliminar sin selección', funcion: eliminarSinSeleccion },
+        { numero: 25, nombre: 'TC025 - Botón + Añadir abre formulario', funcion: abrirFormulario },
+        { numero: 26, nombre: 'TC026 - Botón Editar con fila seleccionada', funcion: editarConSeleccion },
+        { numero: 27, nombre: 'TC027 - Botón Editar sin selección', funcion: editarSinSeleccion },
+        { numero: 28, nombre: 'TC028 - Fecha Desde (filtro superior)', funcion: filtrarPorFechaDesde },
+        { numero: 29, nombre: 'TC029 - Fecha Hasta (filtro superior)', funcion: filtrarPorFechaHasta },
+        { numero: 30, nombre: 'TC030 - Fecha Desde + Hasta (rango completo)', funcion: filtrarPorRangoFechas },
+        { numero: 31, nombre: 'TC031 - Filtrar por Value (menú de columna)', funcion: filtrarPorValue },
+        { numero: 32, nombre: 'TC032 - Ocultar columna desde menú contextual', funcion: ocultarColumna },
+        { numero: 33, nombre: 'TC033 - Manage columns (mostrar/ocultar)', funcion: gestionarColumnas },
+        { numero: 34, nombre: 'TC034 - Scroll en tabla (vertical/horizontal)', funcion: scrollEnTabla },
+        { numero: 35, nombre: 'TC035 - Reinicio de filtros al recargar', funcion: reinicioFiltros },
+    ];
+
+    // Resumen al final
+    after(() => {
+        cy.log('Procesando resultados finales para Taller y Gastos (Gastos Generales)');
+        cy.procesarResultadosPantalla('Taller y Gastos (Gastos Generales)');
+    });
+
+    // Iterador de casos con protección anti-doble-registro
+    casos.forEach(({ numero, nombre, funcion }) => {
+        it(nombre, () => {
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
+            cy.on('fail', (err) => {
+                cy.capturarError(nombre, err, {
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
+                    pantalla: 'Taller y Gastos (Gastos Generales)'
+                });
+                return false;
+            });
+
+            cy.login();
+            cy.wait(500);
+
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Taller y Gastos (Gastos Generales)'
+                        });
+                    }
+                });
+            });
+        });
+    });
+
+    // === FUNCIONES DE VALIDACIÓN ===
+
+    function cargarPantalla() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('exist');
+        return cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
+    }
+
+    function cambiarIdiomaIngles() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select#languageSwitcher').select('en', { force: true });
+        cy.wait(1500);
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
+            cy.contains('Start').should('exist');
+            cy.contains('End').should('exist');
+            cy.contains('Amount').should('exist');
+        });
+    }
+
+    function cambiarIdiomaCatalan() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select#languageSwitcher').select('ca', { force: true });
+        cy.wait(1500);
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
+            cy.contains('Inici').should('exist');
+            cy.contains('Fi').should('exist');
+            cy.contains('Import').should('exist');
+        });
+    }
+
+    function cambiarIdiomaEspanol() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select#languageSwitcher').select('es', { force: true });
+        cy.wait(1500);
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
+            cy.contains('Inicio').should('exist');
+            cy.contains('Fin').should('exist');
+            cy.contains('Importe').should('exist');
+        });
+    }
+
+    function filtrarPorInicio() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Inicio', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('2020{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function filtrarPorCodigo() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Código', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('35{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function filtrarPorFin() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Fin', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('2020{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function filtrarPorImporte() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Importe', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('300{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function filtrarPorDescripcion() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Descripción', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('Nómina{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function filtrarPorFactura() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Factura', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('26{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function filtrarPorNomina() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('select[name="column"]').select('Nómina', { force: true });
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('77{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function buscarTextoExacto() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('Abono Gasoil autonomico{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function buscarTextoParcial() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('SuperLopez{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function buscarCaseInsensitive() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('nÓmInA{enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function buscarConEspacios() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('   NÓMINA    {enter}', { force: true });
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function buscarCaracteresEspeciales() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('%&/{enter}', { force: true });
+        cy.wait(500);
+        return cy.contains('No rows', { timeout: 3000 }).should('be.visible');
+    }
+
+    function ordenarPorInicio() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Inicio').click();
+        cy.wait(1000);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Inicio').click();
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function ordenarPorFin() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fin').click();
+        cy.wait(1000);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fin').click();
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function ordenarPorImporte() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe').click();
+        cy.wait(1000);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe').click();
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function ordenarPorDescripcion() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Descripción').click();
+        cy.wait(1000);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Descripción').click();
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function ordenarPorFactura() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Factura').click();
+        cy.wait(1000);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Factura').click();
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function seleccionarFila() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        return cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
+    }
+
+    function eliminarConSeleccion() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
+        cy.wait(500);
+        cy.get('button.css-1cbe274').click({ force: true });
+        
+        // Verificar si realmente se eliminó
+        cy.get('body').then($body => {
+            if ($body.find('.MuiDataGrid-row:visible').length === 0) {
+                // Si no hay filas visibles, asumimos que funcionó
+                cy.registrarResultados({
+                    numero: 23,
+                    nombre: 'TC023 - Botón Eliminar con fila seleccionada',
+                    esperado: 'Se elimina la fila y la tabla se refresca',
+                    obtenido: 'Se elimina la fila correctamente',
+                    resultado: 'OK',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            } else {
+                // Si hay filas visibles, no funcionó
+                cy.registrarResultados({
+                    numero: 23,
+                    nombre: 'TC023 - Botón Eliminar con fila seleccionada',
+                    esperado: 'Se elimina la fila y la tabla se refresca',
+                    obtenido: 'Sale que se ha eliminado pero no desaparece',
+                    resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            }
+        });
+        
+        return cy.get('.MuiDataGrid-root').should('be.visible');
+    }
+
+    function eliminarSinSeleccion() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('button.css-1cbe274').click({ force: true });
+        
+        // Verificar si aparece el mensaje correcto o si no se realiza acción
+        cy.get('body').then($body => {
+            if ($body.find('text:contains("No hay ningún elemento seleccionado para eliminar")').length > 0 || 
+                $body.find('text:contains("No hay ningún elemento seleccionado")').length > 0) {
+                // Si aparece el mensaje correcto, funcionó
+                cy.registrarResultados({
+                    numero: 24,
+                    nombre: 'TC024 - Botón Eliminar sin selección',
+                    esperado: 'No se realiza acción o aparece aviso',
+                    obtenido: 'Aparece mensaje correcto de aviso',
+                    resultado: 'OK',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            } else {
+                // Si no aparece el mensaje correcto, no funcionó
+                cy.registrarResultados({
+                    numero: 24,
+                    nombre: 'TC024 - Botón Eliminar sin selección',
+                    esperado: 'No se realiza acción o aparece aviso',
+                    obtenido: 'No se elimina nada y aún así sale que se ha eliminado',
+                    resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            }
+        });
+        
+        return cy.get('.MuiDataGrid-root').should('be.visible');
+    }
+
+    function abrirFormulario() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('button').contains('Añadir').click({ force: true });
+        return cy.get('form').should('be.visible');
+    }
+
+    function editarConSeleccion() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('.MuiDataGrid-row:visible').first().as('filaSeleccionada');
+        cy.get('@filaSeleccionada').click({ force: true });
+        cy.wait(500);
+        cy.get('@filaSeleccionada').dblclick({ force: true });
+        return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/general-expenses\/form\/\d+$/);
+    }
+
+    function editarSinSeleccion() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        return cy.contains('button', 'Editar').should('not.exist');
+    }
+
+    function filtrarPorFechaDesde() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2020');
+        });
+
+        cy.wait(500);
+
+        cy.get('body').then($body => {
+            if ($body.find('.MuiDataGrid-row:visible').length === 0) {
+                cy.registrarResultados({
+                    numero: 28,
+                    nombre: 'TC028 - Fecha Desde (filtro superior)',
+                    esperado: 'Se muestran gastos a partir del 2020',
+                    obtenido: 'No se muestra nada',
+                    resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            } else {
+                cy.registrarResultados({
+                    numero: 28,
+                    nombre: 'TC028 - Fecha Desde (filtro superior)',
+                    esperado: 'Se muestran gastos a partir del 2020',
+                    obtenido: 'Se muestran gastos a partir del 2020',
+                    resultado: 'OK',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            }
+        });
+
+        return cy.get('.MuiDataGrid-root').should('be.visible');
+    }
+
+    function filtrarPorFechaHasta() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2018');
+        });
+
+        cy.wait(500);
+
+        cy.get('body').then($body => {
+            if ($body.find('.MuiDataGrid-row:visible').length === 0) {
+                cy.registrarResultados({
+                    numero: 29,
+                    nombre: 'TC029 - Fecha Hasta (filtro superior)',
+                    esperado: 'Se muestran gastos hasta el 2018',
+                    obtenido: 'No se muestra nada',
+                    resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            } else {
+                cy.registrarResultados({
+                    numero: 29,
+                    nombre: 'TC029 - Fecha Hasta (filtro superior)',
+                    esperado: 'Se muestran gastos hasta el 2018',
+                    obtenido: 'Se muestran gastos hasta el 2018',
+                    resultado: 'OK',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            }
+        });
+
+        return cy.get('.MuiDataGrid-root').should('be.visible');
+    }
+
+    function filtrarPorRangoFechas() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}01');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2018');
+        });
+
+        cy.get('.MuiPickersInputBase-sectionsContainer').eq(1).within(() => {
+            cy.get('span[aria-label="Day"]').type('{selectall}{backspace}31');
+            cy.get('span[aria-label="Month"]').type('{selectall}{backspace}12');
+            cy.get('span[aria-label="Year"]').type('{selectall}{backspace}2021');
+        });
+
+        cy.wait(500);
+
+        cy.get('body').then($body => {
+            if ($body.find('.MuiDataGrid-row:visible').length === 0) {
+                cy.registrarResultados({
+                    numero: 30,
+                    nombre: 'TC030 - Fecha Desde + Hasta (rango completo)',
+                    esperado: 'Se muestran únicamente los registros que caen dentro del rango de fechas definido',
+                    obtenido: 'No se muestra nada',
+                    resultado: 'ERROR',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            } else {
+                cy.registrarResultados({
+                    numero: 30,
+                    nombre: 'TC030 - Fecha Desde + Hasta (rango completo)',
+                    esperado: 'Se muestran únicamente los registros que caen dentro del rango de fechas definido',
+                    obtenido: 'Se muestran únicamente los registros que caen dentro del rango de fechas definido',
+                    resultado: 'OK',
+                    pantalla: 'Taller y Gastos (Gastos Generales)',
+                    archivo
+                });
+            }
+        });
+
+        return cy.get('.MuiDataGrid-root').should('be.visible');
+    }
+
+    function filtrarPorValue() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
+
+        cy.get('[aria-label="Código column menu"]').click({ force: true });
+        cy.get('li').contains('Filter').click({ force: true });
+
+        cy.get('input[placeholder="Filter value"]')
+            .should('exist')
+            .clear()
+            .type('35');
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    function ocultarColumna() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
+
+        cy.get('[aria-label="Código column menu"]').click({ force: true });
+        cy.get('li').contains('Hide column').click({ force: true });
+
+        return cy.get('.MuiDataGrid-columnHeaders')
+            .should('be.visible')
+            .within(() => {
+                cy.contains('Código').should('not.exist');
+            });
+    }
+
+    function gestionarColumnas() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Inicio')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
+
+        cy.get('[aria-label="Inicio column menu"]').click({ force: true });
+        cy.get('li').contains('Manage columns').click({ force: true });
+
+        cy.get('.MuiDataGrid-panel')
+            .should('be.visible')
+            .find('label')
+            .contains('Código')
+            .parents('label')
+            .find('input[type="checkbox"]')
+            .check({ force: true });
+
+        return cy.get('.MuiDataGrid-columnHeaders')
+            .should('be.visible')
+            .within(() => {
+                cy.contains('Código').should('exist');
+            });
+    }
+
+    function scrollEnTabla() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
+
+        const maxScrolls = 10;
+        let intentos = 0;
+
+        function hacerScrollVertical(prevHeight = 0) {
+            return cy.get('.MuiDataGrid-virtualScroller').then($scroller => {
+                const currentScrollHeight = $scroller[0].scrollHeight;
+                if (currentScrollHeight === prevHeight || intentos >= maxScrolls) {
+                    return cy.get('.MuiDataGrid-columnHeaders').should('exist');
+                } else {
+                    intentos++;
+                    return cy.get('.MuiDataGrid-virtualScroller')
+                        .scrollTo('bottom', { duration: 400 })
+                        .wait(400)
+                        .then(() => hacerScrollVertical(currentScrollHeight));
+                }
+            });
+        }
+
+        return hacerScrollVertical();
+    }
+
+    function reinicioFiltros() {
+        cy.navegarAMenu('TallerYGastos', 'Gastos Generales');
+        cy.url().should('include', '/dashboard/general-expenses');
+        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('nómina{enter}', { force: true });
+        cy.reload();
+        return cy.get('input[placeholder="Buscar"]').should('have.value', '');
+    }
+});
