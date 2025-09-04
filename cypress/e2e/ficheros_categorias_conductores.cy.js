@@ -1,4 +1,6 @@
 describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de errores y reporte a Excel', () => {
+    const archivo = 'reportes_pruebas_novatrans.xlsx';
+
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
         { numero: 1, nombre: 'TC001 - Cargar la pantalla de categorías de conductores correctamente', funcion: cargarPantallaCategorias },
@@ -40,40 +42,44 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
         cy.procesarResultadosPantalla('Ficheros (Categorías Conductores)');
     });
 
-    // Itero por cada caso individualmente
+    // Iterador de casos con protección anti-doble-registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Registro automático de errores si algo falla dentro del test
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
                     numero,
                     nombre,
                     esperado: 'Comportamiento correcto',
-                    archivo: 'reportes_pruebas_novatrans.xlsx',
+                    archivo,
                     pantalla: 'Ficheros (Categorías Conductores)'
                 });
-                return false; // Evita que Cypress corte el resto del flujo del test
+                return false;
             });
 
-            // Hago login y espero un poco antes de empezar la acción
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función de prueba correspondiente al caso
-            funcion();
-
-            // Solo registro el resultado como OK si no se registró manualmente en la función
-            // (esto evita doble registro para casos que registran manualmente)
-            if (numero !== 22) {
-                cy.registrarResultados({
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    obtenido: 'Comportamiento correcto',
-                    archivo: 'reportes_pruebas_novatrans.xlsx',
-                    pantalla: 'Ficheros (Categorías Conductores)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Ficheros (Categorías Conductores)'
+                        });
+                    }
                 });
-            }
+            });
         });
     });
 

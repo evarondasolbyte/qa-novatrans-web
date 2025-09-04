@@ -41,38 +41,43 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.procesarResultadosPantalla('Procesos (Órdenes de Carga)');
     });
 
+    // Iterador de casos con protección anti-doble-registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Si algo falla durante la ejecución del test, capturo el error automáticamente
-            // y lo registro en el Excel con todos los datos del caso.
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
-                    numero,                    // Número de caso de prueba
-                    nombre,                    // Nombre del test (título del caso)
-                    esperado: 'Comportamiento correcto',  // Qué se esperaba que ocurriera
-                    archivo,                   // Nombre del archivo Excel donde se guarda todo
+                    numero,
+                    nombre,
+                    esperado: 'Comportamiento correcto',
+                    archivo,
                     pantalla: 'Procesos (Órdenes de Carga)'
                 });
-                return false; // Previene que Cypress corte el flujo y nos permite seguir registrando
+                return false;
             });
 
-            // Inicio sesión antes de ejecutar el caso, usando la sesión compartida (cy.login)
-            // y espero unos milisegundos por seguridad antes de continuar
             cy.login();
             cy.wait(500);
 
-            // Ejecuto la función correspondiente al test (ya definida arriba)
-            funcion();
-
-            // Si todo salió bien, registro el resultado como OK en el Excel
-            cy.registrarResultados({
-                numero,                   // Número del caso
-                nombre,                   // Nombre del test
-                esperado: 'Comportamiento correcto',  // Qué esperaba que hiciera
-                obtenido: 'Comportamiento correcto',  // Qué hizo realmente (si coincide, marca OK)
-                resultado: 'OK',          // Marca manualmente como OK
-                archivo,                  // Archivo Excel donde se registra
-                pantalla: 'Procesos (Órdenes de Carga)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Procesos (Órdenes de Carga)'
+                        });
+                    }
+                });
             });
         });
     });

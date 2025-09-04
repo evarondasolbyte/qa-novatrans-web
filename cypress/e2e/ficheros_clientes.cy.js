@@ -35,8 +35,13 @@ describe('CLIENTES - Validación completa con gestión de errores y reporte a Ex
         cy.procesarResultadosPantalla('Ficheros (Clientes)');
     });
 
+    // Iterador de casos con protección anti-doble-registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
                     numero,
@@ -51,14 +56,21 @@ describe('CLIENTES - Validación completa con gestión de errores y reporte a Ex
             cy.login();
             cy.wait(500);
 
-            funcion().then(() => {
-                cy.registrarResultados({
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    obtenido: 'Comportamiento correcto',
-                    archivo,
-                    pantalla: 'Ficheros (Clientes)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Ficheros (Clientes)'
+                        });
+                    }
                 });
             });
         });

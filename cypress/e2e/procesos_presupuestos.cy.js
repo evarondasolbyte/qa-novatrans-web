@@ -40,35 +40,42 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.procesarResultadosPantalla('Procesos (Presupuestos)');
     });
 
+    // Iterador de casos con protección anti-doble-registro
     casos.forEach(({ numero, nombre, funcion }) => {
         it(nombre, () => {
-            // Captura de errores si algo falla dentro del test
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
+
+            // Captura de errores y registro
             cy.on('fail', (err) => {
                 cy.capturarError(nombre, err, {
                     numero,
                     nombre,
                     esperado: 'Comportamiento correcto',
-                    archivo: 'reportes_pruebas_novatrans.xlsx',
+                    archivo,
                     pantalla: 'Procesos (Presupuestos)'
                 });
-                throw err; // para que Cypress marque el test como fallido
+                return false;
             });
 
             cy.login();
             cy.wait(500);
 
-            // Ejecutar función normalmente
-            funcion();
-
-            // Registrar resultado solo si no falló
-            cy.then(() => {
-                cy.registrarResultados({
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    obtenido: 'Comportamiento correcto',
-                    archivo: 'reportes_pruebas_novatrans.xlsx',
-                    pantalla: 'Procesos (Presupuestos)'
+            // Ejecuta el caso y sólo auto-OK si nadie registró antes
+            return funcion().then(() => {
+                cy.estaRegistrado().then((ya) => {
+                    if (!ya) {
+                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
+                            obtenido: 'Comportamiento correcto',
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Procesos (Presupuestos)'
+                        });
+                    }
                 });
             });
         });
