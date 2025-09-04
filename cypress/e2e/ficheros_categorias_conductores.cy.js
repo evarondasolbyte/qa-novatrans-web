@@ -407,21 +407,21 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
         cy.url().should('include', '/dashboard/driver-categories');
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         
-                    // Contar filas antes de intentar eliminar
-            cy.get('.MuiDataGrid-row:visible').then(($filasAntes) => {
-                const numFilasAntes = $filasAntes.length;
-                cy.log(`Filas antes de eliminar: ${numFilasAntes}`);
-                
-                // Seleccionar la segunda fila
-                cy.get('.MuiDataGrid-row:visible').eq(1).click({ force: true });
-                cy.wait(500);
-                
-                // Hacer clic en el botón eliminar
-                cy.get('button.css-1cbe274').click({ force: true });
-                cy.wait(1000); // Esperar a que se procese la acción
+        // Contar filas antes de intentar eliminar
+        return cy.get('.MuiDataGrid-row:visible').then(($filasAntes) => {
+            const numFilasAntes = $filasAntes.length;
+            cy.log(`Filas antes de eliminar: ${numFilasAntes}`);
             
+            // Seleccionar la segunda fila
+            cy.get('.MuiDataGrid-row:visible').eq(1).click({ force: true });
+            cy.wait(500);
+            
+            // Hacer clic en el botón eliminar
+            cy.get('button.css-1cbe274').click({ force: true });
+            cy.wait(1000); // Esperar a que se procese la acción
+        
             // Verificar si se eliminó correctamente comparando el número de filas
-            cy.get('.MuiDataGrid-row:visible').then(($filasDespues) => {
+            return cy.get('.MuiDataGrid-row:visible').then(($filasDespues) => {
                 const numFilasDespues = $filasDespues.length;
                 cy.log(`Filas después de eliminar: ${numFilasDespues}`);
                 
@@ -450,10 +450,11 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
                         pantalla: 'Ficheros (Categorías Conductores)'
                     });
                 }
+                
+                // Devolver algo para que la promesa se resuelva correctamente
+                return cy.wrap(true);
             });
         });
-        
-        // No retornar nada para evitar interferir con el flujo del test
     }
 
     function recargarPagina() {

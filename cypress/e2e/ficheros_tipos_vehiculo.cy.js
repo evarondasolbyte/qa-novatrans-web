@@ -103,7 +103,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         cy.get('select#languageSwitcher').select('ca', { force: true });
         
         // Verificar elementos que deberían estar en catalán
-        cy.get('.MuiDataGrid-columnHeaders').then(($headers) => {
+        return cy.get('.MuiDataGrid-columnHeaders').then(($headers) => {
             const headerText = $headers.text();
             cy.log('Texto completo de headers:', headerText);
             
@@ -145,7 +145,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                     archivo,
                     pantalla: 'Ficheros (Tipos de Vehículo)'
                 });
-                return; // No lanzar error, solo registrar KO
+                return cy.wrap(true); // Devolver algo para que la promesa se resuelva
             } else {
                 // Solo si TODOS los elementos están correctos, registrar OK
                 cy.log('Registrando OK porque todos los elementos están correctos');
@@ -158,6 +158,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                     archivo,
                     pantalla: 'Ficheros (Tipos de Vehículo)'
                 });
+                return cy.wrap(true); // Devolver algo para que la promesa se resuelva
             }
         });
     }
