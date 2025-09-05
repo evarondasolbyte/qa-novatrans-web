@@ -158,7 +158,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                     archivo,
                     pantalla: 'Ficheros (Tipos de Vehículo)'
                 });
-                return cy.wrap(true); // Devolver algo para que la promesa se resuelva
+                return cy.wrap(true); 
             }
         });
     }

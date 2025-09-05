@@ -90,7 +90,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('.MuiDataGrid-root').should('be.visible');
 
         // Verificar que se muestran todos los presupuestos correctamente
-        cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
     }
 
     // TC002 - Ver columnas: Código, Número, Solicitud...
@@ -109,7 +109,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         });
 
         // Verificar que hay datos en las columnas
-        cy.get('.MuiDataGrid-row:first-child').within(() => {
+        return cy.get('.MuiDataGrid-row:first-child').within(() => {
             cy.get('[data-field]').should('have.length.greaterThan', 0);
         });
     }
@@ -124,7 +124,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('presupuesto viaje{enter}', { force: true });
 
         // Verificar que se filtran los presupuestos por coincidencia
-        cy.get('.MuiDataGrid-cell[data-field="titulo"]').should('contain.text', 'presupuesto viaje');
+        return cy.get('.MuiDataGrid-cell[data-field="titulo"]').should('contain.text', 'presupuesto viaje');
     }
 
     // TC004 - Filtrar por "Cliente"
@@ -138,7 +138,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
 
         // Verificar que aparecen solo presupuestos del cliente indicado
         cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 800 });
-        cy.get('.MuiDataGrid-cell[data-field="cliente"]').each(($cell) => {
+        return cy.get('.MuiDataGrid-cell[data-field="cliente"]').each(($cell) => {
             expect($cell.text().toLowerCase()).to.include('ayto');
         });
     }
@@ -179,7 +179,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('6464{enter}', { force: true });
 
         // Verificar que aparece el presupuesto con ese número
-        cy.get('.MuiDataGrid-cell[data-field="numero"]').should('contain.text', '6464');
+        return cy.get('.MuiDataGrid-cell[data-field="numero"]').should('contain.text', '6464');
     }
 
     // TC007 - Usa opción "Todos" en el select desplegable
@@ -191,7 +191,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('select[name="column"]').select('Todos');
 
         // Verificar que muestra todos sin filtro aplicado
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     // TC008 - Buscar uno por uno por los campos del desplegable
@@ -210,7 +210,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             { campo: 'Cliente', valor: 'ayto', requiereScroll: true },
         ];
 
-        cy.wrap(pruebas).each(({ campo, valor, requiereScroll }) => {
+        return cy.wrap(pruebas).each(({ campo, valor, requiereScroll }) => {
             cy.log(`🔍 Filtrando por "${campo}" con valor "${valor}"`);
 
             // Aplicar filtro
@@ -274,7 +274,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
         cy.wait(500);
 
-        cy.get('.MuiDataGrid-row .MuiDataGrid-cell:nth-child(2)').then($cells => {
+        return cy.get('.MuiDataGrid-row .MuiDataGrid-cell:nth-child(2)').then($cells => {
             const valores = [...$cells].map(c => parseInt(c.innerText));
             expect(valores).to.deep.equal([...valores].sort((a, b) => b - a));
         });
@@ -304,7 +304,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
         cy.wait(1000);
 
-        cy.get('.MuiDataGrid-cell[data-field="numero"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="numero"]').then($cells => {
             const valores = [...$cells].map(c => c.innerText.trim());
             expect(estaOrdenadoDesc(valores)).to.be.true;
         });
@@ -333,7 +333,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             .find('button').eq(1).click({ force: true });
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
 
-        cy.get('.MuiDataGrid-cell[data-field="solicitud"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="solicitud"]').then($cells => {
             const fechas = [...$cells].map(c => new Date(c.innerText.split('/').reverse().join('-')).getTime());
             expect(fechas).to.deep.equal([...fechas].sort((a, b) => b - a));
         });
@@ -363,7 +363,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             .find('button').eq(1).click({ force: true });
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
 
-        cy.get('.MuiDataGrid-cell[data-field="titulo"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="titulo"]').then($cells => {
             const textos = [...$cells].map(c => c.innerText.trim().toLowerCase());
             expect(textos).to.deep.equal([...textos].sort((a, b) => b.localeCompare(a)));
         });
@@ -381,7 +381,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
 
         // Verificar que la fila queda marcada - usar una validación más flexible
-        cy.get('.MuiDataGrid-row').should('exist');
+        return cy.get('.MuiDataGrid-row').should('exist');
     }
 
     // TC014 - Hacer clic en el menú de columna (3 puntos)
@@ -399,7 +399,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             });
 
         // Verificar que se despliega el menú contextual
-        cy.get('.MuiDataGrid-menu').should('be.visible');
+        return cy.get('.MuiDataGrid-menu').should('be.visible');
     }
 
     // TC015 - Usar "Sort by ASC" desde el menú
@@ -419,7 +419,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.wait(1000);
 
         // Verificar que aplica orden ascendente
-        cy.get('.MuiDataGrid-cell[data-field="codigo"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="codigo"]').then($cells => {
             const valores = [...$cells].map(c => c.innerText.trim());
             const ordenados = [...valores].sort((a, b) =>
                 a.localeCompare(b, 'es', { numeric: true })
@@ -445,7 +445,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.wait(1000);
 
         // Verificar que aplica orden descendente
-        cy.get('.MuiDataGrid-cell[data-field="codigo"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="codigo"]').then($cells => {
             const valores = [...$cells].map(c => c.innerText.trim());
             const ordenados = [...valores].sort((a, b) =>
                 b.localeCompare(a, 'es', { numeric: true })
@@ -474,7 +474,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.wait(1000);
 
         // Verificar que permite escribir valor a filtrar en esa columna y aparece correctamente filtrado
-        cy.get('.MuiDataGrid-cell[data-field="codigo"]').each($cell => {
+        return cy.get('.MuiDataGrid-cell[data-field="codigo"]').each($cell => {
             expect($cell.text()).to.include('2');
         });
     }
@@ -493,7 +493,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.contains('li[role="menuitem"]', 'Hide column').click({ force: true });
 
         // Verificar que la columna "Código" ha desaparecido de la vista
-        cy.get('.MuiDataGrid-columnHeaderTitle')
+        return cy.get('.MuiDataGrid-columnHeaderTitle')
             .contains('Código')
             .should('not.exist');
     }
@@ -526,7 +526,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             .check({ force: true });
 
         // Verificar que la columna "Código" ahora es visible en el encabezado
-        cy.get('div[data-field="codigo"][role="columnheader"]')
+        return cy.get('div[data-field="codigo"][role="columnheader"]')
             .scrollIntoView()
             .should('exist')
             .and('be.visible');
@@ -546,7 +546,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             .type('0101{enter}', { force: true });
 
         // Verificar que la tabla muestra "No rows"
-        cy.get('.MuiDataGrid-overlay')
+        return cy.get('.MuiDataGrid-overlay')
             .should('be.visible')
             .and('contain.text', 'No rows');
     }
@@ -565,7 +565,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             .type('$%&{enter}', { force: true });
 
         // Verificar que no rompe la app, muestra lista vacía
-        cy.get('.MuiDataGrid-overlay')
+        return cy.get('.MuiDataGrid-overlay')
             .should('be.visible')
             .and('contain.text', 'No rows');
     }
@@ -584,7 +584,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
             .type('25-000-2525{enter}', { force: true });
 
         // Verificar que muestra "No rows" ya que no existe esa fecha
-        cy.get('.MuiDataGrid-overlay')
+        return cy.get('.MuiDataGrid-overlay')
             .should('be.visible')
             .and('contain.text', 'No rows');
     }
@@ -599,7 +599,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('button.css-1y72v2k').click();
 
         // Verificar que se abre el formulario para nuevo presupuesto
-        cy.url().should('include', '/dashboard/budgets/form');
+        return cy.url().should('include', '/dashboard/budgets/form');
     }
 
     // TC024 - Pulsar "Editar" con un registro seleccionado
@@ -623,7 +623,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('@presupuestoSeleccionado').dblclick({ force: true });
 
         // Verificar que se carga el registro en modo edición
-        cy.url({ timeout: 10000 }).should('match', /\/dashboard\/budgets\/form\/\d+$/);
+        return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/budgets\/form\/\d+$/);
     }
 
     // TC025 - Pulsar "Eliminar" con uno o varios seleccionados
@@ -644,7 +644,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.url().should('include', '/dashboard/budgets');
 
         // Verificar que no aparece el botón de Editar si no hay ninguna fila seleccionada
-        cy.get('body').then($body => {
+        return cy.get('body').then($body => {
             if ($body.find('button:contains("Editar")').length > 0) {
                 cy.get('button').contains('Editar').should('be.disabled');
             } else {
@@ -662,7 +662,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('div[role="row"] input[type="checkbox"]:checked').should('have.length', 0);
 
         // Clic en el botón Eliminar
-        cy.get('button.css-1cbe274').click({ force: true });
+        return cy.get('button.css-1cbe274').click({ force: true });
 
         // // Validar mensaje de error o que no pasa nada
         // return cy.get('body').then($body => {
@@ -699,7 +699,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         // Verificar que al recargar, los filtros se limpian. Se muestra la lista completa sin filtros
         cy.get('select[name="column"]').find(':selected').invoke('text').should('eq', 'Select an option...');
         cy.get('input#search[placeholder="Buscar"]').should('have.value', '');
-        cy.get('.MuiDataGrid-row').its('length').should('be.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row').its('length').should('be.greaterThan', 0);
     }
 
     // TC030 - Cambiar idioma a Inglés
@@ -711,7 +711,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('select#languageSwitcher').select('en', { force: true });
 
         // Verificar que se modifica el idioma correctamente
-        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
             cy.contains('Code').should('exist');
             cy.contains('Number').should('exist');
             cy.contains('Request').should('exist');
@@ -732,7 +732,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('select#languageSwitcher').select('ca', { force: true });
 
         // Verificar que se modifica el idioma correctamente
-        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
             cy.contains('Codi').should('exist');
             cy.contains('Número').should('exist');
             cy.contains('Sol·licitud').should('exist');
@@ -753,7 +753,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
         cy.get('select#languageSwitcher').select('es', { force: true });
 
         // Verificar que se modifica el idioma correctamente
-        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
             cy.contains('Código').should('exist');
             cy.contains('Número').should('exist');
             cy.contains('Solicitud').should('exist');
