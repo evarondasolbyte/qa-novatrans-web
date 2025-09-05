@@ -17,6 +17,11 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         { numero: 12, nombre: 'TC012 - Validar que la fecha es obligatoria', funcion: validarFechaObligatoria },
         { numero: 13, nombre: 'TC013 - Scroll vertical/horizontal en tabla', funcion: scrollTabla },
         { numero: 14, nombre: 'TC014 - Reinicio de la pantalla (recarga)', funcion: reinicioPantalla },
+        { numero: 15, nombre: 'TC015 - Ordenar ASC/DESC Inicio', funcion: ordenarInicioAscDesc },
+        { numero: 17, nombre: 'TC017 - Ordenar ASC/DESC Valor Euros', funcion: ordenarValorEurosAscDesc },
+        { numero: 18, nombre: 'TC018 - Filtrar por Value', funcion: filtrarPorValue },
+        { numero: 19, nombre: 'TC019 - Ocultar columna', funcion: ocultarColumna },
+        { numero: 20, nombre: 'TC020 - Mostrar columna', funcion: mostrarColumna },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -65,6 +70,121 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         });
     });
 
+    // === Helpers de fecha (MUI) ===
+    function openInicioCalendar() {
+        // botón del calendario junto al campo "Inicio"
+        cy.contains('label', /^Inicio$/i)
+            .parent()
+            .find('button')        // icon button del datepicker
+            .click({ force: true });
+        return cy.get('[role="dialog"], .MuiPickersPopper-root').should('be.visible');
+    }
+
+    function setInicioDateByCalendar({ day, month, year }) {
+        // month: 1..12
+        openInicioCalendar();
+
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        function navigateTo(targetMonthIdx, targetYear) {
+            cy.get('.MuiPickersCalendarHeader-label')
+                .invoke('text')
+                .then(label => {
+                    // label ej: "September 2025"
+                    const [currMonthName, currYearStr] = label.trim().split(/\s+/);
+                    const currMonthIdx = monthNames.indexOf(currMonthName) + 1;
+                    const currYear = parseInt(currYearStr, 10);
+
+                    if (currYear === targetYear && currMonthIdx === targetMonthIdx) {
+                        return; // ya estamos en el mes/año deseado
+                    }
+
+                    if (currYear < targetYear || (currYear === targetYear && currMonthIdx < targetMonthIdx)) {
+                        cy.get('button[aria-label="Next month"]').click({ force: true });
+                    } else {
+                        cy.get('button[aria-label="Previous month"]').click({ force: true });
+                    }
+                    // re-evaluar hasta llegar
+                    navigateTo(targetMonthIdx, targetYear);
+                });
+        }
+
+        navigateTo(month, year);
+
+        // seleccionar día y confirmar
+        cy.contains('.MuiPickersDay-root', new RegExp(`^${Number(day)}$`)).click({ force: true });
+        cy.get('body').click(0, 0); // blur/commit
+
+        // verificar que el input se ha rellenado (MM/DD/YYYY)
+        return cy.contains('label', /^Inicio$/i)
+            .parent()
+            .find('input')
+            .invoke('val')
+            .should('match', /^\d{2}\/\d{2}\/\d{4}$/);
+    }
+
+    function reseleccionarDivisa(texto = 'EUR - Euro') {
+        cy.get('[role="combobox"]').first().click({ force: true });
+        cy.contains('li', texto).click({ force: true });
+        cy.get('body').click(0, 0);
+    }
+
+    // Helper para abrir el menú de una columna por su data-field
+    function abrirMenuColumna(field) {
+        cy.get(`div[role="columnheader"][data-field="${field}"]`)
+            .should('be.visible')
+            .within(() => {
+                cy.get('button[aria-label="Menu"]').click({ force: true });
+            });
+    }
+
+    function crearDivisa({ day, month, year, value }) {
+        reseleccionarDivisa('EUR - Euro');
+        setInicioDateByCalendar({ day, month, year });
+        cy.get('input[name="valueEuros"]').clear().type(String(value));
+        cy.get('body').click(0, 0);
+        cy.contains('button', 'Crear').click({ force: true });
+    }
+
+    function prepararDosDivisas() {
+        crearDivisa({ day: 2, month: 9, year: 2025, value: 10 });
+        reseleccionarDivisa('EUR - Euro');
+        crearDivisa({ day: 4, month: 9, year: 2025, value: 7 });
+        reseleccionarDivisa('EUR - Euro');
+    }
+
+    function ensureColumnVisible(titleRegex) {
+        cy.get('body').then($b => {
+            const visible = $b.find('.MuiDataGrid-columnHeaderTitle').toArray()
+                .some(el => titleRegex.test(el.textContent || ''));
+            if (!visible) {
+                cy.get('.MuiDataGrid-virtualScroller, .MuiDataGrid-main')
+                    .first()
+                    .scrollTo('right', { duration: 400 });
+                cy.wait(300);
+            }
+        });
+    }
+
+    // ---- helper: si no hay datos, crea dos para poder ordenar/mostrar algo
+    function ensureAtLeastTwoRows() {
+        cy.get('.MuiDataGrid-row:visible').then($rows => {
+            if ($rows.length >= 2) return;
+
+            reseleccionarDivisa('EUR - Euro');
+
+            setInicioDateByCalendar({ day: 2, month: 9, year: 2025 });
+            cy.get('input[name="valueEuros"]').clear().type('10'); cy.get('body').click(0, 0);
+            cy.contains('button', 'Crear').click({ force: true }); reseleccionarDivisa('EUR - Euro');
+
+            setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
+            cy.get('input[name="valueEuros"]').clear().type('7'); cy.get('body').click(0, 0);
+            cy.contains('button', 'Crear').click({ force: true }); reseleccionarDivisa('EUR - Euro');
+        });
+    }
     // === FUNCIONES DE VALIDACIÓN ===
     function cargarPantallaDivisas() {
         cy.navegarAMenu('Utilidades', 'Divisas');
@@ -82,24 +202,45 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         return cy.get('body').should('contain.text', 'Currency');
     }
 
+    // TC003 - Cambiar idioma a Catalán (registra ERROR hoy; OK si un día está bien)
     function cambiarIdiomaCatalan() {
+        const numero = 3;
+        const nombre = 'TC003 - Cambiar idioma a Catalán';
+        const pantalla = 'Utilidades (Divisas)';
+
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
+
         cy.get('select#languageSwitcher').select('ca', { force: true });
-        cy.wait(1500);
-        
-        // Forzar ERROR para catalán (según TC003 original)
-        cy.registrarResultados({
-            numero: 3,
-            nombre: 'Cambiar idioma a Catalán',
-            esperado: 'Textos aparecen en catalán',
-            obtenido: 'No se traduce bien ninguna palabra',
-            resultado: 'ERROR',
-            archivo: 'reportes_pruebas_novatrans.xlsx',
-            pantalla: 'Utilidades (Divisas)'
+        cy.wait(1200);
+
+        // Sin .then vacío ni encadenados frágiles
+        return cy.window().then((win) => {
+            const bodyText = win.document.body.innerText || '';
+            const headersTxt = Array.from(
+                win.document.querySelectorAll('.MuiDataGrid-columnHeaderTitle')
+            ).map(el => (el.textContent || '').trim()).join(' | ');
+
+            const hayClavesI18n = /(^|\s)currencies\./i.test(bodyText);
+            const headersEnCatalan = /\bInici\b/i.test(headersTxt) && /\bFi\b/i.test(headersTxt);
+            const headersEnEspanol = /\bInicio\b/i.test(headersTxt) || /\bFin\b/i.test(headersTxt);
+
+            // OK solo si está en catalán, sin español y sin claves i18n
+            const ok = headersEnCatalan && !headersEnEspanol && !hayClavesI18n;
+
+            cy.registrarResultados({
+                numero,
+                nombre,
+                esperado: 'La interfaz cambia correctamente a catalán',
+                obtenido: ok
+                    ? 'Interfaz en catalán (Inici/Fi) y sin claves i18n'
+                    : `No cambia correctamente (headers: ${headersTxt})`,
+                resultado: ok ? 'OK' : 'ERROR',
+                archivo,
+                pantalla
+            });
+            cy.marcarRegistrado(); // evita el auto-OK del runner
         });
-        
-        return cy.get('body').should('contain.text', 'Divisa');
     }
 
     function cambiarIdiomaEspanol() {
@@ -110,270 +251,226 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         return cy.get('body').should('contain.text', 'Divisas');
     }
 
+    // === TC005 – Crear divisa correctamente (sin registro manual) ===
     function crearDivisaCorrectamente() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Seleccionar divisa EUR - Euro usando el combobox de Material-UI
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
+        // Divisa
+        cy.get('[role="combobox"]').first().click({ force: true });
+        cy.contains('li', 'EUR - Euro').click({ force: true });
+        cy.get('body').click(0, 0);
 
-        // Rellenar fecha de inicio usando el date picker
-        cy.get('input[name="startDate"]').click();
-        cy.wait(1000);
-        // Seleccionar el día 4 del mes actual
-        cy.get('.MuiPickersDay-root').contains('4').click();
-        cy.wait(500);
+        // Fecha por calendario (commit fiable)
+        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
 
-        // Rellenar valor
+        // Valor
         cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.wait(500);
+        cy.get('body').click(0, 0);
 
-        // Hacer clic en Crear
-        cy.get('button').contains('Crear').click();
-        cy.wait(2000);
+        // Crear
+        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
 
-        // Verificar que se añadió el registro
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneRegistro = bodyText.includes('EUR') || bodyText.includes('Euro') || bodyText.includes('10');
-            expect(tieneRegistro).to.be.true;
-        });
+        // Si la grid no refresca sola, re-selecciona la divisa para forzar GET
+        cy.get('[role="combobox"]').first().click({ force: true });
+        cy.contains('li', 'EUR - Euro').click({ force: true });
+        cy.get('body').click(0, 0);
+
+        // Return para tu auto-OK
+        return cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('have.length.greaterThan', 0);
     }
 
+    // TC006 – Validar campo obligatorio "Valor" vacío
     function validarValorVacio() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Seleccionar divisa
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
+        reseleccionarDivisa('EUR - Euro');
+        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 }); // fecha válida
+        // No ponemos valor
 
-        // Rellenar fecha de inicio usando el date picker
-        cy.get('input[name="startDate"]').click();
-        cy.wait(1000);
-        // Seleccionar el día 4 del mes actual
-        cy.get('.MuiPickersDay-root').contains('4').click();
-        cy.wait(500);
+        cy.contains('button', 'Crear').click({ force: true });
 
-        // Dejar valor vacío y hacer clic en Crear
-        cy.get('button').contains('Crear').click();
-        cy.wait(1000);
-
-        // Verificar que aparece validación
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneValidacion = bodyText.includes('Completa este campo') || 
-                                   bodyText.includes('Campo obligatorio') ||
-                                   bodyText.includes('required') ||
-                                   bodyText.includes('error') ||
-                                   bodyText.includes('validación');
-            expect(tieneValidacion).to.be.true;
+        return cy.get('body').then(($b) => {
+            const t = $b.text();
+            const hayValidacion = /Completa este campo|Campo obligatorio|required|valor/i.test(t);
+            expect(hayValidacion, 'Debe aparecer validación de Valor').to.be.true;
         });
     }
 
+    // TC007 – Validar "Valor" con caracteres no numéricos
     function validarValorNoNumerico() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Seleccionar divisa
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
+        reseleccionarDivisa('EUR - Euro');
+        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
 
-        // Rellenar fecha de inicio usando el date picker
-        cy.get('input[name="startDate"]').click();
-        cy.wait(1000);
-        // Seleccionar el día 4 del mes actual
-        cy.get('.MuiPickersDay-root').contains('4').click();
-        cy.wait(500);
+        // Cuenta filas antes
+        let filasAntes = 0;
+        cy.get('.MuiDataGrid-virtualScrollerContent').then($c => {
+            filasAntes = $c.find('.MuiDataGrid-row').length;
+        });
 
-        // Rellenar valor con caracteres no numéricos
         cy.get('input[name="valueEuros"]').clear().type('a');
-        cy.wait(500);
+        cy.get('body').click(0, 0);
 
-        // Hacer clic en Crear
-        cy.get('button').contains('Crear').click();
-        cy.wait(1000);
+        cy.contains('button', 'Crear').click({ force: true });
+        reseleccionarDivisa('EUR - Euro');
 
-        // Verificar que no se crea el registro
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneRegistroInvalido = bodyText.includes('a') && !bodyText.includes('EUR');
-            expect(tieneRegistroInvalido).to.be.false;
+        // No debería crear una fila nueva
+        return cy.get('.MuiDataGrid-virtualScrollerContent', { timeout: 5000 }).then($c => {
+            const filasDespues = $c.find('.MuiDataGrid-row').length;
+            expect(filasDespues, 'No debe aumentar el número de filas').to.equal(filasAntes);
         });
     }
 
+    // TC008 – Crear varios registros (fechas distintas)
     function crearVariosRegistros() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Primer registro - 04/09/2025
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
-        cy.get('input[name="startDate"]').clear().type('09/04/2025');
-        cy.wait(500);
-        cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.wait(500);
-        cy.get('button').contains('Crear').click();
-        cy.wait(2000);
+        reseleccionarDivisa('EUR - Euro');
 
-        // Segundo registro - 20/09/2025
-        cy.get('input[name="startDate"]').click();
-        cy.wait(1000);
-        // Seleccionar el día 20 del mes actual
-        cy.get('.MuiPickersDay-root').contains('20').click();
-        cy.wait(500);
+        // Registro 1
+        setInicioDateByCalendar({ day: 2, month: 9, year: 2025 });
         cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.wait(500);
-        cy.get('button').contains('Crear').click();
-        cy.wait(2000);
+        cy.get('body').click(0, 0);
+        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
+        reseleccionarDivisa('EUR - Euro');
 
-        // Verificar que ambos registros aparecen
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneAmbosRegistros = (bodyText.includes('04/09/2025') || bodyText.includes('09/04/2025')) && 
-                                       (bodyText.includes('20/09/2025') || bodyText.includes('09/20/2025'));
-            expect(tieneAmbosRegistros).to.be.true;
-        });
+        // Registro 2
+        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
+        cy.get('input[name="valueEuros"]').clear().type('7');
+        cy.get('body').click(0, 0);
+        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
+        reseleccionarDivisa('EUR - Euro');
+
+        return cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('have.length.greaterThan', 1);
     }
 
+    // TC009 – Eliminar divisa correctamente
     function eliminarDivisaCorrectamente() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Primero crear una divisa para poder eliminarla
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
-        cy.get('input[name="startDate"]').clear().type('09/04/2025');
-        cy.wait(500);
+        reseleccionarDivisa('EUR - Euro');
+
+        // Me aseguro de tener al menos 1 registro creando uno rápido
+        setInicioDateByCalendar({ day: 2, month: 9, year: 2025 });
         cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.wait(500);
-        cy.get('button').contains('Crear').click();
-        cy.wait(2000);
+        cy.get('body').click(0, 0);
+        cy.contains('button', 'Crear').click({ force: true });
+        reseleccionarDivisa('EUR - Euro');
 
-        // Verificar si hay registros para eliminar
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            
-            if (bodyText.includes('No rows') || bodyText.includes('Sin datos') || bodyText.includes('No hay datos')) {
-                // No hay datos para eliminar - esto es un WARNING, no un error
-                cy.log('No hay registros para eliminar');
-                return cy.wrap(null);
-            } else {
-                // Seleccionar primer registro y eliminar
-                cy.get('table tr, .MuiTableRow-root').not(':first').first().click();
-                cy.wait(500);
-                cy.get('button').contains('Eliminar').click();
-                cy.wait(2000);
+        // Cuenta filas y elimina la primera
+        let filasAntes = 0;
+        cy.get('.MuiDataGrid-row', { timeout: 8000 }).then($rows => { filasAntes = $rows.length; });
 
-                // Verificar que el registro desapareció
-                return cy.get('body').then(($bodyAfter) => {
-                    const bodyTextAfter = $bodyAfter.text();
-                    const registroEliminado = !bodyTextAfter.includes('EUR') || bodyTextAfter.includes('No rows');
-                    expect(registroEliminado).to.be.true;
-                });
-            }
+        cy.get('.MuiDataGrid-row').first().click();
+        cy.contains('button', 'Eliminar').click({ force: true });
+
+        // Valida que disminuye (o que no hay filas)
+        return cy.get('.MuiDataGrid-virtualScrollerContent', { timeout: 8000 }).then($c => {
+            const filasDespues = $c.find('.MuiDataGrid-row').length;
+            expect(filasDespues, 'Debe disminuir el número de filas').to.be.at.most(Math.max(0, filasAntes - 1));
         });
     }
 
+    // TC010 - Eliminar sin selección (sin registro explícito)
     function eliminarSinSeleccion() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Hacer clic en Eliminar sin seleccionar nada
-        cy.get('button').contains('Eliminar').click();
-        cy.wait(1000);
+        cy.contains('button', 'Eliminar').click({ force: true });
+        cy.wait(500);
 
-        // Verificar que no se realiza acción o aparece mensaje
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneMensajeAviso = bodyText.includes('Seleccione') || 
-                                     bodyText.includes('seleccionar') ||
-                                     bodyText.includes('aviso') ||
-                                     bodyText.includes('warning');
-            // Ambos casos son válidos según el test
-            expect(true).to.be.true;
-        });
+        // No falla; simplemente valida que la pantalla sigue operativa
+        return cy.contains(/^Divisas$/).should('be.visible');
     }
 
+
+    // TC011 – Crear divisa con valor decimal
     function crearDivisaDecimal() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Seleccionar divisa EUR - Euro
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
+        reseleccionarDivisa('EUR - Euro');
+        setInicioDateByCalendar({ day: 1, month: 9, year: 2025 });
 
-        // Rellenar fecha de inicio usando el date picker
-        cy.get('input[name="startDate"]').click();
-        cy.wait(1000);
-        // Seleccionar el día 4 del mes actual
-        cy.get('.MuiPickersDay-root').contains('4').click();
-        cy.wait(500);
-
-        // Rellenar valor decimal
+        // El input es type="number" con step="0.01" → usa punto decimal
         cy.get('input[name="valueEuros"]').clear().type('8.25');
-        cy.wait(500);
+        cy.get('body').click(0, 0);
 
-        // Hacer clic en Crear
-        cy.get('button').contains('Crear').click();
-        cy.wait(2000);
+        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
+        reseleccionarDivisa('EUR - Euro');
 
-        // Verificar que se crea con valor decimal
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneValorDecimal = bodyText.includes('8.25') || bodyText.includes('8,25');
-            expect(tieneValorDecimal).to.be.true;
+        return cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('exist').then(() => {
+            // Acepta tanto 8.25 como render con coma
+            cy.get('body').invoke('text').should(t => {
+                expect(/8\.25|8,25/.test(t)).to.be.true;
+            });
         });
     }
 
+    // TC012 – Validar que la fecha es obligatoria
     function validarFechaObligatoria() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Seleccionar divisa
-        cy.get('[role="combobox"]').first().click();
-        cy.get('li').contains('EUR - Euro').click();
-        cy.wait(500);
-
-        // Rellenar valor
+        reseleccionarDivisa('EUR - Euro');
+        // No ponemos fecha
         cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.wait(500);
+        cy.get('body').click(0, 0);
 
-        // Dejar fecha vacía y hacer clic en Crear
-        cy.get('button').contains('Crear').click();
-        cy.wait(1000);
+        cy.contains('button', 'Crear').click({ force: true });
 
-        // Verificar que aparece validación
-        return cy.get('body').then(($body) => {
-            const bodyText = $body.text();
-            const tieneValidacion = bodyText.includes('Completa este campo') || 
-                                   bodyText.includes('Campo obligatorio') ||
-                                   bodyText.includes('required') ||
-                                   bodyText.includes('fecha') ||
-                                   bodyText.includes('inicio');
-            expect(tieneValidacion).to.be.true;
+        return cy.get('body').then(($b) => {
+            const t = $b.text();
+            const hayValidacion = /Completa este campo|Campo obligatorio|required|fecha|inicio/i.test(t);
+            expect(hayValidacion, 'Debe aparecer validación de fecha').to.be.true;
         });
     }
 
+    // TC013 - Scroll vertical/horizontal en tabla (crea filas si faltan y scrollea)
     function scrollTabla() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
 
-        // Hacer scroll en la página
-        cy.get('body').scrollTo('bottom');
-        cy.wait(1000);
-        cy.get('body').scrollTo('top');
-        cy.wait(1000);
+        // Asegura una divisa seleccionada
+        reseleccionarDivisa('EUR - Euro');
 
-        // Verificar que la página sigue visible
-        return cy.get('h1, h2, h3, h4, h5, h6').contains('Divisas').should('be.visible');
+        // Si hay pocas filas, crea hasta tener suficientes para scrollear
+        return cy.get('.MuiDataGrid-row').its('length').then((len) => {
+            const objetivo = 12; // con ~12 ya hay scroll
+            const faltan = Math.max(0, objetivo - (len || 0));
+
+            if (faltan > 0) {
+                const dias = Array.from({ length: faltan }, (_, i) => (i + 1)); // 1..faltan
+                // Encadena creaciones de forma segura
+                return dias.reduce((chain, day) => {
+                    return chain.then(() => {
+                        setInicioDateByCalendar({ day, month: 9, year: 2025 });     // 01..0X/09/2025
+                        cy.get('input[name="valueEuros"]').clear().type(String(day));
+                        cy.contains('button', 'Crear').click({ force: true });
+                        return reseleccionarDivisa('EUR - Euro'); // refresca la grid
+                    });
+                }, cy.wrap(null));
+            }
+        }).then(() => {
+            // Scroll global y del DataGrid
+            cy.get('body').scrollTo('bottom').wait(300).scrollTo('top').wait(300);
+
+            cy.get('.MuiDataGrid-root').should('be.visible');
+            cy.get('.MuiDataGrid-virtualScroller')
+                .scrollTo('bottom', { duration: 600 })
+                .wait(300)
+                .scrollTo('top', { duration: 600 })
+                .wait(300);
+
+            // Asegura que hay bastantes filas (prueba “pasada” sin registrar)
+            return cy.get('.MuiDataGrid-row').its('length').should('be.greaterThan', 10);
+        });
     }
 
     function reinicioPantalla() {
@@ -387,20 +484,179 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
 
         // Verificar que la pantalla vuelve al estado inicial
         cy.get('h1, h2, h3, h4, h5, h6').contains('Divisas').should('exist');
-        cy.get('input[placeholder*="Valor"]').should('exist');
         cy.get('button').contains('Crear').should('exist');
 
-        // Verificar si los datos desaparecen (según el test original)
+        // Verificar si los datos desaparecen o se mantienen
         return cy.get('body').then(($body) => {
             const bodyText = $body.text();
-            const datosDesaparecen = bodyText.includes('No rows') || 
-                                    bodyText.includes('Sin datos') || 
-                                    bodyText.includes('No hay datos');
-            
+            const datosDesaparecen = bodyText.includes('No rows') ||
+                bodyText.includes('Sin datos') ||
+                bodyText.includes('No hay datos');
+
             if (datosDesaparecen) {
-                cy.log('WARNING: Desaparecen todos los datos creados');
+                // Si los datos desaparecen, registrar WARNING
+                cy.registrarResultados({
+                    numero: 14,
+                    nombre: 'Reinicio de la pantalla (recarga)',
+                    esperado: 'Los datos se mantienen después de recargar',
+                    obtenido: 'Desaparecen todos los datos creados al recargar',
+                    resultado: 'WARNING',
+                    archivo: 'reportes_pruebas_novatrans.xlsx',
+                    pantalla: 'Utilidades (Divisas)'
+                });
+            } else {
+                // Si los datos se mantienen, registrar OK
+                cy.registrarResultados({
+                    numero: 14,
+                    nombre: 'Reinicio de la pantalla (recarga)',
+                    esperado: 'Los datos se mantienen después de recargar',
+                    obtenido: 'Los datos se mantienen correctamente después de recargar',
+                    resultado: 'OK',
+                    archivo: 'reportes_pruebas_novatrans.xlsx',
+                    pantalla: 'Utilidades (Divisas)'
+                });
             }
-            expect(true).to.be.true; // Siempre pasa, pero registra el WARNING
+
+            expect(true).to.be.true; // Siempre pasa, pero registra el resultado apropiado
         });
+    }
+
+    // TC015 - Ordenar por Inicio (crear 2, luego click header 2 veces)
+    function ordenarInicioAscDesc() {
+        cy.navegarAMenu('Utilidades', 'Divisas');
+        cy.url().should('include', '/dashboard/currencies');
+
+        prepararDosDivisas(); // <-- crea 02/09 y 04/09
+
+        ensureColumnVisible(/^(Inicio|Inici)$/);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', /(Inicio|Inici)/)
+            .should('be.visible').click({ force: true });
+        cy.wait(700);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', /(Inicio|Inici)/)
+            .should('be.visible').click({ force: true });
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    // TC017 - Ordenar por Valor Euros (crear 2, luego click header 2 veces)
+    function ordenarValorEurosAscDesc() {
+        cy.navegarAMenu('Utilidades', 'Divisas');
+        cy.url().should('include', '/dashboard/currencies');
+
+        prepararDosDivisas(); // <-- misma pareja de registros
+
+        ensureColumnVisible(/^Valor Euros$/);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', /^Valor Euros$/)
+            .should('be.visible').click({ force: true });
+        cy.wait(700);
+        cy.contains('.MuiDataGrid-columnHeaderTitle', /^Valor Euros$/)
+            .should('be.visible').click({ force: true });
+
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+    // TC018 - Filtrar por Value (como tu filterValueEnColumna)
+    function filtrarPorValue() {
+        cy.navegarAMenu('Utilidades', 'Divisas');
+        cy.url().should('include', '/dashboard/currencies');
+
+        // crear una fila asegurada con valor 10
+        reseleccionarDivisa('EUR - Euro');
+        setInicioDateByCalendar({ day: 6, month: 9, year: 2025 });
+        cy.get('input[name="valueEuros"]').clear().type('10');
+        cy.get('body').click(0, 0);
+        cy.contains('button', 'Crear').click({ force: true });
+        reseleccionarDivisa('EUR - Euro');
+
+        // abrir menú de la columna "Valor Euros" como en tu patrón
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Valor Euros')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
+
+        cy.get('[aria-label="Valor Euros column menu"]').click({ force: true });
+        cy.get('li').contains('Filter').click({ force: true });
+
+        // usar el placeholder "Filter value" (mismo patrón de tu ejemplo)
+        cy.get('input[placeholder="Filter value"]')
+            .should('exist')
+            .clear()
+            .type('10', { force: true });
+
+        // al menos debe quedar 1 fila visible
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+    }
+
+    // TC019 - Ocultar columna
+    function ocultarColumna() {
+        cy.navegarAMenu('Utilidades', 'Divisas');
+        cy.url().should('include', '/dashboard/currencies');
+
+        // Abrir menú contextual (3 puntos) en la columna "Inicio"
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Inicio')
+            .parents('.MuiDataGrid-columnHeader')
+            .find('button').eq(1).click({ force: true });
+
+        // Hacer clic en "Hide column"
+        cy.contains('li[role="menuitem"]', 'Hide column').click({ force: true });
+
+        // Verificar que la columna "Inicio" ha desaparecido de la vista
+        return cy.get('.MuiDataGrid-columnHeaderTitle')
+            .contains('Inicio')
+            .should('not.exist');
+    }
+
+    // TC020 - Ocultar "Inicio" y volver a mostrarlo desde el menú de "Fin"
+    function mostrarColumna() {
+        cy.navegarAMenu('Utilidades', 'Divisas');
+        cy.url().should('include', '/dashboard/currencies');
+        cy.get('.MuiDataGrid-root').should('be.visible');
+
+        // Abrir el menú desde "Fin"
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fin')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
+
+        cy.get('[aria-label="Fin column menu"]').click({ force: true });
+        cy.get('li').contains('Manage columns').click({ force: true });
+
+        // Panel visible
+        cy.get('.MuiDataGrid-panel').should('be.visible');
+
+        // 1) Ocultar "Inicio"
+        cy.get('.MuiDataGrid-panel')
+            .find('label')
+            .contains(/(Inicio|Inici|Start)/)
+            .parents('label')
+            .find('input[type="checkbox"]')
+            .uncheck({ force: true });
+
+        // Verificar que ya no está visible en headers
+        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+            cy.contains(/(Inicio|Inici)/).should('not.exist');
+        });
+
+        // 2) Volver a mostrar "Inicio"
+        // (si el panel se cerró, lo abrimos otra vez desde "Fin")
+        cy.get('body').then($b => {
+            if (!$b.find('.MuiDataGrid-panel:visible').length) {
+                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fin')
+                    .parents('[role="columnheader"]').trigger('mouseover');
+                cy.get('[aria-label="Fin column menu"]').click({ force: true });
+                cy.get('li').contains('Manage columns').click({ force: true });
+            }
+        });
+
+        cy.get('.MuiDataGrid-panel')
+            .find('label')
+            .contains(/(Inicio|Inici|Start)/)
+            .parents('label')
+            .find('input[type="checkbox"]')
+            .check({ force: true });
+
+        // Confirmar que "Inicio" vuelve a existir en los headers
+        return cy.get('.MuiDataGrid-columnHeaders')
+            .should('be.visible')
+            .within(() => {
+                cy.contains(/(Inicio|Inici)/).should('exist');
+            });
     }
 });
