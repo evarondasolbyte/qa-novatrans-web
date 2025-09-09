@@ -1,4 +1,4 @@
-describe('PROCESOS > Órdenes de Carga - Validación completa con errores y reporte a Excel', () => {
+describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
@@ -38,7 +38,15 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
     after(() => {
-        cy.procesarResultadosPantalla('Procesos (Órdenes de Carga)');
+        cy.log('Procesando resultados finales para Procesos (Órdenes de Carga - CARGAS/DESCARGAS)');
+        cy.wait(1000);
+        
+        // Debug: verificar si hay resultados acumulados
+        cy.window().then((win) => {
+            cy.log('Verificando resultados acumulados...');
+        });
+        
+        cy.procesarResultadosPantalla('Procesos (Órdenes de Carga - CARGAS/DESCARGAS)');
     });
 
     // Iterador de casos con protección anti-doble-registro
@@ -54,7 +62,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
                     nombre,
                     esperado: 'Comportamiento correcto',
                     archivo,
-                    pantalla: 'Procesos (Órdenes de Carga)'
+                    pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
                 });
                 return false;
             });
@@ -64,9 +72,11 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
 
             // Ejecuta el caso y sólo auto-OK si nadie registró antes
             return funcion().then(() => {
+                cy.wait(500);
                 cy.estaRegistrado().then((ya) => {
                     if (!ya) {
                         cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                        cy.log(`Pantalla: Procesos (Órdenes de Carga - CARGAS/DESCARGAS)`);
                         cy.registrarResultados({
                             numero,
                             nombre,
@@ -74,8 +84,10 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
                             obtenido: 'Comportamiento correcto',
                             resultado: 'OK',
                             archivo,
-                            pantalla: 'Procesos (Órdenes de Carga)'
+                            pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
                         });
+                    } else {
+                        cy.log(`Test ${numero} ya registrado, saltando auto-OK`);
                     }
                 });
             });
@@ -93,7 +105,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.url().should('include', '/loads-unloads');
 
         //Validación mínima para asegurar que la pantalla cargó correctamente
-        cy.contains('Proveedor').should('exist');
+        return cy.contains('Proveedor').should('exist');
     }
 
     function tc002() {
@@ -115,7 +127,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
 
         //Ahora valido que el primer resultado visible tenga exactamente "1700342"
         //Uso [data-field="oc"] porque esa celda representa la columna "O.C." en la fila
-        cy.get('.MuiDataGrid-row:visible')
+        return cy.get('.MuiDataGrid-row:visible')
             .first()
             .find('div[data-field="oc"]')
             .invoke('text')
@@ -136,7 +148,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             .type('368{enter}', { force: true });
 
         //Verifico que el primer resultado visible contenga "368" en la celda correspondiente
-        cy.get('.MuiDataGrid-row:visible')
+        return cy.get('.MuiDataGrid-row:visible')
             .first()
             .find('div[data-field="provider"]')
             .invoke('text')
@@ -157,7 +169,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             .type('Marbella{enter}', { force: true });
 
         //Verifico que no haya filas visibles en la tabla
-        cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
     }
 
     function tc005() {
@@ -177,7 +189,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
 
         //Valido que la columna "Ruta" contenga la palabra "origen" (ignorando mayúsculas)
-        cy.get('.MuiDataGrid-row:visible')
+        return cy.get('.MuiDataGrid-row:visible')
             .first()
             .find('div[data-field="route"]')
             .invoke('text')
@@ -198,7 +210,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             .type('$%{enter}', { force: true });
 
         //Verifico que el sistema no lance errores y simplemente no muestre resultados
-        cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
     }
 
     function tc007() {
@@ -231,7 +243,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             });
 
         //Valido que todas las filas visibles cumplan con ambos filtros: proveedor y rango de fechas
-        cy.get('.MuiDataGrid-row:visible').each(($row) => {
+        return cy.get('.MuiDataGrid-row:visible').each(($row) => {
             cy.wrap($row).within(() => {
                 //Confirmo que la celda de proveedor contenga "368"
                 cy.get('div[data-field="provider"]')
@@ -258,7 +270,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
         cy.url().should('include', '/loads-unloads');
 
-        // 🔄 Intento limpiar filtros activos solo si existen
+        //  Intento limpiar filtros activos solo si existen
         cy.get('body').then(($body) => {
             if ($body.find('div.MuiChip-root').length > 0) {
                 cy.get('div.MuiChip-root').each(($chip) => {
@@ -276,7 +288,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             .type('{enter}', { force: true });
 
         // Verifico que se muestran filas en la tabla (es decir, se han recuperado todos los datos)
-        cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
+        return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
             .its('length')
             .should('be.greaterThan', 0);
     }
@@ -307,7 +319,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             });
 
         //Validar que se muestran registros dentro del rango
-        cy.get('.MuiDataGrid-row:visible').each(($row) => {
+        return cy.get('.MuiDataGrid-row:visible').each(($row) => {
             cy.wrap($row).within(() => {
                 cy.get('div[data-field="date"]')
                     .invoke('text')
@@ -337,7 +349,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             });
 
         //Validar que los registros mostrados tienen fecha >= 06/10/2016
-        cy.get('.MuiDataGrid-row:visible').each(($row) => {
+        return cy.get('.MuiDataGrid-row:visible').each(($row) => {
             cy.wrap($row).within(() => {
                 cy.get('div[data-field="date"]')
                     .invoke('text')
@@ -363,7 +375,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             });
 
         //Validar que los registros mostrados tienen fecha <= 07/10/2018
-        cy.get('.MuiDataGrid-row:visible').each(($row) => {
+        return cy.get('.MuiDataGrid-row:visible').each(($row) => {
             cy.wrap($row).within(() => {
                 cy.get('div[data-field="date"]')
                     .invoke('text')
@@ -399,8 +411,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             });
 
         //Validar que no se muestren resultados visibles
-        cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
-
+        return cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
     }
 
     function tc013() {
@@ -417,7 +428,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             .type('06-11-2017{enter}', { force: true }); //Usa "-" en lugar de "/"
 
         //Validar que no haya resultados visibles
-        cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
     }
 
     function tc014() {
@@ -446,7 +457,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         //Finalmente, tomo todas las celdas de la columna "Fecha",
         //convierto cada fecha a formato timestamp para poder ordenarlas correctamente,
         //y compruebo que el orden actual de las fechas sea igual al mismo array ordenado ascendentemente.
-        cy.get('.MuiDataGrid-cell[data-field="date"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="date"]').then($cells => {
             const fechas = [...$cells].map(c =>
                 new Date(c.innerText.split('/').reverse().join('-')).getTime()
             );
@@ -474,7 +485,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
 
         //Recojo las fechas de la tabla y verifico que estén ordenadas de forma descendente
-        cy.get('.MuiDataGrid-cell[data-field="date"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="date"]').then($cells => {
             const fechas = [...$cells].map(c =>
                 new Date(c.innerText.split('/').reverse().join('-')).getTime()
             );
@@ -502,7 +513,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('li[role="menuitem"][data-value="desc"]').click({ force: true });
 
         //Recojo los textos de las celdas de "Proveedor" y valido que estén en orden descendente
-        cy.get('.MuiDataGrid-cell[data-field="provider"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="provider"]').then($cells => {
             const proveedores = [...$cells].map(c => c.innerText.trim().toLowerCase());
             expect(proveedores).to.deep.equal([...proveedores].sort((a, b) => b.localeCompare(a)));
         });
@@ -527,7 +538,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('li[role="menuitem"][data-value="asc"]').click({ force: true });
 
         //Validación ascendente de la columna "O.C." por número
-        cy.get('.MuiDataGrid-cell[data-field="oc"]').then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="oc"]').then($cells => {
             const numeros = [...$cells].map(c => parseInt(c.innerText.trim(), 10));
             expect(numeros).to.deep.equal([...numeros].sort((a, b) => a - b));
         });
@@ -564,7 +575,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
 
         //Validar que el filtro funcionó correctamente y que la celda contiene exactamente "3"
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        cy.get('.MuiDataGrid-row:visible')
+        return cy.get('.MuiDataGrid-row:visible')
             .first()
             .find('div[data-field="oc"]')
             .invoke('text')
@@ -580,8 +591,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
 
         // Hacer clic sobre la primera fila para seleccionarla
-        cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
-
+        return cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
     }
 
     function tc020() {
@@ -593,7 +603,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('div[role="row"] input[type="checkbox"]:checked').should('have.length', 0);
 
         // Verificar que el botón "Editar" NO esté visible (porque no hay selección)
-        cy.contains('button', 'Editar').should('not.exist');
+        return cy.contains('button', 'Editar').should('not.exist');
     }
 
     function tc021() {
@@ -619,7 +629,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('@ordenSeleccionada').dblclick({ force: true });
 
         //Verifico que se abre la pantalla de edición correctamente con un ID dinámico en la URL
-        cy.url({ timeout: 10000 }).should('match', /\/dashboard\/loads-unloads\/form\/\d+$/);
+        return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/loads-unloads\/form\/\d+$/);
     }
 
     function tc022() {
@@ -640,7 +650,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.url().should('include', '/dashboard/loads-unloads/form');
 
         //Validar que el formulario es nuevo
-        cy.get('h5, h6').first().invoke('text').should('include', 'Nueva carga');
+        return cy.get('h5, h6').first().invoke('text').should('include', 'Nueva carga');
     }
 
     function tc023() {
@@ -656,7 +666,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         let intentos = 0;
 
         function hacerScrollVertical(prevHeight = 0) {
-            cy.get('.MuiDataGrid-virtualScroller').then($scroller => {
+            return cy.get('.MuiDataGrid-virtualScroller').then($scroller => {
                 const currentScrollHeight = $scroller[0].scrollHeight;
 
                 //Si no ha cambiado el scrollHeight, asumimos que hemos llegado al fondo
@@ -676,7 +686,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
                     cy.get('.MuiDataGrid-virtualScroller').scrollTo('right');
 
                     //Confirmar cabeceras tras scroll horizontal
-                    cy.get('.MuiDataGrid-columnHeaders')
+                    return cy.get('.MuiDataGrid-columnHeaders')
                         .should('exist')
                         .and($el => {
                             const rect = $el[0].getBoundingClientRect();
@@ -686,7 +696,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
 
                 } else {
                     intentos++;
-                    cy.get('.MuiDataGrid-virtualScroller')
+                    return cy.get('.MuiDataGrid-virtualScroller')
                         .scrollTo('bottom', { duration: 400 })
                         .wait(400)
                         .then(() => hacerScrollVertical(currentScrollHeight));
@@ -695,7 +705,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         }
 
         //Lanzar scroll vertical recursivo
-        hacerScrollVertical();
+        return hacerScrollVertical();
     }
 
     function tc024() {
@@ -735,7 +745,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('li[role="menuitem"][data-value="asc"]').click({ force: true });
 
         // Verificar orden ascendente
-        cy.get('.MuiDataGrid-cell[data-field="oc"]', { timeout: 10000 }).then($cells => {
+        return cy.get('.MuiDataGrid-cell[data-field="oc"]', { timeout: 10000 }).then($cells => {
             const valoresOC = [...$cells].map(c => parseInt(c.innerText.trim(), 10));
             const ordenados = [...valoresOC].sort((a, b) => a - b);
             expect(valoresOC).to.deep.equal(ordenados);
@@ -763,7 +773,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.wait(500);
 
         //Recorro las filas visibles de la tabla
-        cy.get('div[role="row"]').each($row => {
+        return cy.get('div[role="row"]').each($row => {
             //De cada fila, saco las celdas
             const $cells = Cypress.$($row).find('div[role="cell"]');
 
@@ -797,7 +807,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('div.MuiDataGrid-columnHeader[data-field="place"]').should('not.exist');
 
         //También comprobamos que las celdas de la columna "Lugar" han desaparecido de las filas
-        cy.get('div[role="row"]').each($row => {
+        return cy.get('div[role="row"]').each($row => {
             //Nos aseguramos de que en cada fila ya no haya celdas con data-field="place"
             cy.wrap($row).find('div[data-field="place"]').should('not.exist');
         });
@@ -829,7 +839,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
             });
 
         //Comprobamos que la columna Lugar aparece de nuevo en la tabla
-        cy.get('div.MuiDataGrid-columnHeaderTitle')
+        return cy.get('div.MuiDataGrid-columnHeaderTitle')
             .contains('Lugar')
             .should('be.visible');
     }
@@ -845,7 +855,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('select#languageSwitcher').select('en', { force: true });
 
         //Validar cabeceras de la tabla en inglés
-        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
             cy.contains('O.C.').should('exist');
             cy.contains('Date').should('exist');
             cy.contains('Provider').should('exist');
@@ -867,14 +877,13 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('select#languageSwitcher').select('ca', { force: true });
 
         //Validar cabeceras reales en catalán según la interfaz actual
-        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
             cy.contains('O.C.').should('exist');
             cy.contains('Data').should('exist');
             cy.contains('Proveïdor').should('exist');
             cy.contains('Ruta').should('exist');
             cy.contains('Lloc').should('exist');
         });
-
     }
 
     function tc030() {
@@ -888,7 +897,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         cy.get('select#languageSwitcher').select('es', { force: true });
 
         //Verificar que las cabeceras de la tabla están en español
-        cy.get('.MuiDataGrid-columnHeaders').within(() => {
+        return cy.get('.MuiDataGrid-columnHeaders').within(() => {
             cy.contains('O.C.').should('exist');
             cy.contains('Fecha').should('exist');
             cy.contains('Proveedor').should('exist');
@@ -898,7 +907,7 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
     function tc031() {
         const numero = 31;
         const nombre = 'TC031 - Eliminar con selección';
-        const pantalla = 'Procesos (Órdenes de Carga)';
+        const pantalla = 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)';
 
         cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
         cy.url().should('include', '/dashboard/loads-unloads');
@@ -943,9 +952,10 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
         const MSG_ERROR_ELIMINAR = /error al eliminar la carga\/descarga/i;
 
         // si aparece toast de error → ERROR; si no, comparamos número de filas
-        cy.get('body').then($body => {
+        return cy.get('body').then($body => {
             const texto = $body.text();
             if (MSG_NO_SELECCION.test(texto) || MSG_ERROR_ELIMINAR.test(texto)) {
+                cy.log(`TC031: Registrando ERROR - ${MSG_NO_SELECCION.test(texto) ? 'No hay selección' : 'Error al eliminar'}`);
                 cy.registrarResultados({
                     numero,
                     nombre,
@@ -954,21 +964,25 @@ describe('PROCESOS > Órdenes de Carga - Validación completa con errores y repo
                         ? 'No hay ningún elemento seleccionado para eliminar'
                         : 'Error al eliminar la carga/descarga',
                     resultado: 'ERROR',
-                    pantalla
+                    pantalla,
+                    archivo
                 });
-                return;
+                return cy.wrap(true); // Devolver promesa para que no se ejecute el auto-OK
             }
 
-            cy.get(ROWS).its('length').then(despues => {
+            return cy.get(ROWS).its('length').then(despues => {
                 const ok = despues < antes;
+                cy.log(`TC031: Registrando ${ok ? 'OK' : 'ERROR'} - Filas antes: ${antes}, después: ${despues}`);
                 cy.registrarResultados({
                     numero,
                     nombre,
                     esperado: 'Se elimina correctamente',
                     obtenido: ok ? 'Se elimina correctamente' : 'No se eliminó la fila',
                     resultado: ok ? 'OK' : 'ERROR',
-                    pantalla
+                    pantalla,
+                    archivo
                 });
+                return cy.wrap(true); // Devolver promesa para que no se ejecute el auto-OK
             });
         });
     }

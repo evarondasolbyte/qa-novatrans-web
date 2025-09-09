@@ -2,37 +2,39 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
   const archivo = 'reportes_pruebas_novatrans.xlsx';
 
   const casos = [
-    { numero: 1,  nombre: 'TC001 - Cargar la pantalla de formas de pago correctamente', funcion: cargarPantallaFormasPago },
-    { numero: 2,  nombre: 'TC002 - Cambiar idioma a Inglés',                                   funcion: cambiarIdiomaIngles },
-    { numero: 3,  nombre: 'TC003 - Cambiar idioma a Catalán',                                  funcion: cambiarIdiomaCatalan },
-    { numero: 4,  nombre: 'TC004 - Cambiar idioma a Español',                                  funcion: cambiarIdiomaEspanol },
-    { numero: 5,  nombre: 'TC005 - Aplicar filtro por columna "Código"',                       funcion: filtrarPorCodigo },
-    { numero: 6,  nombre: 'TC006 - Aplicar filtro por columna "Referencia"',                   funcion: filtrarPorReferencia },
-    { numero: 7,  nombre: 'TC007 - Aplicar filtro por columna "Descripción"',                  funcion: filtrarPorDescripcion },
-    { numero: 8,  nombre: 'TC008 - Aplicar filtro por columna "Días para pago"',               funcion: filtrarPorDiasPago },
-    { numero: 9,  nombre: 'TC009 - Buscar por texto exacto en buscador',                       funcion: buscarTextoExacto },
-    { numero: 10, nombre: 'TC010 - Buscar por texto parcial en buscador',                      funcion: buscarTextoParcial },
-    { numero: 11, nombre: 'TC011 - Buscar ignorando mayúsculas y minúsculas',                  funcion: buscarAlternandoMayusculas },
-    { numero: 12, nombre: 'TC012 - Buscar con espacios al inicio y fin',                       funcion: buscarConEspacios },
-    { numero: 13, nombre: 'TC013 - Buscar con caracteres especiales',                          funcion: buscarCaracteresEspeciales },
-    { numero: 14, nombre: 'TC014 - Ordenar columna "Código" ascendente/descendente',           funcion: ordenarCodigo },
-    { numero: 15, nombre: 'TC015 - Ordenar columna "Referencia" ascendente/descendente',       funcion: ordenarReferencia },
-    { numero: 16, nombre: 'TC016 - Seleccionar una fila',                                      funcion: seleccionarFila },
-    { numero: 17, nombre: 'TC017 - Botón "Editar" con una fila seleccionada',                  funcion: editarFormaPago },
-    { numero: 18, nombre: 'TC018 - Botón "Eliminar" con varias filas seleccionadas',           funcion: eliminarFormaPago },
-    { numero: 19, nombre: 'TC019 - Botón "Editar" sin ninguna fila seleccionada',              funcion: editarSinSeleccion },
-    { numero: 20, nombre: 'TC020 - Botón "Eliminar" sin ninguna fila seleccionada',            funcion: eliminarSinSeleccion },
-    { numero: 21, nombre: 'TC021 - Botón "+ Añadir" abre formulario de alta',                  funcion: abrirFormularioAlta },
-    { numero: 22, nombre: 'TC022 - Ocultar columna desde el menú contextual',                  funcion: ocultarColumna },
-    { numero: 23, nombre: 'TC023 - Gestionar visibilidad desde "Manage columns"',              funcion: gestionarColumnas },
-    { numero: 24, nombre: 'TC024 - Scroll vertical en la tabla',                               funcion: scrollVertical },
-    { numero: 25, nombre: 'TC025 - Recargar página y verificar reinicio de filtros',           funcion: recargarPagina },
-    { numero: 26, nombre: 'TC026 - Aplicar filtro con valor inexistente',                      funcion: filtrarValorInexistente },
-    { numero: 27, nombre: 'TC027 - Validar opción de "Todos" en filtro',                       funcion: validarOpcionTodos },
-    { numero: 28, nombre: 'TC028 - Filtrar por campo "Value"',                                 funcion: filtrarPorValue },
+    { numero: 1, nombre: 'TC001 - Cargar la pantalla de formas de pago correctamente', funcion: cargarPantallaFormasPago },
+    { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
+    { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
+    { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
+    { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "Código"', funcion: filtrarPorCodigo },
+    { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "Referencia"', funcion: filtrarPorReferencia },
+    { numero: 7, nombre: 'TC007 - Aplicar filtro por columna "Descripción"', funcion: filtrarPorDescripcion },
+    { numero: 8, nombre: 'TC008 - Aplicar filtro por columna "Días para pago"', funcion: filtrarPorDiasPago },
+    { numero: 9, nombre: 'TC009 - Buscar por texto exacto en buscador', funcion: buscarTextoExacto },
+    { numero: 10, nombre: 'TC010 - Buscar por texto parcial en buscador', funcion: buscarTextoParcial },
+    { numero: 11, nombre: 'TC011 - Buscar ignorando mayúsculas y minúsculas', funcion: buscarAlternandoMayusculas },
+    { numero: 12, nombre: 'TC012 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios },
+    { numero: 13, nombre: 'TC013 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales },
+    { numero: 14, nombre: 'TC014 - Ordenar columna "Código" ascendente/descendente', funcion: ordenarCodigo },
+    { numero: 15, nombre: 'TC015 - Ordenar columna "Referencia" ascendente/descendente', funcion: ordenarReferencia },
+    { numero: 16, nombre: 'TC016 - Seleccionar una fila', funcion: seleccionarFila },
+    { numero: 17, nombre: 'TC017 - Botón "Editar" con una fila seleccionada', funcion: editarFormaPago },
+    { numero: 18, nombre: 'TC018 - Botón "Eliminar" con varias filas seleccionadas', funcion: eliminarFormaPago },
+    { numero: 19, nombre: 'TC019 - Botón "Editar" sin ninguna fila seleccionada', funcion: editarSinSeleccion },
+    { numero: 20, nombre: 'TC020 - Botón "Eliminar" sin ninguna fila seleccionada', funcion: eliminarSinSeleccion },
+    { numero: 21, nombre: 'TC021 - Botón "+ Añadir" abre formulario de alta', funcion: abrirFormularioAlta },
+    { numero: 22, nombre: 'TC022 - Ocultar columna desde el menú contextual', funcion: ocultarColumna },
+    { numero: 23, nombre: 'TC023 - Gestionar visibilidad desde "Manage columns"', funcion: gestionarColumnas },
+    { numero: 24, nombre: 'TC024 - Scroll vertical en la tabla', funcion: scrollVertical },
+    { numero: 25, nombre: 'TC025 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina },
+    { numero: 26, nombre: 'TC026 - Aplicar filtro con valor inexistente', funcion: filtrarValorInexistente },
+    { numero: 27, nombre: 'TC027 - Validar opción de "Todos" en filtro', funcion: validarOpcionTodos },
+    { numero: 28, nombre: 'TC028 - Filtrar por campo "Value"', funcion: filtrarPorValue },
   ];
 
   after(() => {
+    cy.log('Procesando resultados finales para Ficheros (Formas de Pago)');
+    cy.wait(1000);
     cy.procesarResultadosPantalla('Ficheros (Formas de Pago)');
   });
 
@@ -47,7 +49,7 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
           numero,
           nombre,
           esperado: 'Comportamiento correcto',
-          archivo: 'reportes_pruebas_novatrans.xlsx',
+          archivo,
           pantalla: 'Ficheros (Formas de Pago)',
         });
         return false; // dejamos que continúe el flujo de comandos/registro
@@ -58,15 +60,17 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
 
       // Ejecutar la función y sólo auto-OK si nadie registró antes
       return funcion().then(() => {
+        cy.wait(500);
         cy.estaRegistrado().then((ya) => {
           if (!ya) {
+            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
             cy.registrarResultados({
               numero,
               nombre,
               esperado: 'Comportamiento correcto',
               obtenido: 'Comportamiento correcto',
               resultado: 'OK',
-              archivo: 'reportes_pruebas_novatrans.xlsx',
+              archivo,
               pantalla: 'Ficheros (Formas de Pago)',
             });
           }
@@ -79,6 +83,8 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
   function cargarPantallaFormasPago() {
     cy.navegarAMenu('Ficheros', 'Formas de Pago');
     cy.url().should('include', '/dashboard/payment-methods');
+    cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('exist');
+    cy.wait(1000);
     return cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
   }
 
@@ -125,7 +131,7 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
           obtenido: 'No se encontraron filas con Código = 10 y sí debería haber',
           resultado: 'ERROR',
           pantalla: 'Ficheros (Formas de Pago)',
-          archivo: 'reportes_pruebas_novatrans.xlsx'
+          archivo
         });
       } else {
         cy.registrarResultados({
@@ -135,7 +141,7 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
           obtenido: 'Comportamiento correcto',
           resultado: 'OK',
           pantalla: 'Ficheros (Formas de Pago)',
-          archivo: 'reportes_pruebas_novatrans.xlsx'
+          archivo
         });
       }
     });
@@ -294,15 +300,44 @@ describe('FORMAS DE PAGO - Validación completa con gestión de errores y report
   function ocultarColumna() {
     cy.navegarAMenu('Ficheros', 'Formas de Pago');
     cy.url().should('include', '/dashboard/payment-methods');
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia').should('be.visible').click();
-    return cy.get('.MuiDataGrid-row').should('exist');
+
+    // Usar el patrón correcto para ocultar columna
+    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
+      .parents('[role="columnheader"]')
+      .trigger('mouseover');
+
+    cy.get('[aria-label="Referencia column menu"]').click({ force: true });
+    cy.get('li').contains('Hide column').click({ force: true });
+
+    return cy.get('[data-field="referencia"]').should('not.exist');
   }
 
   function gestionarColumnas() {
     cy.navegarAMenu('Ficheros', 'Formas de Pago');
     cy.url().should('include', '/dashboard/payment-methods');
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código').should('be.visible').click();
-    return cy.get('.MuiDataGrid-row').should('exist');
+
+    // Usar el patrón correcto para manage columns
+    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
+      .parents('[role="columnheader"]')
+      .trigger('mouseover');
+
+    cy.get('[aria-label="Código column menu"]').click({ force: true });
+    cy.get('li').contains('Manage columns').click({ force: true });
+
+    // Usar el patrón correcto como en otros archivos
+    cy.get('.MuiDataGrid-panel')
+      .should('be.visible')
+      .find('label')
+      .contains('Referencia')
+      .parents('label')
+      .find('input[type="checkbox"]')
+      .check({ force: true });
+
+    return cy.get('.MuiDataGrid-columnHeaders')
+      .should('be.visible')
+      .within(() => {
+        cy.contains('Referencia').should('exist');
+      });
   }
 
   function scrollVertical() {
