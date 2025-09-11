@@ -392,7 +392,6 @@ describe('TESORERÍA (CAJAS) - Validación completa con gestión de errores y re
         cy.get('[aria-label="Nombre column menu"]').click({ force: true });
         cy.get('li').contains('Manage columns').click({ force: true });
 
-        // Usar el patrón correcto como en gastosgenerales
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')
             .find('label')
