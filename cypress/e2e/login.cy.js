@@ -3,16 +3,16 @@ describe('LOGIN - Validación completa con gestión de errores y reporte a Excel
   const archivo = 'reportes_pruebas_novatrans.xlsx';
 
   const casos = [
-    { numero: 1,  nombre: 'TC001 - Login con credenciales válidas', datos: {}, esperado: 'Accede al dashboard', prioridad: 'ALTA' },
-    { numero: 2,  nombre: 'TC002 - Usuario incorrecto',            datos: { username: 'Admin', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
-    { numero: 3,  nombre: 'TC003 - Contraseña incorrecta',         datos: { password: 'solbyte@2025', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
-    { numero: 4,  nombre: 'TC004 - Base de datos incorrecta',      datos: { database: 'NTDesarrolloLore', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
-    { numero: 5,  nombre: 'TC005 - Servidor incorrecto',           datos: { server: 'SERVER\\DESARRO', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
-    { numero: 6,  nombre: 'TC006 - Usuario vacío',                 datos: { username: '', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
-    { numero: 7,  nombre: 'TC007 - Contraseña vacía',              datos: { password: '', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
-    { numero: 8,  nombre: 'TC008 - Base de datos vacía',           datos: { database: '', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
-    { numero: 9,  nombre: 'TC009 - Servidor vacío',                datos: { server: '', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
-    { numero: 10, nombre: 'TC010 - Todos los campos vacíos',       datos: { database: '', server: '', username: '', password: '', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' }
+    { numero: 1, nombre: 'TC001 - Login con credenciales válidas', datos: {}, esperado: 'Accede al dashboard', prioridad: 'ALTA' },
+    { numero: 2, nombre: 'TC002 - Usuario incorrecto', datos: { username: 'Admin', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
+    { numero: 3, nombre: 'TC003 - Contraseña incorrecta', datos: { password: 'solbyte@2025', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
+    { numero: 4, nombre: 'TC004 - Base de datos incorrecta', datos: { database: 'NTDesarrolloLore', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
+    { numero: 5, nombre: 'TC005 - Servidor incorrecto', datos: { server: 'SERVER\\DESARRO', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
+    { numero: 6, nombre: 'TC006 - Usuario vacío', datos: { username: '', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
+    { numero: 7, nombre: 'TC007 - Contraseña vacía', datos: { password: '', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' },
+    { numero: 8, nombre: 'TC008 - Base de datos vacía', datos: { database: '', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
+    { numero: 9, nombre: 'TC009 - Servidor vacío', datos: { server: '', useSession: false }, esperado: 'No accede', prioridad: 'MEDIA' },
+    { numero: 10, nombre: 'TC010 - Todos los campos vacíos', datos: { database: '', server: '', username: '', password: '', useSession: false }, esperado: 'No accede', prioridad: 'ALTA' }
   ];
 
   // Resumen al final
@@ -22,9 +22,9 @@ describe('LOGIN - Validación completa con gestión de errores y reporte a Excel
 
   // Filtrar casos por prioridad si se especifica
   const prioridadFiltro = Cypress.env('prioridad');
-  const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
-      ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
-      : casos;
+  const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas'
+    ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+    : casos;
 
   casosFiltrados.forEach(({ numero, nombre, datos, esperado, prioridad }) => {
     it(`${nombre} [${prioridad}]`, () => {

@@ -49,8 +49,8 @@ module.exports = defineConfig({
          *   ok/warning/error: solo para "Resultados Pruebas"
          */
         async guardarEnExcel({ numero, nombre, esperado, obtenido, resultado, fechaHora, archivo, pantalla, observacion, ok, warning, error }) {
-          // Default a excel para entornos sin credenciales o cuando quiero “modo offline”
-          const sink = process.env.RESULT_SINK || 'excel';
+          // Default a sheets para usar Google Sheets
+          const sink = process.env.RESULT_SINK || 'sheets';
 
           // ============== SINK: GOOGLE SHEETS ==============
           if (sink === 'sheets') {
@@ -179,7 +179,7 @@ module.exports = defineConfig({
         /**
          * guardarEnLog
          * - Inserta un registro individual en la hoja "Log" con el formato correcto.
-         * - En Sheets escribe en la hoja "Log" (A:I).
+         * - En Sheets escribe en el nuevo Google Sheets separado para Log (A:I).
          * - En Excel local crea/usa una hoja llamada "Log".
          *
          * Campos:
@@ -194,7 +194,7 @@ module.exports = defineConfig({
          *   observacion: observaciones
          */
         async guardarEnLog({ testId, test, paso, fechaHora, resultado, nombre, esperado, obtenido, observacion }) {
-          const sink = process.env.RESULT_SINK || 'excel';
+          const sink = process.env.RESULT_SINK || 'sheets';
 
           // ============== SINK: GOOGLE SHEETS ==============
           if (sink === 'sheets') {
@@ -210,9 +210,9 @@ module.exports = defineConfig({
             if (!token) throw new Error('No se pudo obtener access token');
 
             // Helper común: escribe en la fila exacta debajo del último registro
-            const appendExactRow = async ({ sheetName, endColLetter, rowValues }) => {
+            const appendExactRow = async ({ sheetName, endColLetter, rowValues, spreadsheetId }) => {
               const getUrl =
-                `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/` +
+                `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/` +
                 `${encodeURIComponent(`${sheetName}!A:A`)}?majorDimension=COLUMNS`;
               const getRes = await fetchCompat(getUrl, { headers: { Authorization: `Bearer ${token}` } });
               const getJson = await getRes.json();
@@ -222,7 +222,7 @@ module.exports = defineConfig({
 
               const range = `${sheetName}!A${nextRow}:${endColLetter}${nextRow}`;
               const putUrl =
-                `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GS_SPREADSHEET_ID}/values/` +
+                `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/` +
                 `${encodeURIComponent(range)}?valueInputOption=RAW`;
               const putRes = await fetchCompat(putUrl, {
                 method: 'PUT',
@@ -249,7 +249,9 @@ module.exports = defineConfig({
               observacion ?? ''
             ];
 
-            await appendExactRow({ sheetName: 'Log', endColLetter: 'I', rowValues: row });
+            // Usar el nuevo Google Sheets ID para el Log
+            const logSpreadsheetId = '1WbRsyBxk-soCln1A7K_vh5VlBNJ-RYAphzLxe-EseE8';
+            await appendExactRow({ sheetName: 'Log', endColLetter: 'I', rowValues: row, spreadsheetId: logSpreadsheetId });
             return 'OK';
           }
 
