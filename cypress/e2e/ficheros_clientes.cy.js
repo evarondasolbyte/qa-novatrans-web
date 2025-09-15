@@ -3,31 +3,31 @@ describe('CLIENTES - Validación completa con gestión de errores y reporte a Ex
 
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Ver lista de clientes', funcion: verListaClientes },
-        { numero: 2, nombre: 'TC002 - Verificar columnas de la tabla', funcion: verificarColumnas },
-        { numero: 4, nombre: 'TC004 - Buscar cliente por nombre', funcion: buscarPorNombre },
-        { numero: 7, nombre: 'TC007 - Buscar cliente por NIF', funcion: buscarPorNIF },
-        { numero: 12, nombre: 'TC012 - Editar cliente', funcion: editarCliente },
-        { numero: 19, nombre: 'TC019 - Scroll lateral y vertical', funcion: scrollBuscarCodigo },
-        { numero: 20, nombre: 'TC020 - Tabla responde al cambiar idioma', funcion: cambiarIdiomaClientes },
-        { numero: 21, nombre: 'TC021 - Aplicar multifiltro por Nombre + condición Contenga', funcion: filtrarNombreContenga },
-        { numero: 22, nombre: 'TC022 - Filtrar por Teléfono con condición >=', funcion: filtrarTelefono },
-        { numero: 23, nombre: 'TC023 - Filtrar por Notas con condición Empiece Por', funcion: filtrarNotasEmpiece },
-        { numero: 24, nombre: 'TC024 - Búsqueda con valor inexistente', funcion: buscarNotasInexistente },
-        { numero: 26, nombre: 'TC026 - Marcar un cliente', funcion: marcarUnCliente },
-        { numero: 33, nombre: 'TC033 - Ingresar caracteres inválidos en búsqueda', funcion: buscarCaracteresInvalidos },
-        { numero: 34, nombre: 'TC034 - Ordenar por columna Código ascendente', funcion: ordenarCodigoAsc },
-        { numero: 35, nombre: 'TC035 - Ordenar por columna Código descendente', funcion: ordenarCodigoDesc },
-        { numero: 36, nombre: 'TC036 - Ordenar por Nombre ascendente', funcion: ordenarNombreAsc },
-        { numero: 37, nombre: 'TC037 - Ordenar por Teléfono numéricamente', funcion: ordenarTelefonoDesc },
-        { numero: 38, nombre: 'TC038 - Aplicar filtro desde opción Filter en NIF/CIF', funcion: filtrarNIF },
-        { numero: 39, nombre: 'TC039 - Filtrar por Email desde su columna', funcion: filtrarEmail },
-        { numero: 40, nombre: 'TC040 - Ocultar columna Teléfono', funcion: ocultarColumnaTelefono },
-        { numero: 41, nombre: 'TC041 - Mostrar columna oculta desde Manage columns', funcion: mostrarColumnaTelefono },
-        { numero: 42, nombre: 'TC042 - Ordenar por columna Código desde el icono de orden', funcion: ordenarCodigoIcono },
-        { numero: 43, nombre: 'TC043 - Pulsar + Añadir', funcion: abrirFormulario },
-        { numero: 44, nombre: 'TC044 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 45, nombre: 'TC045 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
+        { numero: 1, nombre: 'TC001 - Ver lista de clientes', funcion: verListaClientes, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Verificar columnas de la tabla', funcion: verificarColumnas, prioridad: 'ALTA' },
+        { numero: 4, nombre: 'TC004 - Buscar cliente por nombre', funcion: buscarPorNombre, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Buscar cliente por NIF', funcion: buscarPorNIF, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Editar cliente', funcion: editarCliente, prioridad: 'ALTA' },
+        { numero: 19, nombre: 'TC019 - Scroll lateral y vertical', funcion: scrollBuscarCodigo, prioridad: 'BAJA' },
+        { numero: 20, nombre: 'TC020 - Tabla responde al cambiar idioma', funcion: cambiarIdiomaClientes, prioridad: 'BAJA' },
+        { numero: 21, nombre: 'TC021 - Aplicar multifiltro por Nombre + condición Contenga', funcion: filtrarNombreContenga, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Filtrar por Teléfono con condición >=', funcion: filtrarTelefono, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - Filtrar por Notas con condición Empiece Por', funcion: filtrarNotasEmpiece, prioridad: 'MEDIA' },
+        { numero: 24, nombre: 'TC024 - Búsqueda con valor inexistente', funcion: buscarNotasInexistente, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Marcar un cliente', funcion: marcarUnCliente, prioridad: 'ALTA' },
+        { numero: 33, nombre: 'TC033 - Ingresar caracteres inválidos en búsqueda', funcion: buscarCaracteresInvalidos, prioridad: 'BAJA' },
+        { numero: 34, nombre: 'TC034 - Ordenar por columna Código ascendente', funcion: ordenarCodigoAsc, prioridad: 'MEDIA' },
+        { numero: 35, nombre: 'TC035 - Ordenar por columna Código descendente', funcion: ordenarCodigoDesc, prioridad: 'MEDIA' },
+        { numero: 36, nombre: 'TC036 - Ordenar por Nombre ascendente', funcion: ordenarNombreAsc, prioridad: 'MEDIA' },
+        { numero: 37, nombre: 'TC037 - Ordenar por Teléfono numéricamente', funcion: ordenarTelefonoDesc, prioridad: 'BAJA' },
+        { numero: 38, nombre: 'TC038 - Aplicar filtro desde opción Filter en NIF/CIF', funcion: filtrarNIF, prioridad: 'ALTA' },
+        { numero: 39, nombre: 'TC039 - Filtrar por Email desde su columna', funcion: filtrarEmail, prioridad: 'MEDIA' },
+        { numero: 40, nombre: 'TC040 - Ocultar columna Teléfono', funcion: ocultarColumnaTelefono, prioridad: 'BAJA' },
+        { numero: 41, nombre: 'TC041 - Mostrar columna oculta desde Manage columns', funcion: mostrarColumnaTelefono, prioridad: 'BAJA' },
+        { numero: 42, nombre: 'TC042 - Ordenar por columna Código desde el icono de orden', funcion: ordenarCodigoIcono, prioridad: 'BAJA' },
+        { numero: 43, nombre: 'TC043 - Pulsar + Añadir', funcion: abrirFormulario, prioridad: 'ALTA' },
+        { numero: 44, nombre: 'TC044 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 45, nombre: 'TC045 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -36,8 +36,14 @@ describe('CLIENTES - Validación completa con gestión de errores y reporte a Ex
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

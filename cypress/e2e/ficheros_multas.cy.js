@@ -3,39 +3,39 @@ describe('MULTAS - Validación completa con gestión de errores y reporte a Exce
 
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla de multas correctamente', funcion: cargarPantallaMultas },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "Código"', funcion: filtrarPorCodigo },
-        { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "Fecha"', funcion: filtrarPorFecha },
-        { numero: 7, nombre: 'TC007 - Aplicar filtro por "Conductor"', funcion: filtrarPorConductor },
-        { numero: 8, nombre: 'TC008 - Aplicar filtro por "Boletín"', funcion: filtrarPorBoletin },
-        { numero: 9, nombre: 'TC009 - Aplicar filtro por "Estado"', funcion: filtrarPorEstado },
-        { numero: 10, nombre: 'TC010 - Aplicar filtro por "Pagado"', funcion: filtrarPorPagado },
-        { numero: 11, nombre: 'TC011 - Buscar por texto exacto en buscador', funcion: buscarTextoExacto },
-        { numero: 12, nombre: 'TC012 - Buscar por texto parcial en buscador', funcion: buscarTextoParcial },
-        { numero: 13, nombre: 'TC013 - Buscar con mayúsculas y minúsculas combinadas', funcion: buscarAlternandoMayusculas },
-        { numero: 14, nombre: 'TC014 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios },
-        { numero: 15, nombre: 'TC015 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 16, nombre: 'TC016 - Ordenar columna "Fecha" ascendente/descendente', funcion: ordenarFecha },
-        { numero: 17, nombre: 'TC017 - Ordenar columna "Código" ascendente/descendente', funcion: ordenarCodigo },
-        { numero: 18, nombre: 'TC018 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 19, nombre: 'TC019 - Botón "Editar" con una fila seleccionada', funcion: editarMulta },
-        { numero: 20, nombre: 'TC020 - Botón "Eliminar" con varias filas seleccionadas', funcion: eliminarMulta },
-        { numero: 21, nombre: 'TC021 - Botón "Editar" sin ninguna fila seleccionada', funcion: editarSinSeleccion },
-        { numero: 22, nombre: 'TC022 - Botón "Eliminar" sin ninguna fila seleccionada', funcion: eliminarSinSeleccion },
-        { numero: 23, nombre: 'TC023 - Botón "+ Añadir" abre formulario de alta', funcion: abrirFormularioAlta },
-        { numero: 24, nombre: 'TC024 - Ocultar columna desde el menú contextual', funcion: ocultarColumna },
-        { numero: 25, nombre: 'TC025 - Gestionar visibilidad desde "Manage columns"', funcion: gestionarColumnas },
-        { numero: 26, nombre: 'TC026 - Scroll horizontal y vertical en la tabla', funcion: scrollHorizontalVertical },
-        { numero: 27, nombre: 'TC027 - Buscar "Expediente" con valor parcial', funcion: buscarExpedienteParcial },
-        { numero: 28, nombre: 'TC028 - Filtro por "Fecha desde" y "Fecha hasta"', funcion: filtrarPorFechaDesdeHasta },
-        { numero: 29, nombre: 'TC029 - Filtro por "Imp. Final"', funcion: filtrarPorImpFinal },
-        { numero: 30, nombre: 'TC030 - Filtro por "Imp. Inicial" igual a un valor', funcion: filtrarPorImpInicial },
-        { numero: 31, nombre: 'TC031 - Filtro por "Finalizada" marcada', funcion: filtrarPorFinalizada },
-        { numero: 32, nombre: 'TC032 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina },
-        { numero: 33, nombre: 'TC033 - Filtrar por campo "Value"', funcion: filtrarPorValue },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla de multas correctamente', funcion: cargarPantallaMultas, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "Código"', funcion: filtrarPorCodigo, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "Fecha"', funcion: filtrarPorFecha, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Aplicar filtro por "Conductor"', funcion: filtrarPorConductor, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Aplicar filtro por "Boletín"', funcion: filtrarPorBoletin, prioridad: 'MEDIA' },
+        { numero: 9, nombre: 'TC009 - Aplicar filtro por "Estado"', funcion: filtrarPorEstado, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Aplicar filtro por "Pagado"', funcion: filtrarPorPagado, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Buscar por texto exacto en buscador', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Buscar por texto parcial en buscador', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Buscar con mayúsculas y minúsculas combinadas', funcion: buscarAlternandoMayusculas, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 16, nombre: 'TC016 - Ordenar columna "Fecha" ascendente/descendente', funcion: ordenarFecha, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Ordenar columna "Código" ascendente/descendente', funcion: ordenarCodigo, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 19, nombre: 'TC019 - Botón "Editar" con una fila seleccionada', funcion: editarMulta, prioridad: 'ALTA' },
+        { numero: 20, nombre: 'TC020 - Botón "Eliminar" con varias filas seleccionadas', funcion: eliminarMulta, prioridad: 'ALTA' },
+        { numero: 21, nombre: 'TC021 - Botón "Editar" sin ninguna fila seleccionada', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Botón "Eliminar" sin ninguna fila seleccionada', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - Botón "+ Añadir" abre formulario de alta', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Ocultar columna desde el menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 25, nombre: 'TC025 - Gestionar visibilidad desde "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
+        { numero: 26, nombre: 'TC026 - Scroll horizontal y vertical en la tabla', funcion: scrollHorizontalVertical, prioridad: 'BAJA' },
+        { numero: 27, nombre: 'TC027 - Buscar "Expediente" con valor parcial', funcion: buscarExpedienteParcial, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Filtro por "Fecha desde" y "Fecha hasta"', funcion: filtrarPorFechaDesdeHasta, prioridad: 'ALTA' },
+        { numero: 29, nombre: 'TC029 - Filtro por "Imp. Final"', funcion: filtrarPorImpFinal, prioridad: 'MEDIA' },
+        { numero: 30, nombre: 'TC030 - Filtro por "Imp. Inicial" igual a un valor', funcion: filtrarPorImpInicial, prioridad: 'MEDIA' },
+        { numero: 31, nombre: 'TC031 - Filtro por "Finalizada" marcada', funcion: filtrarPorFinalizada, prioridad: 'MEDIA' },
+        { numero: 32, nombre: 'TC032 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina, prioridad: 'MEDIA' },
+        { numero: 33, nombre: 'TC033 - Filtrar por campo "Value"', funcion: filtrarPorValue, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -44,8 +44,14 @@ describe('MULTAS - Validación completa con gestión de errores y reporte a Exce
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

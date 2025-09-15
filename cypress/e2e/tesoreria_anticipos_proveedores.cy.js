@@ -2,49 +2,49 @@ describe('TESORERÍA (ANTICIPOS A PROVEEDORES) - Validación completa con gesti�
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Código', funcion: filtrarPorCodigo },
-        { numero: 6, nombre: 'TC006 - Filtrar por Proveedor', funcion: filtrarPorProveedor },
-        { numero: 7, nombre: 'TC007 - Filtrar por Fecha', funcion: filtrarPorFecha },
-        { numero: 8, nombre: 'TC008 - Filtrar por Importe (=)', funcion: filtrarPorImporte },
-        { numero: 9, nombre: 'TC009 - Filtrar por Notas (contenga)', funcion: filtrarPorNotas },
-        { numero: 10, nombre: 'TC010 - Filtrar por Forma', funcion: filtrarPorForma },
-        { numero: 11, nombre: 'TC011 - Filtrar por Número', funcion: filtrarPorNumero },
-        { numero: 12, nombre: 'TC012 - Filtrar por Empresa', funcion: filtrarPorEmpresa },
-        { numero: 13, nombre: 'TC013 - Búsqueda general (texto exacto)', funcion: busquedaGeneralExacta },
-        { numero: 14, nombre: 'TC014 - Búsqueda general (texto parcial)', funcion: busquedaGeneralParcial },
-        { numero: 15, nombre: 'TC015 - Búsqueda case-insensitive', funcion: busquedaCaseInsensitive },
-        { numero: 16, nombre: 'TC016 - Búsqueda con espacios', funcion: busquedaConEspacios },
-        { numero: 17, nombre: 'TC017 - Búsqueda con caracteres especiales', funcion: busquedaConCaracteresEspeciales },
-        { numero: 18, nombre: 'TC018 - Ordenar por Código ASC/DESC', funcion: ordenarPorCodigo },
-        { numero: 19, nombre: 'TC019 - Ordenar por Proveedor ASC/DESC', funcion: ordenarPorProveedor },
-        { numero: 20, nombre: 'TC020 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha },
-        { numero: 21, nombre: 'TC021 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte },
-        { numero: 22, nombre: 'TC022 - Ordenar por Notas ASC/DESC', funcion: ordenarPorNotas },
-        { numero: 23, nombre: 'TC023 - Ordenar por Forma ASC/DESC', funcion: ordenarPorForma },
-        { numero: 24, nombre: 'TC024 - Ordenar por Número ASC/DESC', funcion: ordenarPorNumero },
-        { numero: 25, nombre: 'TC025 - Ordenar por Empresa ASC/DESC', funcion: ordenarPorEmpresa },
-        { numero: 26, nombre: 'TC026 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 27, nombre: 'TC027 - Eliminar con fila seleccionada', funcion: eliminarConFilaSeleccionada },
-        { numero: 28, nombre: 'TC028 - Eliminar sin selección', funcion: eliminarSinSeleccion },
-        { numero: 29, nombre: 'TC029 - Añadir abre formulario', funcion: abrirFormularioAñadir },
-        { numero: 30, nombre: 'TC030 - Editar con fila seleccionada', funcion: editarConFilaSeleccionada },
-        { numero: 31, nombre: 'TC031 - Editar sin selección', funcion: editarSinSeleccion },
-        { numero: 32, nombre: 'TC032 - Fecha inicio (filtro superior)', funcion: fechaInicioFiltro },
-        { numero: 33, nombre: 'TC033 - Fecha fin (filtro superior)', funcion: fechaFinFiltro },
-        { numero: 34, nombre: 'TC034 - Rango inicio + fin', funcion: rangoFechas },
-        { numero: 35, nombre: 'TC035 - Filter → Value en columna', funcion: filterValueEnColumna },
-        { numero: 36, nombre: 'TC036 - Ocultar columna (Hide column)', funcion: ocultarColumna },
-        { numero: 37, nombre: 'TC037 - Manage columns (mostrar/ocultar)', funcion: manageColumns },
-        { numero: 38, nombre: 'TC038 - Scroll horizontal/vertical', funcion: scrollHorizontalVertical },
-        { numero: 39, nombre: 'TC039 - Reset de filtros al recargar', funcion: resetFiltrosRecarga },
-        { numero: 42, nombre: 'TC042 - Filtrar por Pagado = Sí', funcion: filtrarPorPagado },
-        { numero: 43, nombre: 'TC043 - Filtrar por Exportado = Sí', funcion: filtrarPorExportado },
-        { numero: 46, nombre: 'TC046 - Ordenar por Pagado', funcion: ordenarPorPagado },
-        { numero: 47, nombre: 'TC047 - Ordenar por Exportado', funcion: ordenarPorExportado },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Código', funcion: filtrarPorCodigo, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por Proveedor', funcion: filtrarPorProveedor, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por Fecha', funcion: filtrarPorFecha, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por Importe (=)', funcion: filtrarPorImporte, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por Notas (contenga)', funcion: filtrarPorNotas, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por Forma', funcion: filtrarPorForma, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Filtrar por Número', funcion: filtrarPorNumero, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Filtrar por Empresa', funcion: filtrarPorEmpresa, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Búsqueda general (texto exacto)', funcion: busquedaGeneralExacta, prioridad: 'ALTA' },
+        { numero: 14, nombre: 'TC014 - Búsqueda general (texto parcial)', funcion: busquedaGeneralParcial, prioridad: 'ALTA' },
+        { numero: 15, nombre: 'TC015 - Búsqueda case-insensitive', funcion: busquedaCaseInsensitive, prioridad: 'MEDIA' },
+        { numero: 16, nombre: 'TC016 - Búsqueda con espacios', funcion: busquedaConEspacios, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Búsqueda con caracteres especiales', funcion: busquedaConCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 18, nombre: 'TC018 - Ordenar por Código ASC/DESC', funcion: ordenarPorCodigo, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Ordenar por Proveedor ASC/DESC', funcion: ordenarPorProveedor, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Ordenar por Notas ASC/DESC', funcion: ordenarPorNotas, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - Ordenar por Forma ASC/DESC', funcion: ordenarPorForma, prioridad: 'MEDIA' },
+        { numero: 24, nombre: 'TC024 - Ordenar por Número ASC/DESC', funcion: ordenarPorNumero, prioridad: 'MEDIA' },
+        { numero: 25, nombre: 'TC025 - Ordenar por Empresa ASC/DESC', funcion: ordenarPorEmpresa, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 27, nombre: 'TC027 - Eliminar con fila seleccionada', funcion: eliminarConFilaSeleccionada, prioridad: 'ALTA' },
+        { numero: 28, nombre: 'TC028 - Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 29, nombre: 'TC029 - Añadir abre formulario', funcion: abrirFormularioAñadir, prioridad: 'ALTA' },
+        { numero: 30, nombre: 'TC030 - Editar con fila seleccionada', funcion: editarConFilaSeleccionada, prioridad: 'ALTA' },
+        { numero: 31, nombre: 'TC031 - Editar sin selección', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 32, nombre: 'TC032 - Fecha inicio (filtro superior)', funcion: fechaInicioFiltro, prioridad: 'ALTA' },
+        { numero: 33, nombre: 'TC033 - Fecha fin (filtro superior)', funcion: fechaFinFiltro, prioridad: 'ALTA' },
+        { numero: 34, nombre: 'TC034 - Rango inicio + fin', funcion: rangoFechas, prioridad: 'ALTA' },
+        { numero: 35, nombre: 'TC035 - Filter → Value en columna', funcion: filterValueEnColumna, prioridad: 'MEDIA' },
+        { numero: 36, nombre: 'TC036 - Ocultar columna (Hide column)', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 37, nombre: 'TC037 - Manage columns (mostrar/ocultar)', funcion: manageColumns, prioridad: 'BAJA' },
+        { numero: 38, nombre: 'TC038 - Scroll horizontal/vertical', funcion: scrollHorizontalVertical, prioridad: 'BAJA' },
+        { numero: 39, nombre: 'TC039 - Reset de filtros al recargar', funcion: resetFiltrosRecarga, prioridad: 'MEDIA' },
+        { numero: 42, nombre: 'TC042 - Filtrar por Pagado = Sí', funcion: filtrarPorPagado, prioridad: 'ALTA' },
+        { numero: 43, nombre: 'TC043 - Filtrar por Exportado = Sí', funcion: filtrarPorExportado, prioridad: 'ALTA' },
+        { numero: 46, nombre: 'TC046 - Ordenar por Pagado', funcion: ordenarPorPagado, prioridad: 'MEDIA' },
+        { numero: 47, nombre: 'TC047 - Ordenar por Exportado', funcion: ordenarPorExportado, prioridad: 'MEDIA' },
     ];
 
     // Resumen al final
@@ -54,8 +54,14 @@ describe('TESORERÍA (ANTICIPOS A PROVEEDORES) - Validación completa con gesti�
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

@@ -14,25 +14,31 @@ describe('Utilidades (Datos Maestros)', () => {
     });
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantallaDatosMaestros },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Concepto', funcion: filtrarPorConcepto },
-        { numero: 6, nombre: 'TC006 - Crear registro (+)', funcion: crearRegistro },
-        { numero: 7, nombre: 'TC007 - Editar registro existente', funcion: editarRegistro },
-        { numero: 8, nombre: 'TC008 - Eliminar registro (X roja)', funcion: eliminarRegistro },
-        { numero: 9, nombre: 'TC009 - Ordenar columna Nombre ASC/DESC', funcion: ordenarColumnaNombre },
-        { numero: 10, nombre: 'TC010 - Filtrar columna por Value', funcion: filtrarColumnaPorValue },
-        { numero: 11, nombre: 'TC011 - Ocultar y Mostrar columna desde Manage columns', funcion: ocultarMostrarColumna },
-        { numero: 12, nombre: 'TC012 - Reiniciar pantalla', funcion: reiniciarPantalla },
-        { numero: 13, nombre: 'TC013 - Eliminar sin registro seleccionado', funcion: eliminarSinSeleccion },
-        { numero: 14, nombre: 'TC014 - Editar sin registro seleccionado', funcion: editarSinSeleccion },
-        { numero: 15, nombre: 'TC015 - Scroll', funcion: scrollTabla }
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantallaDatosMaestros, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Concepto', funcion: filtrarPorConcepto, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Crear registro (+)', funcion: crearRegistro, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Editar registro existente', funcion: editarRegistro, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Eliminar registro (X roja)', funcion: eliminarRegistro, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Ordenar columna Nombre ASC/DESC', funcion: ordenarColumnaNombre, prioridad: 'MEDIA' },
+        { numero: 10, nombre: 'TC010 - Filtrar columna por Value', funcion: filtrarColumnaPorValue, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Ocultar y Mostrar columna desde Manage columns', funcion: ocultarMostrarColumna, prioridad: 'BAJA' },
+        { numero: 12, nombre: 'TC012 - Reiniciar pantalla', funcion: reiniciarPantalla, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Eliminar sin registro seleccionado', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Editar sin registro seleccionado', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Scroll', funcion: scrollTabla, prioridad: 'BAJA' }
     ];
 
-    casos.forEach(caso => {
-        it(caso.nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(caso => {
+        it(`${caso.nombre} [${caso.prioridad}]`, () => {
             cy.estaRegistrado(caso.numero, pantalla, archivo).then(registrado => {
                 if (!registrado) {
                     return caso.funcion().then(() => {

@@ -2,37 +2,37 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Acceder a la pantalla de presupuestos', funcion: tc001 },
-        { numero: 2, nombre: 'TC002 - Ver columnas: Código, Número, Solicitud...', funcion: tc002 },
-        { numero: 3, nombre: 'TC003 - Buscar por "Título"', funcion: tc003 },
-        { numero: 4, nombre: 'TC004 - Filtrar por "Cliente"', funcion: tc004 },
-        { numero: 5, nombre: 'TC005 - Usar el filtro por fechas "Desde" y "Hasta"', funcion: tc005 },
-        { numero: 6, nombre: 'TC006 - Busca por número exacto', funcion: tc006 },
-        { numero: 7, nombre: 'TC007 - Usa opción "Todos" en el select desplegable', funcion: tc007 },
-        { numero: 8, nombre: 'TC008 - Buscar uno por uno por los campos del desplegable', funcion: tc008 },
-        { numero: 9, nombre: 'TC009 - Ordenar por "Código" ascendente y descendente', funcion: tc009 },
-        { numero: 10, nombre: 'TC010 - Ordenar por "Número"', funcion: tc010 },
-        { numero: 11, nombre: 'TC011 - Ordenar por "Solicitud" (fecha)', funcion: tc011 },
-        { numero: 12, nombre: 'TC012 - Ordenar por "Título" alfabéticamente', funcion: tc012 },
-        { numero: 13, nombre: 'TC013 - Seleccionar una fila individual', funcion: tc013 },
-        { numero: 14, nombre: 'TC014 - Hacer clic en el menú de columna (3 puntos)', funcion: tc014 },
-        { numero: 15, nombre: 'TC015 - Usar "Sort by ASC" desde el menú', funcion: tc015 },
-        { numero: 16, nombre: 'TC016 - Usar "Sort by DESC"', funcion: tc016 },
-        { numero: 17, nombre: 'TC017 - Usar "Filter" desde el menú', funcion: tc017 },
-        { numero: 18, nombre: 'TC018 - Ocultar columna con "Hide Column"', funcion: tc018 },
-        { numero: 19, nombre: 'TC019 - Mostrar columnas con "Manage Columns"', funcion: tc019 },
-        { numero: 20, nombre: 'TC020 - Buscar un número que no existe', funcion: tc020 },
-        { numero: 21, nombre: 'TC021 - Introducir símbolos raros en búsqueda', funcion: tc021 },
-        { numero: 22, nombre: 'TC022 - Aplicar filtro por fecha mal formateada', funcion: tc022 },
-        { numero: 23, nombre: 'TC023 - Pulsar "+ Añadir"', funcion: tc023 },
-        { numero: 24, nombre: 'TC024 - Pulsar "Editar" con un registro seleccionado', funcion: tc024 },
-        { numero: 25, nombre: 'TC025 - Pulsar "Eliminar" con uno o varios seleccionados', funcion: tc025 },
-        { numero: 26, nombre: 'TC026 - Pulsar "Editar" sin seleccionar ningún registro', funcion: tc026 },
-        { numero: 27, nombre: 'TC027 - Pulsar "Eliminar" sin seleccionar ningún registro', funcion: tc027 },
-        { numero: 28, nombre: 'TC028 - Recargar la página con filtros activos', funcion: tc028 },
-        { numero: 29, nombre: 'TC029 - Cambiar idioma a Inglés', funcion: tc029 },
-        { numero: 30, nombre: 'TC030 - Cambiar idioma a Catalán', funcion: tc030 },
-        { numero: 31, nombre: 'TC031 - Cambiar idioma a Español', funcion: tc031 },
+        { numero: 1, nombre: 'TC001 - Acceder a la pantalla de presupuestos', funcion: tc001, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Ver columnas: Código, Número, Solicitud...', funcion: tc002, prioridad: 'ALTA' },
+        { numero: 3, nombre: 'TC003 - Buscar por "Título"', funcion: tc003, prioridad: 'ALTA' },
+        { numero: 4, nombre: 'TC004 - Filtrar por "Cliente"', funcion: tc004, prioridad: 'ALTA' },
+        { numero: 5, nombre: 'TC005 - Usar el filtro por fechas "Desde" y "Hasta"', funcion: tc005, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Busca por número exacto', funcion: tc006, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Usa opción "Todos" en el select desplegable', funcion: tc007, prioridad: 'MEDIA' },
+        { numero: 8, nombre: 'TC008 - Buscar uno por uno por los campos del desplegable', funcion: tc008, prioridad: 'MEDIA' },
+        { numero: 9, nombre: 'TC009 - Ordenar por "Código" ascendente y descendente', funcion: tc009, prioridad: 'MEDIA' },
+        { numero: 10, nombre: 'TC010 - Ordenar por "Número"', funcion: tc010, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Ordenar por "Solicitud" (fecha)', funcion: tc011, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Ordenar por "Título" alfabéticamente', funcion: tc012, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Seleccionar una fila individual', funcion: tc013, prioridad: 'ALTA' },
+        { numero: 14, nombre: 'TC014 - Hacer clic en el menú de columna (3 puntos)', funcion: tc014, prioridad: 'BAJA' },
+        { numero: 15, nombre: 'TC015 - Usar "Sort by ASC" desde el menú', funcion: tc015, prioridad: 'BAJA' },
+        { numero: 16, nombre: 'TC016 - Usar "Sort by DESC"', funcion: tc016, prioridad: 'BAJA' },
+        { numero: 17, nombre: 'TC017 - Usar "Filter" desde el menú', funcion: tc017, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Ocultar columna con "Hide Column"', funcion: tc018, prioridad: 'BAJA' },
+        { numero: 19, nombre: 'TC019 - Mostrar columnas con "Manage Columns"', funcion: tc019, prioridad: 'BAJA' },
+        { numero: 20, nombre: 'TC020 - Buscar un número que no existe', funcion: tc020, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Introducir símbolos raros en búsqueda', funcion: tc021, prioridad: 'BAJA' },
+        { numero: 22, nombre: 'TC022 - Aplicar filtro por fecha mal formateada', funcion: tc022, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - Pulsar "+ Añadir"', funcion: tc023, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Pulsar "Editar" con un registro seleccionado', funcion: tc024, prioridad: 'ALTA' },
+        { numero: 25, nombre: 'TC025 - Pulsar "Eliminar" con uno o varios seleccionados', funcion: tc025, prioridad: 'ALTA' },
+        { numero: 26, nombre: 'TC026 - Pulsar "Editar" sin seleccionar ningún registro', funcion: tc026, prioridad: 'MEDIA' },
+        { numero: 27, nombre: 'TC027 - Pulsar "Eliminar" sin seleccionar ningún registro', funcion: tc027, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Recargar la página con filtros activos', funcion: tc028, prioridad: 'MEDIA' },
+        { numero: 29, nombre: 'TC029 - Cambiar idioma a Inglés', funcion: tc029, prioridad: 'BAJA' },
+        { numero: 30, nombre: 'TC030 - Cambiar idioma a Catalán', funcion: tc030, prioridad: 'BAJA' },
+        { numero: 31, nombre: 'TC031 - Cambiar idioma a Español', funcion: tc031, prioridad: 'BAJA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -41,8 +41,14 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

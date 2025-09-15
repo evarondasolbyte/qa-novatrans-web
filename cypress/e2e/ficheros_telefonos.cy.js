@@ -2,38 +2,38 @@ describe('FICHEROS - TELÉFONOS - Validación completa con gestión de errores y
   const archivo = 'reportes_pruebas_novatrans.xlsx';
 
   const casos = [
-    { numero: 1,  nombre: 'TC001 - Cargar la pantalla de "Teléfonos" correctamente', funcion: TC001 },
-    { numero: 2,  nombre: 'TC002 - Ordenar por "Número" ascendente', funcion: TC002 },
-    { numero: 3,  nombre: 'TC003 - Ordenar por "Número" descendente', funcion: TC003 },
-    { numero: 4,  nombre: 'TC004 - Ordenar por "Modelo" ascendente', funcion: TC004 },
-    { numero: 5,  nombre: 'TC005 - Ordenar por "Modelo" descendente', funcion: TC005 },
-    { numero: 6,  nombre: 'TC006 - Ordenar por "Poseedor" ascendente', funcion: TC006 },
-    { numero: 7,  nombre: 'TC007 - Ordenar por "Poseedor" descendente', funcion: TC007 },
-    { numero: 8,  nombre: 'TC008 - Ordenar por "Extensión" ascendente', funcion: TC008 },
-    { numero: 9,  nombre: 'TC009 - Ordenar por "Extensión" descendente', funcion: TC009 },
-    { numero: 10, nombre: 'TC010 - Filtrar por "Número"', funcion: TC010 },
-    { numero: 11, nombre: 'TC011 - Filtrar por "Modelo"', funcion: TC011 },
-    { numero: 12, nombre: 'TC012 - Filtrar por "Poseedor"', funcion: TC012 },
-    { numero: 13, nombre: 'TC013 - Filtrar por "Activo"', funcion: TC013 },
-    { numero: 14, nombre: 'TC014 - Filtrar por "Extensión" exacta', funcion: TC014 },
-    { numero: 15, nombre: 'TC015 - Filtrar un Modelo por campo "Value" (menú columna)', funcion: TC015 },
-    { numero: 16, nombre: 'TC016 - Buscar texto en mayúsculas/minúsculas alternadas', funcion: TC016 },
-    { numero: 17, nombre: 'TC017 - Buscar caracteres especiales', funcion: TC017 },
-    { numero: 18, nombre: 'TC018 - Buscar texto sin coincidencias', funcion: TC018 },
-    { numero: 19, nombre: 'TC019 - Limpiar el filtro y mostrar todos los registros', funcion: TC019 },
-    { numero: 20, nombre: 'TC020 - Seleccionar un teléfono individual', funcion: TC020 },
-    { numero: 21, nombre: 'TC021 - Botón "Editar" sin selección', funcion: TC021 },
-    { numero: 22, nombre: 'TC022 - Botón "Editar" con un teléfono seleccionado', funcion: TC022 },
-    { numero: 23, nombre: 'TC023 - Botón "Eliminar" sin selección', funcion: TC023 },
-    { numero: 24, nombre: 'TC024 - Botón "Eliminar" con uno o varios seleccionado', funcion: TC024 },
-    { numero: 25, nombre: 'TC025 - Botón "+ Añadir" abre formulario', funcion: TC025 },
-    { numero: 26, nombre: 'TC026 - Ocultar columna desde el menú contextual', funcion: TC026 },
-    { numero: 27, nombre: 'TC027 - Mostrar/ocultar columnas desde "Manage columns"', funcion: TC027 },
-    { numero: 28, nombre: 'TC028 - Scroll vertical', funcion: TC028 },
-    { numero: 29, nombre: 'TC029 - Cambio de idioma a "Inglés"', funcion: TC029 },
-    { numero: 30, nombre: 'TC030 - Cambio de idioma a "Catalán"', funcion: TC030 },
-    { numero: 31, nombre: 'TC031 - Cambio de idioma a "Español"', funcion: TC031 },
-    { numero: 32, nombre: 'TC032 - Recargar la página con filtros aplicados', funcion: TC032 },
+    { numero: 1,  nombre: 'TC001 - Cargar la pantalla de "Teléfonos" correctamente', funcion: TC001, prioridad: 'ALTA' },
+    { numero: 2,  nombre: 'TC002 - Ordenar por "Número" ascendente', funcion: TC002, prioridad: 'MEDIA' },
+    { numero: 3,  nombre: 'TC003 - Ordenar por "Número" descendente', funcion: TC003, prioridad: 'MEDIA' },
+    { numero: 4,  nombre: 'TC004 - Ordenar por "Modelo" ascendente', funcion: TC004, prioridad: 'MEDIA' },
+    { numero: 5,  nombre: 'TC005 - Ordenar por "Modelo" descendente', funcion: TC005, prioridad: 'MEDIA' },
+    { numero: 6,  nombre: 'TC006 - Ordenar por "Poseedor" ascendente', funcion: TC006, prioridad: 'MEDIA' },
+    { numero: 7,  nombre: 'TC007 - Ordenar por "Poseedor" descendente', funcion: TC007, prioridad: 'MEDIA' },
+    { numero: 8,  nombre: 'TC008 - Ordenar por "Extensión" ascendente', funcion: TC008, prioridad: 'MEDIA' },
+    { numero: 9,  nombre: 'TC009 - Ordenar por "Extensión" descendente', funcion: TC009, prioridad: 'MEDIA' },
+    { numero: 10, nombre: 'TC010 - Filtrar por "Número"', funcion: TC010, prioridad: 'ALTA' },
+    { numero: 11, nombre: 'TC011 - Filtrar por "Modelo"', funcion: TC011, prioridad: 'ALTA' },
+    { numero: 12, nombre: 'TC012 - Filtrar por "Poseedor"', funcion: TC012, prioridad: 'ALTA' },
+    { numero: 13, nombre: 'TC013 - Filtrar por "Activo"', funcion: TC013, prioridad: 'ALTA' },
+    { numero: 14, nombre: 'TC014 - Filtrar por "Extensión" exacta', funcion: TC014, prioridad: 'MEDIA' },
+    { numero: 15, nombre: 'TC015 - Filtrar un Modelo por campo "Value" (menú columna)', funcion: TC015, prioridad: 'MEDIA' },
+    { numero: 16, nombre: 'TC016 - Buscar texto en mayúsculas/minúsculas alternadas', funcion: TC016, prioridad: 'MEDIA' },
+    { numero: 17, nombre: 'TC017 - Buscar caracteres especiales', funcion: TC017, prioridad: 'BAJA' },
+    { numero: 18, nombre: 'TC018 - Buscar texto sin coincidencias', funcion: TC018, prioridad: 'MEDIA' },
+    { numero: 19, nombre: 'TC019 - Limpiar el filtro y mostrar todos los registros', funcion: TC019, prioridad: 'MEDIA' },
+    { numero: 20, nombre: 'TC020 - Seleccionar un teléfono individual', funcion: TC020, prioridad: 'ALTA' },
+    { numero: 21, nombre: 'TC021 - Botón "Editar" sin selección', funcion: TC021, prioridad: 'MEDIA' },
+    { numero: 22, nombre: 'TC022 - Botón "Editar" con un teléfono seleccionado', funcion: TC022, prioridad: 'ALTA' },
+    { numero: 23, nombre: 'TC023 - Botón "Eliminar" sin selección', funcion: TC023, prioridad: 'MEDIA' },
+    { numero: 24, nombre: 'TC024 - Botón "Eliminar" con uno o varios seleccionado', funcion: TC024, prioridad: 'ALTA' },
+    { numero: 25, nombre: 'TC025 - Botón "+ Añadir" abre formulario', funcion: TC025, prioridad: 'ALTA' },
+    { numero: 26, nombre: 'TC026 - Ocultar columna desde el menú contextual', funcion: TC026, prioridad: 'BAJA' },
+    { numero: 27, nombre: 'TC027 - Mostrar/ocultar columnas desde "Manage columns"', funcion: TC027, prioridad: 'BAJA' },
+    { numero: 28, nombre: 'TC028 - Scroll vertical', funcion: TC028, prioridad: 'BAJA' },
+    { numero: 29, nombre: 'TC029 - Cambio de idioma a "Inglés"', funcion: TC029, prioridad: 'BAJA' },
+    { numero: 30, nombre: 'TC030 - Cambio de idioma a "Catalán"', funcion: TC030, prioridad: 'BAJA' },
+    { numero: 31, nombre: 'TC031 - Cambio de idioma a "Español"', funcion: TC031, prioridad: 'BAJA' },
+    { numero: 32, nombre: 'TC032 - Recargar la página con filtros aplicados', funcion: TC032, prioridad: 'MEDIA' },
   ];
 
   // Resumen final
@@ -42,8 +42,14 @@ describe('FICHEROS - TELÉFONOS - Validación completa con gestión de errores y
   });
 
   // Iterador de casos con el mismo patrón que "Otros Gastos"
-  casos.forEach(({ numero, nombre, funcion }) => {
-    it(nombre, () => {
+  // Filtrar casos por prioridad si se especifica
+  const prioridadFiltro = Cypress.env('prioridad');
+  const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+    ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+    : casos;
+
+  casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+    it(`${nombre} [${prioridad}]`, () => {
       // ✅ usar el helper que sí existe
       cy.resetearFlagsTest();
 

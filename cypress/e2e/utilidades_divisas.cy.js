@@ -3,25 +3,25 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
 
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantallaDivisas },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Crear divisa correctamente', funcion: crearDivisaCorrectamente },
-        { numero: 6, nombre: 'TC006 - Validar campo obligatorio "Valor" vacío', funcion: validarValorVacio },
-        { numero: 7, nombre: 'TC007 - Validar campo "Valor" con caracteres no numéricos', funcion: validarValorNoNumerico },
-        { numero: 8, nombre: 'TC008 - Crear varios registros de la misma divisa en fechas distintas', funcion: crearVariosRegistros },
-        { numero: 9, nombre: 'TC009 - Eliminar divisa correctamente', funcion: eliminarDivisaCorrectamente },
-        { numero: 10, nombre: 'TC010 - Eliminar sin selección', funcion: eliminarSinSeleccion },
-        { numero: 11, nombre: 'TC011 - Crear divisa con valor decimal', funcion: crearDivisaDecimal },
-        { numero: 12, nombre: 'TC012 - Validar que la fecha es obligatoria', funcion: validarFechaObligatoria },
-        { numero: 13, nombre: 'TC013 - Scroll vertical/horizontal en tabla', funcion: scrollTabla },
-        { numero: 14, nombre: 'TC014 - Reinicio de la pantalla (recarga)', funcion: reinicioPantalla },
-        { numero: 15, nombre: 'TC015 - Ordenar ASC/DESC Inicio', funcion: ordenarInicioAscDesc },
-        { numero: 17, nombre: 'TC017 - Ordenar ASC/DESC Valor Euros', funcion: ordenarValorEurosAscDesc },
-        { numero: 18, nombre: 'TC018 - Filtrar por Value', funcion: filtrarPorValue },
-        { numero: 19, nombre: 'TC019 - Ocultar columna', funcion: ocultarColumna },
-        { numero: 20, nombre: 'TC020 - Mostrar columna', funcion: mostrarColumna },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantallaDivisas, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Crear divisa correctamente', funcion: crearDivisaCorrectamente, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Validar campo obligatorio "Valor" vacío', funcion: validarValorVacio, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Validar campo "Valor" con caracteres no numéricos', funcion: validarValorNoNumerico, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Crear varios registros de la misma divisa en fechas distintas', funcion: crearVariosRegistros, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Eliminar divisa correctamente', funcion: eliminarDivisaCorrectamente, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Crear divisa con valor decimal', funcion: crearDivisaDecimal, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Validar que la fecha es obligatoria', funcion: validarFechaObligatoria, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Scroll vertical/horizontal en tabla', funcion: scrollTabla, prioridad: 'BAJA' },
+        { numero: 14, nombre: 'TC014 - Reinicio de la pantalla (recarga)', funcion: reinicioPantalla, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Ordenar ASC/DESC Inicio', funcion: ordenarInicioAscDesc, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Ordenar ASC/DESC Valor Euros', funcion: ordenarValorEurosAscDesc, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Filtrar por Value', funcion: filtrarPorValue, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Ocultar columna', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 20, nombre: 'TC020 - Mostrar columna', funcion: mostrarColumna, prioridad: 'BAJA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -30,8 +30,14 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

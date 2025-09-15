@@ -2,34 +2,34 @@ describe('UTILIDADES (AUDITORÍAS) - Validación completa con gestión de errore
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Acceder a la pantalla correctamente', funcion: accederPantalla },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Tabla Afectada', funcion: filtrarPorTablaAfectada },
-        { numero: 6, nombre: 'TC006 - Filtrar por Acción Realizada', funcion: filtrarPorAccionRealizada },
-        { numero: 7, nombre: 'TC007 - Filtrar por Registro Afectado', funcion: filtrarPorRegistroAfectado },
-        { numero: 8, nombre: 'TC008 - Filtrar por Usuario', funcion: filtrarPorUsuario },
-        { numero: 9, nombre: 'TC009 - Filtrar por Fecha', funcion: filtrarPorFecha },
-        { numero: 10, nombre: 'TC010 - Filtrar por Fecha (Desde – Hasta)', funcion: filtrarPorFechaDesdeHasta },
-        { numero: 11, nombre: 'TC011 - Búsqueda general (texto exacto)', funcion: busquedaTextoExacto },
-        { numero: 12, nombre: 'TC012 - Búsqueda general (texto parcial)', funcion: busquedaTextoParcial },
-        { numero: 13, nombre: 'TC013 - Búsqueda case-insensitive', funcion: busquedaCaseInsensitive },
-        { numero: 14, nombre: 'TC014 - Búsqueda con espacios', funcion: busquedaConEspacios },
-        { numero: 15, nombre: 'TC015 - Búsqueda con caracteres especiales', funcion: busquedaCaracteresEspeciales },
-        { numero: 16, nombre: 'TC016 - Ordenar por Acción Realizada ASC/DESC', funcion: ordenarPorAccionRealizada },
-        { numero: 17, nombre: 'TC017 - Ordenar por Tabla Afectada ASC/DESC', funcion: ordenarPorTablaAfectada },
-        { numero: 18, nombre: 'TC018 - Ordenar por Registro Afectado ASC/DESC', funcion: ordenarPorRegistroAfectado },
-        { numero: 19, nombre: 'TC019 - Ordenar por Usuario ASC/DESC', funcion: ordenarPorUsuario },
-        { numero: 20, nombre: 'TC020 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha },
-        { numero: 21, nombre: 'TC021 - Filter → Value en columna Usuario', funcion: filterValueEnColumnaUsuario },
-        { numero: 22, nombre: 'TC022 - Ocultar columna (Hide column)', funcion: ocultarColumna },
-        { numero: 23, nombre: 'TC023 - Mostrar/Ocultar columnas (Manage)', funcion: mostrarOcultarColumnas },
-        { numero: 24, nombre: 'TC024 - Scroll horizontal y vertical', funcion: scrollHorizontalVertical },
-        { numero: 25, nombre: 'TC025 - Reset de filtros al recargar página', funcion: resetFiltrosRecargar },
-        { numero: 26, nombre: 'TC026 - Seleccionar fila', funcion: seleccionarFila },
-        { numero: 27, nombre: 'TC027 - Seleccionar Tabla', funcion: seleccionarTabla },
-        { numero: 28, nombre: 'TC028 - Seleccionar Usuario', funcion: seleccionarUsuario },
+        { numero: 1, nombre: 'TC001 - Acceder a la pantalla correctamente', funcion: accederPantalla, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Tabla Afectada', funcion: filtrarPorTablaAfectada, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por Acción Realizada', funcion: filtrarPorAccionRealizada, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por Registro Afectado', funcion: filtrarPorRegistroAfectado, prioridad: 'MEDIA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por Usuario', funcion: filtrarPorUsuario, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por Fecha', funcion: filtrarPorFecha, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por Fecha (Desde – Hasta)', funcion: filtrarPorFechaDesdeHasta, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Búsqueda general (texto exacto)', funcion: busquedaTextoExacto, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Búsqueda general (texto parcial)', funcion: busquedaTextoParcial, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Búsqueda case-insensitive', funcion: busquedaCaseInsensitive, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Búsqueda con espacios', funcion: busquedaConEspacios, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Búsqueda con caracteres especiales', funcion: busquedaCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 16, nombre: 'TC016 - Ordenar por Acción Realizada ASC/DESC', funcion: ordenarPorAccionRealizada, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Ordenar por Tabla Afectada ASC/DESC', funcion: ordenarPorTablaAfectada, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Ordenar por Registro Afectado ASC/DESC', funcion: ordenarPorRegistroAfectado, prioridad: 'BAJA' },
+        { numero: 19, nombre: 'TC019 - Ordenar por Usuario ASC/DESC', funcion: ordenarPorUsuario, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Filter → Value en columna Usuario', funcion: filterValueEnColumnaUsuario, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Ocultar columna (Hide column)', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 23, nombre: 'TC023 - Mostrar/Ocultar columnas (Manage)', funcion: mostrarOcultarColumnas, prioridad: 'BAJA' },
+        { numero: 24, nombre: 'TC024 - Scroll horizontal y vertical', funcion: scrollHorizontalVertical, prioridad: 'BAJA' },
+        { numero: 25, nombre: 'TC025 - Reset de filtros al recargar página', funcion: resetFiltrosRecargar, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Seleccionar fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 27, nombre: 'TC027 - Seleccionar Tabla', funcion: seleccionarTabla, prioridad: 'ALTA' },
+        { numero: 28, nombre: 'TC028 - Seleccionar Usuario', funcion: seleccionarUsuario, prioridad: 'ALTA' },
     ];
 
     // Resumen al final
@@ -38,9 +38,15 @@ describe('UTILIDADES (AUDITORÍAS) - Validación completa con gestión de errore
         cy.procesarResultadosPantalla('Utilidades (Auditorías)');
     });
 
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

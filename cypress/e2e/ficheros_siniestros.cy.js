@@ -2,35 +2,35 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Ver lista de siniestros al acceder a la pantalla', funcion: verListaSiniestros },
-        { numero: 2, nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta', funcion: filtrarPorIDExacto },
-        { numero: 3, nombre: 'TC003 - Filtrar por "Tipo"', funcion: filtrarPorTipo },
-        { numero: 4, nombre: 'TC004 - Filtrar por "Ubicación" con coincidencia parcial', funcion: filtrarPorUbicacion },
-        { numero: 5, nombre: 'TC005 - Filtrar por "Matrícula"', funcion: filtrarPorMatricula },
-        { numero: 6, nombre: 'TC006 - Filtrar por "Conductor"', funcion: filtrarPorConductor },
-        { numero: 7, nombre: 'TC007 - Filtrar por "Coste de reparación" exacto', funcion: filtrarPorCosteReparacion },
-        { numero: 8, nombre: 'TC008 - Filtrar por "Responsable"', funcion: filtrarPorResponsable },
-        { numero: 11, nombre: 'TC011 - Limpiar filtros y mostrar todos los siniestros', funcion: limpiarFiltros },
-        { numero: 12, nombre: 'TC012 - Filtrar siniestros con texto sin coincidencias', funcion: filtroSinResultados },
-        { numero: 13, nombre: 'TC013 - Ingresar rango de fechas válido en "Desde" y "Hasta"', funcion: filtrarPorRangoFechas },
-        { numero: 14, nombre: 'TC014 - Ingresar solo fecha "Desde"', funcion: filtrarPorFechaDesde },
-        { numero: 15, nombre: 'TC015 - Ingresar solo fecha "Hasta"', funcion: filtrarPorFechaHasta },
-        { numero: 16, nombre: 'TC016 - Ingresar Fecha Desde mayor que Fecha Hasta', funcion: fechasInvalidas },
-        { numero: 17, nombre: 'TC017 - Ordenar por Fecha ascendente en siniestros', funcion: ordenarFechaAsc },
-        { numero: 18, nombre: 'TC018 - Ordenar por Fecha descendente en siniestros', funcion: ordenarFechaDesc },
-        { numero: 19, nombre: 'TC019 - Ordenar por "Coste de reparación" ascendente', funcion: ordenarCosteReparacionAsc },
-        { numero: 20, nombre: 'TC020 - Ordenar por "Coste de reparación" descendente', funcion: ordenarCosteReparacionDesc },
-        { numero: 21, nombre: 'TC021 - Seleccionar una fila individual en siniestros', funcion: seleccionarFila },
-        { numero: 22, nombre: 'TC022 - Botón "Editar" no visible sin selección', funcion: editarSinSeleccion },
-        { numero: 23, nombre: 'TC023 - "Editar" con una fila seleccionada', funcion: editarConSeleccion },
-        { numero: 24, nombre: 'TC024 - Pulsar "Eliminar" sin seleccionar fila', funcion: eliminarSinSeleccion },
-        { numero: 26, nombre: 'TC026 - Añadir siniestro y abrir formulario', funcion: abrirFormularioAlta },
-        { numero: 27, nombre: 'TC027 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 28, nombre: 'TC028 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 29, nombre: 'TC029 - Scroll vertical sin perder cabecera', funcion: scrollCabecera },
-        { numero: 30, nombre: 'TC030 - Filtro por ID y orden DESC', funcion: filtroYOrdenID },
-        { numero: 31, nombre: 'TC031 - Recargar con filtros aplicados', funcion: recargaConFiltros },
-        { numero: 32, nombre: 'TC032 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol }
+        { numero: 1, nombre: 'TC001 - Ver lista de siniestros al acceder a la pantalla', funcion: verListaSiniestros, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Filtrar por "ID" con coincidencia exacta', funcion: filtrarPorIDExacto, prioridad: 'ALTA' },
+        { numero: 3, nombre: 'TC003 - Filtrar por "Tipo"', funcion: filtrarPorTipo, prioridad: 'ALTA' },
+        { numero: 4, nombre: 'TC004 - Filtrar por "Ubicación" con coincidencia parcial', funcion: filtrarPorUbicacion, prioridad: 'ALTA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por "Matrícula"', funcion: filtrarPorMatricula, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por "Conductor"', funcion: filtrarPorConductor, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por "Coste de reparación" exacto', funcion: filtrarPorCosteReparacion, prioridad: 'MEDIA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por "Responsable"', funcion: filtrarPorResponsable, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Limpiar filtros y mostrar todos los siniestros', funcion: limpiarFiltros, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Filtrar siniestros con texto sin coincidencias', funcion: filtroSinResultados, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Ingresar rango de fechas válido en "Desde" y "Hasta"', funcion: filtrarPorRangoFechas, prioridad: 'ALTA' },
+        { numero: 14, nombre: 'TC014 - Ingresar solo fecha "Desde"', funcion: filtrarPorFechaDesde, prioridad: 'ALTA' },
+        { numero: 15, nombre: 'TC015 - Ingresar solo fecha "Hasta"', funcion: filtrarPorFechaHasta, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Ingresar Fecha Desde mayor que Fecha Hasta', funcion: fechasInvalidas, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Ordenar por Fecha ascendente en siniestros', funcion: ordenarFechaAsc, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Ordenar por Fecha descendente en siniestros', funcion: ordenarFechaDesc, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Ordenar por "Coste de reparación" ascendente', funcion: ordenarCosteReparacionAsc, prioridad: 'BAJA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por "Coste de reparación" descendente', funcion: ordenarCosteReparacionDesc, prioridad: 'BAJA' },
+        { numero: 21, nombre: 'TC021 - Seleccionar una fila individual en siniestros', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 22, nombre: 'TC022 - Botón "Editar" no visible sin selección', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - "Editar" con una fila seleccionada', funcion: editarConSeleccion, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Pulsar "Eliminar" sin seleccionar fila', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Añadir siniestro y abrir formulario', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
+        { numero: 27, nombre: 'TC027 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 28, nombre: 'TC028 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 29, nombre: 'TC029 - Scroll vertical sin perder cabecera', funcion: scrollCabecera, prioridad: 'BAJA' },
+        { numero: 30, nombre: 'TC030 - Filtro por ID y orden DESC', funcion: filtroYOrdenID, prioridad: 'MEDIA' },
+        { numero: 31, nombre: 'TC031 - Recargar con filtros aplicados', funcion: recargaConFiltros, prioridad: 'MEDIA' },
+        { numero: 32, nombre: 'TC032 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' }
     ];
 
     // Resumen al final
@@ -38,9 +38,15 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
         cy.procesarResultadosPantalla('Ficheros (Siniestros)');
     });
 
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
     // Iterador con protección anti doble registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test
             cy.resetearFlagsTest();
 

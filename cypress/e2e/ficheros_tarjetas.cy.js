@@ -3,32 +3,32 @@ describe('TARJETAS - Validación completa con gestión de errores y reporte a Ex
 
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla de tarjetas correctamente', funcion: cargarPantallaTarjetas },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por columna "Código"', funcion: filtrarPorCodigo },
-        { numero: 6, nombre: 'TC006 - Filtrar por columna "Tipo"', funcion: filtrarPorTipo },
-        { numero: 7, nombre: 'TC007 - Filtrar por columna "Número"', funcion: filtrarPorNumero },
-        { numero: 8, nombre: 'TC008 - Buscar texto exacto en buscador general', funcion: buscarTextoExacto },
-        { numero: 9, nombre: 'TC009 - Buscar texto parcial en buscador general', funcion: buscarTextoParcial },
-        { numero: 10, nombre: 'TC010 - Buscar con mayúsculas y minúsculas combinadas', funcion: buscarAlternandoMayusculas },
-        { numero: 11, nombre: 'TC011 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios },
-        { numero: 12, nombre: 'TC012 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 13, nombre: 'TC013 - Ordenar por columna "Código" ASC/DESC', funcion: ordenarCodigo },
-        { numero: 14, nombre: 'TC014 - Ordenar por columna "Número" ASC/DESC', funcion: ordenarNumero },
-        { numero: 15, nombre: 'TC015 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 16, nombre: 'TC016 - Botón "Editar" con una fila seleccionada', funcion: editarTarjeta },
-        { numero: 17, nombre: 'TC017 - Botón "Editar" sin fila seleccionada', funcion: editarSinSeleccion },
-        { numero: 18, nombre: 'TC018 - Botón "Eliminar" con una fila seleccionada', funcion: eliminarTarjeta },
-        { numero: 19, nombre: 'TC019 - Botón "Eliminar" sin fila seleccionada', funcion: eliminarSinSeleccion },
-        { numero: 20, nombre: 'TC020 - Botón "+ Añadir" abre formulario nuevo', funcion: abrirFormularioAlta },
-        { numero: 21, nombre: 'TC021 - Ocultar columna desde menú contextual', funcion: ocultarColumna },
-        { numero: 22, nombre: 'TC022 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas },
-        { numero: 23, nombre: 'TC023 - Scroll vertical en tabla', funcion: scrollVertical },
-        { numero: 24, nombre: 'TC024 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina },
-        { numero: 25, nombre: 'TC025 - Filtrar por fecha desde/hasta', funcion: filtrarPorFechaDesdeHasta },
-        { numero: 26, nombre: 'TC026 - Filtrar por "Value"', funcion: filtrarPorValue },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla de tarjetas correctamente', funcion: cargarPantallaTarjetas, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por columna "Código"', funcion: filtrarPorCodigo, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por columna "Tipo"', funcion: filtrarPorTipo, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por columna "Número"', funcion: filtrarPorNumero, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Buscar texto exacto en buscador general', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Buscar texto parcial en buscador general', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Buscar con mayúsculas y minúsculas combinadas', funcion: buscarAlternandoMayusculas, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 13, nombre: 'TC013 - Ordenar por columna "Código" ASC/DESC', funcion: ordenarCodigo, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Ordenar por columna "Número" ASC/DESC', funcion: ordenarNumero, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Botón "Editar" con una fila seleccionada', funcion: editarTarjeta, prioridad: 'ALTA' },
+        { numero: 17, nombre: 'TC017 - Botón "Editar" sin fila seleccionada', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Botón "Eliminar" con una fila seleccionada', funcion: eliminarTarjeta, prioridad: 'ALTA' },
+        { numero: 19, nombre: 'TC019 - Botón "Eliminar" sin fila seleccionada', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Botón "+ Añadir" abre formulario nuevo', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
+        { numero: 21, nombre: 'TC021 - Ocultar columna desde menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 22, nombre: 'TC022 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
+        { numero: 23, nombre: 'TC023 - Scroll vertical en tabla', funcion: scrollVertical, prioridad: 'BAJA' },
+        { numero: 24, nombre: 'TC024 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina, prioridad: 'MEDIA' },
+        { numero: 25, nombre: 'TC025 - Filtrar por fecha desde/hasta', funcion: filtrarPorFechaDesdeHasta, prioridad: 'ALTA' },
+        { numero: 26, nombre: 'TC026 - Filtrar por "Value"', funcion: filtrarPorValue, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -37,8 +37,14 @@ describe('TARJETAS - Validación completa con gestión de errores y reporte a Ex
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

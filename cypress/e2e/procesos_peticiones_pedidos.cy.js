@@ -3,47 +3,47 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
 
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantallaPeticionesPedidos },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Código', funcion: filtrarPorCodigo },
-        { numero: 6, nombre: 'TC006 - Filtrar por Cliente', funcion: filtrarPorCliente },
-        { numero: 7, nombre: 'TC007 - Filtrar por Fecha de entrada', funcion: filtrarPorFechaEntrada },
-        { numero: 8, nombre: 'TC008 - Filtrar por Fecha de salida', funcion: filtrarPorFechaSalida },
-        { numero: 9, nombre: 'TC009 - Filtrar por Origen', funcion: filtrarPorOrigen },
-        { numero: 10, nombre: 'TC010 - Filtrar por Destino', funcion: filtrarPorDestino },
-        { numero: 11, nombre: 'TC011 - Filtrar por Carga', funcion: filtrarPorCarga },
-        { numero: 12, nombre: 'TC012 - Filtrar por Unidades', funcion: filtrarPorUnidades },
-        { numero: 13, nombre: 'TC013 - Filtrar por Estado', funcion: filtrarPorEstado },
-        { numero: 14, nombre: 'TC014 - Filtrar por Notas (contenga)', funcion: filtrarPorNotas },
-        { numero: 15, nombre: 'TC015 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto },
-        { numero: 16, nombre: 'TC016 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial },
-        { numero: 17, nombre: 'TC017 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive },
-        { numero: 18, nombre: 'TC018 - Búsqueda con espacios', funcion: buscarConEspacios },
-        { numero: 19, nombre: 'TC019 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 20, nombre: 'TC020 - Ordenar por Código ASC/DESC', funcion: ordenarPorCodigo },
-        { numero: 21, nombre: 'TC021 - Ordenar por Fecha de entrada ASC/DESC', funcion: ordenarPorFechaEntrada },
-        { numero: 22, nombre: 'TC022 - Ordenar por Fecha de salida ASC/DESC', funcion: ordenarPorFechaSalida },
-        { numero: 23, nombre: 'TC023 - Ordenar por Origen ASC/DESC', funcion: ordenarPorOrigen },
-        { numero: 24, nombre: 'TC024 - Ordenar por Destino ASC/DESC', funcion: ordenarPorDestino },
-        { numero: 25, nombre: 'TC025 - Ordenar por Carga ASC/DESC', funcion: ordenarPorCarga },
-        { numero: 26, nombre: 'TC026 - Ordenar por Unidades ASC/DESC', funcion: ordenarPorUnidades },
-        { numero: 27, nombre: 'TC027 - Ordenar por Estado ASC/DESC', funcion: ordenarPorEstado },
-        { numero: 28, nombre: 'TC028 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 29, nombre: 'TC029 - Eliminar con fila seleccionada', funcion: eliminarConSeleccion },
-        { numero: 30, nombre: 'TC030 - Eliminar sin selección', funcion: eliminarSinSeleccion },
-        { numero: 31, nombre: 'TC031 - +Añadir abre formulario', funcion: abrirFormularioAlta },
-        { numero: 32, nombre: 'TC032 - Editar con fila seleccionada', funcion: editarConSeleccion },
-        { numero: 33, nombre: 'TC033 - Editar sin selección', funcion: editarSinSeleccion },
-        { numero: 34, nombre: 'TC034 - Fecha Desde (filtro superior)', funcion: filtrarFechaDesde },
-        { numero: 35, nombre: 'TC035 - Fecha Hasta (filtro superior)', funcion: filtrarFechaHasta },
-        { numero: 36, nombre: 'TC036 - Fecha Desde + Hasta (rango)', funcion: filtrarRangoFechas },
-        { numero: 37, nombre: 'TC037 - Filter → Value en columna', funcion: filtrarPorValue },
-        { numero: 38, nombre: 'TC038 - Ocultar columna desde menú contextual', funcion: ocultarColumna },
-        { numero: 39, nombre: 'TC039 - Manage columns (mostrar/ocultar)', funcion: gestionarColumnas },
-        { numero: 40, nombre: 'TC040 - Scroll vertical/horizontal', funcion: scrollTabla },
-        { numero: 41, nombre: 'TC041 - Reinicio de filtros al recargar', funcion: reinicioFiltros },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantallaPeticionesPedidos, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Código', funcion: filtrarPorCodigo, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por Cliente', funcion: filtrarPorCliente, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por Fecha de entrada', funcion: filtrarPorFechaEntrada, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por Fecha de salida', funcion: filtrarPorFechaSalida, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por Origen', funcion: filtrarPorOrigen, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por Destino', funcion: filtrarPorDestino, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Filtrar por Carga', funcion: filtrarPorCarga, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Filtrar por Unidades', funcion: filtrarPorUnidades, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Filtrar por Estado', funcion: filtrarPorEstado, prioridad: 'ALTA' },
+        { numero: 14, nombre: 'TC014 - Filtrar por Notas (contenga)', funcion: filtrarPorNotas, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 17, nombre: 'TC017 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Búsqueda con espacios', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por Código ASC/DESC', funcion: ordenarPorCodigo, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Ordenar por Fecha de entrada ASC/DESC', funcion: ordenarPorFechaEntrada, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Ordenar por Fecha de salida ASC/DESC', funcion: ordenarPorFechaSalida, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - Ordenar por Origen ASC/DESC', funcion: ordenarPorOrigen, prioridad: 'MEDIA' },
+        { numero: 24, nombre: 'TC024 - Ordenar por Destino ASC/DESC', funcion: ordenarPorDestino, prioridad: 'MEDIA' },
+        { numero: 25, nombre: 'TC025 - Ordenar por Carga ASC/DESC', funcion: ordenarPorCarga, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Ordenar por Unidades ASC/DESC', funcion: ordenarPorUnidades, prioridad: 'MEDIA' },
+        { numero: 27, nombre: 'TC027 - Ordenar por Estado ASC/DESC', funcion: ordenarPorEstado, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 29, nombre: 'TC029 - Eliminar con fila seleccionada', funcion: eliminarConSeleccion, prioridad: 'ALTA' },
+        { numero: 30, nombre: 'TC030 - Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 31, nombre: 'TC031 - +Añadir abre formulario', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
+        { numero: 32, nombre: 'TC032 - Editar con fila seleccionada', funcion: editarConSeleccion, prioridad: 'ALTA' },
+        { numero: 33, nombre: 'TC033 - Editar sin selección', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 34, nombre: 'TC034 - Fecha Desde (filtro superior)', funcion: filtrarFechaDesde, prioridad: 'ALTA' },
+        { numero: 35, nombre: 'TC035 - Fecha Hasta (filtro superior)', funcion: filtrarFechaHasta, prioridad: 'ALTA' },
+        { numero: 36, nombre: 'TC036 - Fecha Desde + Hasta (rango)', funcion: filtrarRangoFechas, prioridad: 'ALTA' },
+        { numero: 37, nombre: 'TC037 - Filter → Value en columna', funcion: filtrarPorValue, prioridad: 'MEDIA' },
+        { numero: 38, nombre: 'TC038 - Ocultar columna desde menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 39, nombre: 'TC039 - Manage columns (mostrar/ocultar)', funcion: gestionarColumnas, prioridad: 'BAJA' },
+        { numero: 40, nombre: 'TC040 - Scroll vertical/horizontal', funcion: scrollTabla, prioridad: 'BAJA' },
+        { numero: 41, nombre: 'TC041 - Reinicio de filtros al recargar', funcion: reinicioFiltros, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -51,8 +51,14 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
         cy.procesarResultadosPantalla('Procesos (Peticiones Pedidos)');
     });
 
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             cy.resetearFlagsTest();
             
             cy.on('fail', (err) => {

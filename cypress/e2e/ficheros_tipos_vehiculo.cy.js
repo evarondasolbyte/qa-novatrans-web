@@ -2,34 +2,34 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Ver lista de tipos de vehículo al acceder a la pantalla', funcion: TC001 },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: TC002 },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: TC003 },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: TC004 },
-        { numero: 5, nombre: 'TC005 - Filtrar por "Código"', funcion: TC005 },
-        { numero: 6, nombre: 'TC006 - Filtrar por "Nombre"', funcion: TC006 },
-        { numero: 7, nombre: 'TC007 - Filtrar por "Remolque"', funcion: TC007 },
-        { numero: 8, nombre: 'TC008 - Filtrar por "Rígido"', funcion: TC008 },
-        { numero: 9, nombre: 'TC009 - Filtrar por "Rígido + Remolque"', funcion: TC009 },
-        { numero: 10, nombre: 'TC010 - Filtrar por "Refrigerado"', funcion: TC010 },
-        { numero: 11, nombre: 'TC011 - Buscar por texto exacto en "Todos"', funcion: TC011 },
-        { numero: 12, nombre: 'TC012 - Buscar por texto parcial en "Todos"', funcion: TC012 },
-        { numero: 13, nombre: 'TC013 - Buscar alternando mayúsculas y minúsculas', funcion: TC013 },
-        { numero: 14, nombre: 'TC014 - Buscar con caracteres especiales', funcion: TC014 },
-        { numero: 15, nombre: 'TC015 - Ordenar columna "Código" ascendente y descendente', funcion: TC015 },
-        { numero: 16, nombre: 'TC016 - Ordenar columna "Nombre" ascendente y descendente', funcion: TC016 },
-        { numero: 17, nombre: 'TC017 - Seleccionar un tipo de vehículo individual', funcion: TC017 },
-        { numero: 18, nombre: 'TC018 - Intentar editar un tipo de vehículo con doble clic', funcion: TC018 },
-        { numero: 19, nombre: 'TC019 - Eliminar un tipo de vehículo si es posible y confirmar su desaparición', funcion: TC019 },
-        { numero: 20, nombre: 'TC020 - Botón "+ Añadir" abre el formulario de alta', funcion: TC020 },
-        { numero: 21, nombre: 'TC021 - Ocultar columna desde el menú contextual en Tipos de Vehículo', funcion: TC021 },
-        { numero: 22, nombre: 'TC022 - Ocultar y mostrar columna "Código" desde "Manage columns" en Tipos de Vehículo', funcion: TC022 },
-        { numero: 23, nombre: 'TC023 - Scroll vertical en Tipos de Vehículo', funcion: TC023 },
-        { numero: 24, nombre: 'TC024 - Búsqueda con espacios al inicio y al fin en Tipos de Vehículo', funcion: TC024 },
-        { numero: 25, nombre: 'TC025 - Búsqueda de nombres con acentos en Tipos de Vehículo', funcion: TC025 },
-        { numero: 26, nombre: 'TC026 - Botón "Eliminar" sin selección en Tipos de Vehículo', funcion: TC026 },
-        { numero: 27, nombre: 'TC027 - Botón "Editar" no visible sin selección en Tipos de Vehículo', funcion: TC027 },
-        { numero: 28, nombre: 'TC028 - Filtrar por campo "Value" en Tipos de Vehículo', funcion: TC028 },
+        { numero: 1, nombre: 'TC001 - Ver lista de tipos de vehículo al acceder a la pantalla', funcion: TC001, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: TC002, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: TC003, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: TC004, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por "Código"', funcion: TC005, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por "Nombre"', funcion: TC006, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por "Remolque"', funcion: TC007, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por "Rígido"', funcion: TC008, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por "Rígido + Remolque"', funcion: TC009, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por "Refrigerado"', funcion: TC010, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Buscar por texto exacto en "Todos"', funcion: TC011, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Buscar por texto parcial en "Todos"', funcion: TC012, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Buscar alternando mayúsculas y minúsculas', funcion: TC013, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Buscar con caracteres especiales', funcion: TC014, prioridad: 'BAJA' },
+        { numero: 15, nombre: 'TC015 - Ordenar columna "Código" ascendente y descendente', funcion: TC015, prioridad: 'MEDIA' },
+        { numero: 16, nombre: 'TC016 - Ordenar columna "Nombre" ascendente y descendente', funcion: TC016, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Seleccionar un tipo de vehículo individual', funcion: TC017, prioridad: 'ALTA' },
+        { numero: 18, nombre: 'TC018 - Intentar editar un tipo de vehículo con doble clic', funcion: TC018, prioridad: 'ALTA' },
+        { numero: 19, nombre: 'TC019 - Eliminar un tipo de vehículo si es posible y confirmar su desaparición', funcion: TC019, prioridad: 'ALTA' },
+        { numero: 20, nombre: 'TC020 - Botón "+ Añadir" abre el formulario de alta', funcion: TC020, prioridad: 'ALTA' },
+        { numero: 21, nombre: 'TC021 - Ocultar columna desde el menú contextual en Tipos de Vehículo', funcion: TC021, prioridad: 'BAJA' },
+        { numero: 22, nombre: 'TC022 - Ocultar y mostrar columna "Código" desde "Manage columns" en Tipos de Vehículo', funcion: TC022, prioridad: 'BAJA' },
+        { numero: 23, nombre: 'TC023 - Scroll vertical en Tipos de Vehículo', funcion: TC023, prioridad: 'BAJA' },
+        { numero: 24, nombre: 'TC024 - Búsqueda con espacios al inicio y al fin en Tipos de Vehículo', funcion: TC024, prioridad: 'MEDIA' },
+        { numero: 25, nombre: 'TC025 - Búsqueda de nombres con acentos en Tipos de Vehículo', funcion: TC025, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Botón "Eliminar" sin selección en Tipos de Vehículo', funcion: TC026, prioridad: 'MEDIA' },
+        { numero: 27, nombre: 'TC027 - Botón "Editar" no visible sin selección en Tipos de Vehículo', funcion: TC027, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Filtrar por campo "Value" en Tipos de Vehículo', funcion: TC028, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -38,8 +38,14 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

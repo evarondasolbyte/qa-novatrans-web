@@ -2,22 +2,22 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Acceder a la pantalla correctamente', funcion: accederPantalla },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Crear nuevo registro', funcion: crearNuevoRegistro },
-        { numero: 7, nombre: 'TC007 - Eliminar registro', funcion: eliminarRegistro },
-        { numero: 8, nombre: 'TC008 - Filtros aplicados', funcion: filtrosAplicados},
-        { numero: 9, nombre: 'TC009 - Cancelar acción', funcion: cancelarAccion},
-        { numero: 10, nombre: 'TC010 - Ordenar por Comunidad Autónoma ASC/DESC', funcion: ordenarPorComunidadAutonoma },
-        { numero: 11, nombre: 'TC011 - Ordenar por Fecha de Inicio ASC/DESC', funcion: ordenarPorFechaInicio },
-        { numero: 12, nombre: 'TC012 - Ordenar por Fecha de Fin ASC/DESC', funcion: ordenarPorFechaFin },
-        { numero: 13, nombre: 'TC013 - Ordenar por Porcentaje ASC/DESC', funcion: ordenarPorPorcentaje },
-        { numero: 14, nombre: 'TC014 - Filter → Value en columna Comunidad', funcion: filterValueEnColumnaComunidad },
-        { numero: 15, nombre: 'TC015 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 16, nombre: 'TC016 - Ocultar columna', funcion: ocultarColumna },
-        { numero: 17, nombre: 'TC017 - Mostrar columna', funcion: mostrarColumna },
+        { numero: 1, nombre: 'TC001 - Acceder a la pantalla correctamente', funcion: accederPantalla, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Crear nuevo registro', funcion: crearNuevoRegistro, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Eliminar registro', funcion: eliminarRegistro, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtros aplicados', funcion: filtrosAplicados, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Cancelar acción', funcion: cancelarAccion, prioridad: 'MEDIA' },
+        { numero: 10, nombre: 'TC010 - Ordenar por Comunidad Autónoma ASC/DESC', funcion: ordenarPorComunidadAutonoma, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Ordenar por Fecha de Inicio ASC/DESC', funcion: ordenarPorFechaInicio, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Ordenar por Fecha de Fin ASC/DESC', funcion: ordenarPorFechaFin, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Ordenar por Porcentaje ASC/DESC', funcion: ordenarPorPorcentaje, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Filter → Value en columna Comunidad', funcion: filterValueEnColumnaComunidad, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Ocultar columna', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 17, nombre: 'TC017 - Mostrar columna', funcion: mostrarColumna, prioridad: 'BAJA' },
     ];
 
     // Resumen al final
@@ -27,8 +27,14 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

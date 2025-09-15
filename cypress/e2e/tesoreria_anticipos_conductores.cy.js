@@ -2,39 +2,39 @@ describe('TESORERÍA (ANTICIPOS CONDUCTORES) - Validación completa con gestión
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Código', funcion: filtrarPorCodigo },
-        { numero: 6, nombre: 'TC006 - Filtrar por Conductor', funcion: filtrarPorConductor },
-        { numero: 7, nombre: 'TC007 - Filtrar por Fecha', funcion: filtrarPorFecha },
-        { numero: 8, nombre: 'TC008 - Filtrar por Importe', funcion: filtrarPorImporte },
-        { numero: 9, nombre: 'TC009 - Filtrar por Descripción', funcion: filtrarPorDescripcion },
-        { numero: 10, nombre: 'TC010 - Búsqueda general (texto exacto)', funcion: busquedaGeneralExacta },
-        { numero: 11, nombre: 'TC011 - Búsqueda general (texto parcial)', funcion: busquedaGeneralParcial },
-        { numero: 12, nombre: 'TC012 - Búsqueda case-insensitive', funcion: busquedaCaseInsensitive },
-        { numero: 13, nombre: 'TC013 - Búsqueda con espacios', funcion: busquedaConEspacios },
-        { numero: 14, nombre: 'TC014 - Búsqueda con caracteres especiales', funcion: busquedaConCaracteresEspeciales },
-        { numero: 15, nombre: 'TC015 - Ordenar por Código ASC/DESC', funcion: ordenarPorCodigo },
-        { numero: 16, nombre: 'TC016 - Ordenar por Conductor ASC/DESC', funcion: ordenarPorConductor },
-        { numero: 17, nombre: 'TC017 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha },
-        { numero: 18, nombre: 'TC018 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte },
-        { numero: 19, nombre: 'TC019 - Ordenar por Descripción ASC/DESC', funcion: ordenarPorDescripcion },
-        { numero: 20, nombre: 'TC020 - Ordenar por Saldado ASC/DESC', funcion: ordenarPorSaldado },
-        { numero: 21, nombre: 'TC021 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 22, nombre: 'TC022 - Eliminar con fila seleccionada', funcion: eliminarConFilaSeleccionada },
-        { numero: 23, nombre: 'TC023 - Eliminar sin selección', funcion: eliminarSinSeleccion },
-        { numero: 24, nombre: 'TC024 - Añadir abre formulario', funcion: abrirFormularioAñadir },
-        { numero: 25, nombre: 'TC025 - Editar con fila seleccionada', funcion: editarConFilaSeleccionada },
-        { numero: 26, nombre: 'TC026 - Editar sin selección', funcion: editarSinSeleccion },
-        { numero: 27, nombre: 'TC027 - Fecha inicio (filtro superior)', funcion: fechaInicioFiltro },
-        { numero: 28, nombre: 'TC028 - Fecha fin (filtro superior)', funcion: fechaFinFiltro },
-        { numero: 29, nombre: 'TC029 - Rango inicio + fin', funcion: rangoFechas },
-        { numero: 30, nombre: 'TC030 - Filter → Value en columna', funcion: filterValueEnColumna },
-        { numero: 31, nombre: 'TC031 - Ocultar columna (Hide column)', funcion: ocultarColumna },
-        { numero: 32, nombre: 'TC032 - Manage columns (mostrar/ocultar)', funcion: manageColumns },
-        { numero: 34, nombre: 'TC034 - Reset de filtros al recargar', funcion: resetFiltrosRecarga },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Código', funcion: filtrarPorCodigo, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por Conductor', funcion: filtrarPorConductor, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por Fecha', funcion: filtrarPorFecha, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por Importe', funcion: filtrarPorImporte, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por Descripción', funcion: filtrarPorDescripcion, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Búsqueda general (texto exacto)', funcion: busquedaGeneralExacta, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Búsqueda general (texto parcial)', funcion: busquedaGeneralParcial, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Búsqueda case-insensitive', funcion: busquedaCaseInsensitive, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Búsqueda con espacios', funcion: busquedaConEspacios, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Búsqueda con caracteres especiales', funcion: busquedaConCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 15, nombre: 'TC015 - Ordenar por Código ASC/DESC', funcion: ordenarPorCodigo, prioridad: 'MEDIA' },
+        { numero: 16, nombre: 'TC016 - Ordenar por Conductor ASC/DESC', funcion: ordenarPorConductor, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Ordenar por Descripción ASC/DESC', funcion: ordenarPorDescripcion, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por Saldado ASC/DESC', funcion: ordenarPorSaldado, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 22, nombre: 'TC022 - Eliminar con fila seleccionada', funcion: eliminarConFilaSeleccionada, prioridad: 'ALTA' },
+        { numero: 23, nombre: 'TC023 - Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 24, nombre: 'TC024 - Añadir abre formulario', funcion: abrirFormularioAñadir, prioridad: 'ALTA' },
+        { numero: 25, nombre: 'TC025 - Editar con fila seleccionada', funcion: editarConFilaSeleccionada, prioridad: 'ALTA' },
+        { numero: 26, nombre: 'TC026 - Editar sin selección', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 27, nombre: 'TC027 - Fecha inicio (filtro superior)', funcion: fechaInicioFiltro, prioridad: 'ALTA' },
+        { numero: 28, nombre: 'TC028 - Fecha fin (filtro superior)', funcion: fechaFinFiltro, prioridad: 'ALTA' },
+        { numero: 29, nombre: 'TC029 - Rango inicio + fin', funcion: rangoFechas, prioridad: 'ALTA' },
+        { numero: 30, nombre: 'TC030 - Filter → Value en columna', funcion: filterValueEnColumna, prioridad: 'MEDIA' },
+        { numero: 31, nombre: 'TC031 - Ocultar columna (Hide column)', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 32, nombre: 'TC032 - Manage columns (mostrar/ocultar)', funcion: manageColumns, prioridad: 'BAJA' },
+        { numero: 34, nombre: 'TC034 - Reset de filtros al recargar', funcion: resetFiltrosRecarga, prioridad: 'MEDIA' },
     ];
 
     // Resumen al final
@@ -44,8 +44,14 @@ describe('TESORERÍA (ANTICIPOS CONDUCTORES) - Validación completa con gestión
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

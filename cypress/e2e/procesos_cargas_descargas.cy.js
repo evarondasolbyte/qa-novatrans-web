@@ -2,38 +2,38 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Verificar que se muestran correctamente las órdenes de carga', funcion: tc001 },
-        { numero: 2, nombre: 'TC002 - Filtrar por campo "O.C." con coincidencia exacta', funcion: tc002 },
-        { numero: 3, nombre: 'TC003 - Filtrar por campo "Proveedor" con coincidencia parcial', funcion: tc003 },
-        { numero: 4, nombre: 'TC004 - Filtrar por campo "Lugar" sin coincidencias', funcion: tc004 },
-        { numero: 5, nombre: 'TC005 - Filtrar por campo "Ruta" sensible a mayúsculas', funcion: tc005 },
-        { numero: 6, nombre: 'TC006 - Ingresar caracteres especiales en el filtro de "Domicilio"', funcion: tc006 },
-        { numero: 7, nombre: 'TC007 - Aplicar filtro combinado: "Proveedor" + Fecha desde/hasta', funcion: tc007 },
-        { numero: 8, nombre: 'TC008 - Limpiar filtro y verificar recuperación de todos los datos', funcion: tc008 },
-        { numero: 9, nombre: 'TC009 - Ingresar Fecha Desde y Fechas Hasta válidas', funcion: tc009 },
-        { numero: 10, nombre: 'TC010 - Ingresar solo Fecha Desde', funcion: tc010 },
-        { numero: 11, nombre: 'TC011 - Ingresar solo Fecha Hasta', funcion: tc011 },
-        { numero: 12, nombre: 'TC012 - Ingresar Fecha Desde mayor que Fecha Hasta', funcion: tc012 },
-        { numero: 13, nombre: 'TC013 - Usar formato incorrecto en el campo de fecha', funcion: tc013 },
-        { numero: 14, nombre: 'TC014 - Ordenar columna "Fecha" ascendente', funcion: tc014 },
-        { numero: 15, nombre: 'TC015 - Ordenar columna "Fecha" descendente', funcion: tc015 },
-        { numero: 16, nombre: 'TC016 - Ordenar por columna "Proveedor" alfabéticamente en orden descendente', funcion: tc016 },
-        { numero: 17, nombre: 'TC017 - Ordenar columna "O.C." (número) ascendente', funcion: tc017 },
-        { numero: 18, nombre: 'TC018 - Aplicar orden y luego un filtro', funcion: tc018 },
-        { numero: 19, nombre: 'TC019 - Seleccionar una fila individual', funcion: tc019 },
-        { numero: 20, nombre: 'TC020 - Botón "Editar" sin selección', funcion: tc020 },
-        { numero: 21, nombre: 'TC021 - Botón "Editar" con una sola fila seleccionada', funcion: tc021 },
-        { numero: 22, nombre: 'TC022 - Botón "+ Añadir"', funcion: tc022 },
-        { numero: 23, nombre: 'TC023 - Scroll horizontal/vertical', funcion: tc023 },
-        { numero: 24, nombre: 'TC024 - Menú de columnas: Sort ASC/DESC', funcion: tc024 },
-        { numero: 25, nombre: 'TC025 - Menú de columna: Filter', funcion: tc025 },
-        { numero: 26, nombre: 'TC026 - Menú de columna: Hide column', funcion: tc026 },
-        { numero: 27, nombre: 'TC027 - Menú de columna: Manage columns', funcion: tc027 },
-        { numero: 28, nombre: 'TC028 - Cambiar idioma a Inglés', funcion: tc028 },
-        { numero: 29, nombre: 'TC029 - Cambiar idioma a Catalán', funcion: tc029 },
-        { numero: 30, nombre: 'TC030 - Cambiar idioma a Español', funcion: tc030 },
-        { numero: 31, nombre: 'TC031 - Eliminar con selección', funcion: tc031 },
-        { numero: 32, nombre: 'TC032 - Eliminar sin selección', funcion: tc032 },
+        { numero: 1, nombre: 'TC001 - Verificar que se muestran correctamente las órdenes de carga', funcion: tc001, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Filtrar por campo "O.C." con coincidencia exacta', funcion: tc002, prioridad: 'ALTA' },
+        { numero: 3, nombre: 'TC003 - Filtrar por campo "Proveedor" con coincidencia parcial', funcion: tc003, prioridad: 'ALTA' },
+        { numero: 4, nombre: 'TC004 - Filtrar por campo "Lugar" sin coincidencias', funcion: tc004, prioridad: 'MEDIA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por campo "Ruta" sensible a mayúsculas', funcion: tc005, prioridad: 'MEDIA' },
+        { numero: 6, nombre: 'TC006 - Ingresar caracteres especiales en el filtro de "Domicilio"', funcion: tc006, prioridad: 'BAJA' },
+        { numero: 7, nombre: 'TC007 - Aplicar filtro combinado: "Proveedor" + Fecha desde/hasta', funcion: tc007, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Limpiar filtro y verificar recuperación de todos los datos', funcion: tc008, prioridad: 'MEDIA' },
+        { numero: 9, nombre: 'TC009 - Ingresar Fecha Desde y Fechas Hasta válidas', funcion: tc009, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Ingresar solo Fecha Desde', funcion: tc010, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Ingresar solo Fecha Hasta', funcion: tc011, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Ingresar Fecha Desde mayor que Fecha Hasta', funcion: tc012, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Usar formato incorrecto en el campo de fecha', funcion: tc013, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Ordenar columna "Fecha" ascendente', funcion: tc014, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Ordenar columna "Fecha" descendente', funcion: tc015, prioridad: 'MEDIA' },
+        { numero: 16, nombre: 'TC016 - Ordenar por columna "Proveedor" alfabéticamente en orden descendente', funcion: tc016, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Ordenar columna "O.C." (número) ascendente', funcion: tc017, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Aplicar orden y luego un filtro', funcion: tc018, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Seleccionar una fila individual', funcion: tc019, prioridad: 'ALTA' },
+        { numero: 20, nombre: 'TC020 - Botón "Editar" sin selección', funcion: tc020, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Botón "Editar" con una sola fila seleccionada', funcion: tc021, prioridad: 'ALTA' },
+        { numero: 22, nombre: 'TC022 - Botón "+ Añadir"', funcion: tc022, prioridad: 'ALTA' },
+        { numero: 23, nombre: 'TC023 - Scroll horizontal/vertical', funcion: tc023, prioridad: 'BAJA' },
+        { numero: 24, nombre: 'TC024 - Menú de columnas: Sort ASC/DESC', funcion: tc024, prioridad: 'BAJA' },
+        { numero: 25, nombre: 'TC025 - Menú de columna: Filter', funcion: tc025, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Menú de columna: Hide column', funcion: tc026, prioridad: 'BAJA' },
+        { numero: 27, nombre: 'TC027 - Menú de columna: Manage columns', funcion: tc027, prioridad: 'BAJA' },
+        { numero: 28, nombre: 'TC028 - Cambiar idioma a Inglés', funcion: tc028, prioridad: 'BAJA' },
+        { numero: 29, nombre: 'TC029 - Cambiar idioma a Catalán', funcion: tc029, prioridad: 'BAJA' },
+        { numero: 30, nombre: 'TC030 - Cambiar idioma a Español', funcion: tc030, prioridad: 'BAJA' },
+        { numero: 31, nombre: 'TC031 - Eliminar con selección', funcion: tc031, prioridad: 'ALTA' },
+        { numero: 32, nombre: 'TC032 - Eliminar sin selección', funcion: tc032, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -50,8 +50,14 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

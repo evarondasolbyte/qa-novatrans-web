@@ -3,38 +3,38 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
 
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla de categorías de conductores correctamente', funcion: cargarPantallaCategorias },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "Código"', funcion: filtrarPorCodigo },
-        { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "Nombre"', funcion: filtrarPorNombre },
-        { numero: 7, nombre: 'TC007 - Aplicar filtro por "Conductor"', funcion: filtrarPorConductor },
-        { numero: 8, nombre: 'TC008 - Aplicar filtro por "Administrativo"', funcion: filtrarPorAdministrativo },
-        { numero: 9, nombre: 'TC009 - Aplicar filtro por "Mecánico"', funcion: filtrarPorMecanico },
-        { numero: 10, nombre: 'TC010 - Aplicar filtro por "Agente Comercial"', funcion: filtrarPorAgenteComercial },
-        { numero: 11, nombre: 'TC011 - Aplicar filtro por "Director Comercial"', funcion: filtrarPorDirectorComercial },
-        { numero: 12, nombre: 'TC012 - Aplicar filtro por "Comisionista"', funcion: filtrarPorComisionista },
-        { numero: 13, nombre: 'TC013 - Aplicar filtro por "Gestor de tráfico"', funcion: filtrarPorGestorTrafico },
-        { numero: 14, nombre: 'TC014 - Buscar por texto exacto', funcion: buscarTextoExacto },
-        { numero: 15, nombre: 'TC015 - Buscar por texto parcial', funcion: buscarTextoParcial },
-        { numero: 16, nombre: 'TC016 - Buscar alternando mayúsculas y minúsculas', funcion: buscarAlternandoMayusculas },
-        { numero: 17, nombre: 'TC017 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 18, nombre: 'TC018 - Ordenar columna "Código" ascendente/descendente', funcion: ordenarCodigo },
-        { numero: 19, nombre: 'TC019 - Ordenar columna "Nombre" ascendente/descendente', funcion: ordenarNombre },
-        { numero: 20, nombre: 'TC020 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 21, nombre: 'TC021 - Botón "Editar" con una fila seleccionada', funcion: editarCategoria },
-        { numero: 22, nombre: 'TC022 - Botón "Eliminar" con varias filas seleccionadas', funcion: eliminarConSeleccion },
-        { numero: 23, nombre: 'TC023 - Botón "+ Añadir" abre formulario de alta', funcion: abrirFormularioAlta },
-        { numero: 24, nombre: 'TC024 - Ocultar columna desde el menú contextual', funcion: ocultarColumna },
-        { numero: 25, nombre: 'TC025 - Gestionar visibilidad desde "Manage columns"', funcion: gestionarColumnas },
-        { numero: 26, nombre: 'TC026 - Scroll vertical', funcion: scrollVertical },
-        { numero: 27, nombre: 'TC027 - Búsqueda con espacios adicionales al inicio y al fin', funcion: buscarConEspacios },
-        { numero: 28, nombre: 'TC028 - Búsqueda de nombres con acentos', funcion: buscarConAcentos },
-        { numero: 29, nombre: 'TC029 - Botón "Eliminar" sin ninguna fila seleccionada', funcion: eliminarSinSeleccion },
-        { numero: 30, nombre: 'TC030 - Botón "Editar" sin ninguna fila seleccionada', funcion: editarSinSeleccion },
-        { numero: 31, nombre: 'TC031 - Filtrar por campo "Value"', funcion: filtrarPorValue },
-        { numero: 32, nombre: 'TC032 - Recargar la página y verificar que se borran los filtros', funcion: recargarPagina },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla de categorías de conductores correctamente', funcion: cargarPantallaCategorias, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "Código"', funcion: filtrarPorCodigo, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "Nombre"', funcion: filtrarPorNombre, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Aplicar filtro por "Conductor"', funcion: filtrarPorConductor, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Aplicar filtro por "Administrativo"', funcion: filtrarPorAdministrativo, prioridad: 'MEDIA' },
+        { numero: 9, nombre: 'TC009 - Aplicar filtro por "Mecánico"', funcion: filtrarPorMecanico, prioridad: 'MEDIA' },
+        { numero: 10, nombre: 'TC010 - Aplicar filtro por "Agente Comercial"', funcion: filtrarPorAgenteComercial, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Aplicar filtro por "Director Comercial"', funcion: filtrarPorDirectorComercial, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Aplicar filtro por "Comisionista"', funcion: filtrarPorComisionista, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Aplicar filtro por "Gestor de tráfico"', funcion: filtrarPorGestorTrafico, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Buscar por texto exacto', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 15, nombre: 'TC015 - Buscar por texto parcial', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Buscar alternando mayúsculas y minúsculas', funcion: buscarAlternandoMayusculas, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 18, nombre: 'TC018 - Ordenar columna "Código" ascendente/descendente', funcion: ordenarCodigo, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Ordenar columna "Nombre" ascendente/descendente', funcion: ordenarNombre, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 21, nombre: 'TC021 - Botón "Editar" con una fila seleccionada', funcion: editarCategoria, prioridad: 'ALTA' },
+        { numero: 22, nombre: 'TC022 - Botón "Eliminar" con varias filas seleccionadas', funcion: eliminarConSeleccion, prioridad: 'ALTA' },
+        { numero: 23, nombre: 'TC023 - Botón "+ Añadir" abre formulario de alta', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Ocultar columna desde el menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 25, nombre: 'TC025 - Gestionar visibilidad desde "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
+        { numero: 26, nombre: 'TC026 - Scroll vertical', funcion: scrollVertical, prioridad: 'BAJA' },
+        { numero: 27, nombre: 'TC027 - Búsqueda con espacios adicionales al inicio y al fin', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Búsqueda de nombres con acentos', funcion: buscarConAcentos, prioridad: 'MEDIA' },
+        { numero: 29, nombre: 'TC029 - Botón "Eliminar" sin ninguna fila seleccionada', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 30, nombre: 'TC030 - Botón "Editar" sin ninguna fila seleccionada', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 31, nombre: 'TC031 - Filtrar por campo "Value"', funcion: filtrarPorValue, prioridad: 'MEDIA' },
+        { numero: 32, nombre: 'TC032 - Recargar la página y verificar que se borran los filtros', funcion: recargarPagina, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -43,8 +43,14 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 
@@ -455,6 +461,7 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
                 return cy.wrap(true);
             });
         });
+
     }
 
     function recargarPagina() {

@@ -2,39 +2,39 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Fecha', funcion: filtrarPorFecha },
-        { numero: 6, nombre: 'TC006 - Filtrar por Código Parte Trabajo', funcion: filtrarPorCodigoParteTrabajo },
-        { numero: 7, nombre: 'TC007 - Filtrar por Tipo', funcion: filtrarPorTipo },
-        { numero: 8, nombre: 'TC008 - Filtrar por Motivo (contenga)', funcion: filtrarPorMotivo },
-        { numero: 9, nombre: 'TC009 - Filtrar por Vehículo', funcion: filtrarPorVehiculo },
-        { numero: 10, nombre: 'TC010 - Filtrar por Importe', funcion: filtrarPorImporte },
-        { numero: 11, nombre: 'TC011 - Filtrar por Nombre Proveedor', funcion: filtrarPorNombreProveedor },
-        { numero: 12, nombre: 'TC012 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto },
-        { numero: 13, nombre: 'TC013 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial },
-        { numero: 14, nombre: 'TC014 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive },
-        { numero: 15, nombre: 'TC015 - Búsqueda con espacios al inicio/fin', funcion: buscarConEspacios },
-        { numero: 16, nombre: 'TC016 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 17, nombre: 'TC017 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha },
-        { numero: 18, nombre: 'TC018 - Ordenar por Tipo ASC/DESC', funcion: ordenarPorTipo },
-        { numero: 19, nombre: 'TC019 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte },
-        { numero: 20, nombre: 'TC020 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 21, nombre: 'TC021 - Botón Eliminar con fila seleccionada', funcion: eliminarConSeleccion },
-        { numero: 22, nombre: 'TC022 - Botón Eliminar sin selección', funcion: eliminarSinSeleccion },
-        { numero: 23, nombre: 'TC023 - Botón + Añadir abre formulario', funcion: abrirFormulario },
-        { numero: 24, nombre: 'TC024 - Scroll vertical en tabla', funcion: scrollVertical },
-        { numero: 25, nombre: 'TC025 - Reinicio de filtros al recargar', funcion: reinicioFiltros },
-        { numero: 26, nombre: 'TC026 - Botón Editar con fila seleccionada', funcion: editarConSeleccion },
-        { numero: 27, nombre: 'TC027 - Botón Editar sin fila seleccionada', funcion: editarSinSeleccion },
-        { numero: 28, nombre: 'TC028 - Filtrar por Fecha Desde', funcion: filtrarPorFechaDesde },
-        { numero: 29, nombre: 'TC029 - Filtrar por Fecha Hasta', funcion: filtrarPorFechaHasta },
-        { numero: 30, nombre: 'TC030 - Filtrar por Fecha Desde + Hasta (rango completo)', funcion: filtrarPorRangoFechas },
-        { numero: 31, nombre: 'TC031 - Filtrar por "Value"', funcion: filtrarPorValue },
-        { numero: 32, nombre: 'TC032 - Ocultar columna desde menú contextual', funcion: ocultarColumna },
-        { numero: 33, nombre: 'TC033 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Fecha', funcion: filtrarPorFecha, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por Código Parte Trabajo', funcion: filtrarPorCodigoParteTrabajo, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por Tipo', funcion: filtrarPorTipo, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por Motivo (contenga)', funcion: filtrarPorMotivo, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por Vehículo', funcion: filtrarPorVehiculo, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por Importe', funcion: filtrarPorImporte, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Filtrar por Nombre Proveedor', funcion: filtrarPorNombreProveedor, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 14, nombre: 'TC014 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive, prioridad: 'MEDIA' },
+        { numero: 15, nombre: 'TC015 - Búsqueda con espacios al inicio/fin', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 16, nombre: 'TC016 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 17, nombre: 'TC017 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Ordenar por Tipo ASC/DESC', funcion: ordenarPorTipo, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 21, nombre: 'TC021 - Botón Eliminar con fila seleccionada', funcion: eliminarConSeleccion, prioridad: 'ALTA' },
+        { numero: 22, nombre: 'TC022 - Botón Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 23, nombre: 'TC023 - Botón + Añadir abre formulario', funcion: abrirFormulario, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Scroll vertical en tabla', funcion: scrollVertical, prioridad: 'BAJA' },
+        { numero: 25, nombre: 'TC025 - Reinicio de filtros al recargar', funcion: reinicioFiltros, prioridad: 'MEDIA' },
+        { numero: 26, nombre: 'TC026 - Botón Editar con fila seleccionada', funcion: editarConSeleccion, prioridad: 'ALTA' },
+        { numero: 27, nombre: 'TC027 - Botón Editar sin fila seleccionada', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Filtrar por Fecha Desde', funcion: filtrarPorFechaDesde, prioridad: 'ALTA' },
+        { numero: 29, nombre: 'TC029 - Filtrar por Fecha Hasta', funcion: filtrarPorFechaHasta, prioridad: 'ALTA' },
+        { numero: 30, nombre: 'TC030 - Filtrar por Fecha Desde + Hasta (rango completo)', funcion: filtrarPorRangoFechas, prioridad: 'ALTA' },
+        { numero: 31, nombre: 'TC031 - Filtrar por "Value"', funcion: filtrarPorValue, prioridad: 'MEDIA' },
+        { numero: 32, nombre: 'TC032 - Ocultar columna desde menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 33, nombre: 'TC033 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
     ];
 
     // Resumen al final
@@ -44,8 +44,14 @@ describe('TALLER Y GASTOS - OTROS GASTOS - Validación completa con gestión de 
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

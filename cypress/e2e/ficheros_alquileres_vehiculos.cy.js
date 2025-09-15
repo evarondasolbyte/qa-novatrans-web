@@ -1,38 +1,38 @@
 describe('ALQUILERES VEHÍCULOS - Validación completa con gestión de errores y reporte a Excel', () => {
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla de alquileres correctamente', funcion: cargarPantallaAlquileres },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "F. Alta"', funcion: filtrarPorFAlta },
-        { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "F. Baja"', funcion: filtrarPorFBaja },
-        { numero: 7, nombre: 'TC007 - Aplicar filtro por columna "Empresa"', funcion: filtrarPorEmpresa },
-        { numero: 8, nombre: 'TC008 - Aplicar filtro por columna "Vehículo"', funcion: filtrarPorVehiculo },
-        { numero: 9, nombre: 'TC009 - Aplicar filtro por columna "Kms Inicio"', funcion: filtrarPorKmsInicio },
-        { numero: 10, nombre: 'TC010 - Aplicar filtro por columna "Kms Fin"', funcion: filtrarPorKmsFin },
-        { numero: 11, nombre: 'TC011 - Aplicar filtro por columna "Kms Contr."', funcion: filtrarPorKmsContr },
-        { numero: 12, nombre: 'TC012 - Aplicar filtro por columna "Lleno Recogida"', funcion: filtrarPorLlenoRecogida },
-        { numero: 13, nombre: 'TC013 - Aplicar filtro por columna "Lleno Entrega"', funcion: filtrarPorLlenoEntrega },
-        { numero: 14, nombre: 'TC014 - Aplicar filtro por columna "Cuota"', funcion: filtrarPorCuota },
-        { numero: 15, nombre: 'TC015 - Buscar texto exacto en buscador general', funcion: buscarTextoExacto },
-        { numero: 16, nombre: 'TC016 - Buscar texto parcial en buscador general', funcion: buscarTextoParcial },
-        { numero: 17, nombre: 'TC017 - Buscar con mayúsculas/minúsculas combinadas', funcion: buscarAlternandoMayusculas },
-        { numero: 18, nombre: 'TC018 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios },
-        { numero: 19, nombre: 'TC019 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 20, nombre: 'TC020 - Ordenar por columna "Empresa" ascendente/descendente', funcion: ordenarEmpresa },
-        { numero: 21, nombre: 'TC021 - Ordenar por columna "Cuota" ascendente/descendente', funcion: ordenarCuota },
-        { numero: 22, nombre: 'TC022 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 23, nombre: 'TC023 - Botón "Editar" con una fila seleccionada', funcion: editarAlquiler },
-        { numero: 24, nombre: 'TC024 - Botón "Editar" sin fila seleccionada', funcion: editarSinSeleccion },
-        { numero: 25, nombre: 'TC025 - Botón "Eliminar" con una fila seleccionada', funcion: eliminarAlquiler },
-        { numero: 26, nombre: 'TC026 - Botón "Eliminar" sin fila seleccionada', funcion: eliminarSinSeleccion },
-        { numero: 27, nombre: 'TC027 - Botón "+ Añadir" abre formulario nuevo', funcion: abrirFormularioAlta },
-        { numero: 28, nombre: 'TC028 - Ocultar columna desde menú contextual', funcion: ocultarColumna },
-        { numero: 29, nombre: 'TC029 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas },
-        { numero: 30, nombre: 'TC030 - Scroll vertical y horizontal en la tabla', funcion: scrollHorizontalVertical },
-        { numero: 31, nombre: 'TC031 - Filtrar por rango de fechas desde/hasta', funcion: filtrarPorRangoFechas },
-        { numero: 32, nombre: 'TC032 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla de alquileres correctamente', funcion: cargarPantallaAlquileres, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Aplicar filtro por columna "F. Alta"', funcion: filtrarPorFAlta, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Aplicar filtro por columna "F. Baja"', funcion: filtrarPorFBaja, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Aplicar filtro por columna "Empresa"', funcion: filtrarPorEmpresa, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Aplicar filtro por columna "Vehículo"', funcion: filtrarPorVehiculo, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Aplicar filtro por columna "Kms Inicio"', funcion: filtrarPorKmsInicio, prioridad: 'MEDIA' },
+        { numero: 10, nombre: 'TC010 - Aplicar filtro por columna "Kms Fin"', funcion: filtrarPorKmsFin, prioridad: 'MEDIA' },
+        { numero: 11, nombre: 'TC011 - Aplicar filtro por columna "Kms Contr."', funcion: filtrarPorKmsContr, prioridad: 'MEDIA' },
+        { numero: 12, nombre: 'TC012 - Aplicar filtro por columna "Lleno Recogida"', funcion: filtrarPorLlenoRecogida, prioridad: 'MEDIA' },
+        { numero: 13, nombre: 'TC013 - Aplicar filtro por columna "Lleno Entrega"', funcion: filtrarPorLlenoEntrega, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Aplicar filtro por columna "Cuota"', funcion: filtrarPorCuota, prioridad: 'ALTA' },
+        { numero: 15, nombre: 'TC015 - Buscar texto exacto en buscador general', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Buscar texto parcial en buscador general', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 17, nombre: 'TC017 - Buscar con mayúsculas/minúsculas combinadas', funcion: buscarAlternandoMayusculas, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Buscar con espacios al inicio y fin', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Buscar con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por columna "Empresa" ascendente/descendente', funcion: ordenarEmpresa, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Ordenar por columna "Cuota" ascendente/descendente', funcion: ordenarCuota, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 23, nombre: 'TC023 - Botón "Editar" con una fila seleccionada', funcion: editarAlquiler, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Botón "Editar" sin fila seleccionada', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 25, nombre: 'TC025 - Botón "Eliminar" con una fila seleccionada', funcion: eliminarAlquiler, prioridad: 'ALTA' },
+        { numero: 26, nombre: 'TC026 - Botón "Eliminar" sin fila seleccionada', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 27, nombre: 'TC027 - Botón "+ Añadir" abre formulario nuevo', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
+        { numero: 28, nombre: 'TC028 - Ocultar columna desde menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 29, nombre: 'TC029 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
+        { numero: 30, nombre: 'TC030 - Scroll vertical y horizontal en la tabla', funcion: scrollHorizontalVertical, prioridad: 'BAJA' },
+        { numero: 31, nombre: 'TC031 - Filtrar por rango de fechas desde/hasta', funcion: filtrarPorRangoFechas, prioridad: 'ALTA' },
+        { numero: 32, nombre: 'TC032 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina, prioridad: 'MEDIA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -40,9 +40,15 @@ describe('ALQUILERES VEHÍCULOS - Validación completa con gestión de errores y
         cy.procesarResultadosPantalla('Ficheros (Alquileres Vehículos)');
     });
 
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
     // Itero por cada caso individualmente
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test
             cy.resetearFlagsTest();
 

@@ -2,17 +2,17 @@ describe('CONFIGURACIÓN PERFILES - Validación completa con gestión de errores
   const archivo = 'reportes_pruebas_novatrans.xlsx';
     // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
     const casos = [
-        { numero: 1, nombre: 'TC001 - Verificar perfiles visibles', funcion: verificarPerfilesVisibles },
-        { numero: 2, nombre: 'TC002 - Buscar nombre exacto', funcion: buscarNombreExacto },
-        { numero: 3, nombre: 'TC003 - Buscar texto parcial', funcion: buscarTextoParcial },
-        { numero: 4, nombre: 'TC004 - Buscar sin case sensitive', funcion: buscarSinCase },
-        { numero: 5, nombre: 'TC005 - Buscar perfil inexistente', funcion: buscarInexistente },
-        { numero: 6, nombre: 'TC006 - Eliminar perfil', funcion: eliminarPerfil },
-        { numero: 7, nombre: 'TC007 - No eliminar perfil', funcion: noEliminar },
-        { numero: 8, nombre: 'TC008 - Cambiar idioma a inglés', funcion: cambiarIdiomaIngles },
-        { numero: 9, nombre: 'TC009 - Cambiar idioma a catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 10, nombre: 'TC010 - Cambiar idioma a español', funcion: cambiarIdiomaEspanol },
-        { numero: 11, nombre: 'TC011 - Abrir formulario de edición', funcion: abrirFormularioEdicion },
+        { numero: 1, nombre: 'TC001 - Verificar perfiles visibles', funcion: verificarPerfilesVisibles, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Buscar nombre exacto', funcion: buscarNombreExacto, prioridad: 'ALTA' },
+        { numero: 3, nombre: 'TC003 - Buscar texto parcial', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 4, nombre: 'TC004 - Buscar sin case sensitive', funcion: buscarSinCase, prioridad: 'MEDIA' },
+        { numero: 5, nombre: 'TC005 - Buscar perfil inexistente', funcion: buscarInexistente, prioridad: 'MEDIA' },
+        { numero: 6, nombre: 'TC006 - Eliminar perfil', funcion: eliminarPerfil, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - No eliminar perfil', funcion: noEliminar, prioridad: 'MEDIA' },
+        { numero: 8, nombre: 'TC008 - Cambiar idioma a inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 9, nombre: 'TC009 - Cambiar idioma a catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 10, nombre: 'TC010 - Cambiar idioma a español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 11, nombre: 'TC011 - Abrir formulario de edición', funcion: abrirFormularioEdicion, prioridad: 'ALTA' },
     ];
 
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
@@ -20,9 +20,15 @@ describe('CONFIGURACIÓN PERFILES - Validación completa con gestión de errores
         cy.procesarResultadosPantalla('Configuración (Perfiles)');
     });
 
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test (muy importante)
             cy.resetearFlagsTest();
 

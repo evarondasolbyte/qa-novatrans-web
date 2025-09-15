@@ -2,37 +2,37 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol },
-        { numero: 5, nombre: 'TC005 - Filtrar por Fecha', funcion: filtrarPorFecha },
-        { numero: 7, nombre: 'TC007 - Filtrar por Lugar', funcion: filtrarPorLugar },
-        { numero: 8, nombre: 'TC008 - Filtrar por Vehículo', funcion: filtrarPorVehiculo },
-        { numero: 9, nombre: 'TC009 - Filtrar por Importe', funcion: filtrarPorImporte },
-        { numero: 10, nombre: 'TC010 - Filtrar por Tarjeta', funcion: filtrarPorTarjeta },
-        { numero: 14, nombre: 'TC014 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto },
-        { numero: 15, nombre: 'TC015 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial },
-        { numero: 16, nombre: 'TC016 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive },
-        { numero: 17, nombre: 'TC017 - Búsqueda con espacios', funcion: buscarConEspacios },
-        { numero: 18, nombre: 'TC018 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales },
-        { numero: 19, nombre: 'TC019 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha },
-        { numero: 20, nombre: 'TC020 - Ordenar por Vehículo ASC/DESC', funcion: ordenarPorVehiculo },
-        { numero: 21, nombre: 'TC021 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte },
-        { numero: 22, nombre: 'TC022 - Seleccionar una fila', funcion: seleccionarFila },
-        { numero: 23, nombre: 'TC023 - Botón Eliminar con fila seleccionada', funcion: eliminarConSeleccion },
-        { numero: 24, nombre: 'TC024 - Botón Eliminar sin selección', funcion: eliminarSinSeleccion },
-        { numero: 25, nombre: 'TC025 - Botón + Añadir abre formulario', funcion: abrirFormulario },
-        { numero: 26, nombre: 'TC026 - Botón Editar con fila seleccionada', funcion: editarConSeleccion },
-        { numero: 27, nombre: 'TC027 - Botón Editar sin selección', funcion: editarSinSeleccion },
-        { numero: 28, nombre: 'TC028 - Filtrar por Fecha Desde', funcion: filtrarPorFechaDesde },
-        { numero: 29, nombre: 'TC029 - Filtrar por Fecha Hasta', funcion: filtrarPorFechaHasta },
-        { numero: 30, nombre: 'TC030 - Filtrar por Fecha Desde + Hasta', funcion: filtrarPorRangoFechas },
-        { numero: 31, nombre: 'TC031 - Filtrar por "Value"', funcion: filtrarPorValue },
-        { numero: 32, nombre: 'TC032 - Ocultar columna desde menú contextual', funcion: ocultarColumna },
-        { numero: 33, nombre: 'TC033 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas },
-        { numero: 34, nombre: 'TC034 - Scroll en tabla', funcion: scrollEnTabla },
-        { numero: 35, nombre: 'TC035 - Reinicio de filtros al recargar', funcion: reinicioFiltros },
+        { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
+        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
+        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por Fecha', funcion: filtrarPorFecha, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por Lugar', funcion: filtrarPorLugar, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por Vehículo', funcion: filtrarPorVehiculo, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por Importe', funcion: filtrarPorImporte, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por Tarjeta', funcion: filtrarPorTarjeta, prioridad: 'MEDIA' },
+        { numero: 14, nombre: 'TC014 - Búsqueda general (texto exacto)', funcion: buscarTextoExacto, prioridad: 'ALTA' },
+        { numero: 15, nombre: 'TC015 - Búsqueda general (texto parcial)', funcion: buscarTextoParcial, prioridad: 'ALTA' },
+        { numero: 16, nombre: 'TC016 - Búsqueda case-insensitive', funcion: buscarCaseInsensitive, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Búsqueda con espacios', funcion: buscarConEspacios, prioridad: 'MEDIA' },
+        { numero: 18, nombre: 'TC018 - Búsqueda con caracteres especiales', funcion: buscarCaracteresEspeciales, prioridad: 'BAJA' },
+        { numero: 19, nombre: 'TC019 - Ordenar por Fecha ASC/DESC', funcion: ordenarPorFecha, prioridad: 'MEDIA' },
+        { numero: 20, nombre: 'TC020 - Ordenar por Vehículo ASC/DESC', funcion: ordenarPorVehiculo, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Ordenar por Importe ASC/DESC', funcion: ordenarPorImporte, prioridad: 'MEDIA' },
+        { numero: 22, nombre: 'TC022 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
+        { numero: 23, nombre: 'TC023 - Botón Eliminar con fila seleccionada', funcion: eliminarConSeleccion, prioridad: 'ALTA' },
+        { numero: 24, nombre: 'TC024 - Botón Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 25, nombre: 'TC025 - Botón + Añadir abre formulario', funcion: abrirFormulario, prioridad: 'ALTA' },
+        { numero: 26, nombre: 'TC026 - Botón Editar con fila seleccionada', funcion: editarConSeleccion, prioridad: 'ALTA' },
+        { numero: 27, nombre: 'TC027 - Botón Editar sin selección', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
+        { numero: 28, nombre: 'TC028 - Filtrar por Fecha Desde', funcion: filtrarPorFechaDesde, prioridad: 'ALTA' },
+        { numero: 29, nombre: 'TC029 - Filtrar por Fecha Hasta', funcion: filtrarPorFechaHasta, prioridad: 'ALTA' },
+        { numero: 30, nombre: 'TC030 - Filtrar por Fecha Desde + Hasta', funcion: filtrarPorRangoFechas, prioridad: 'ALTA' },
+        { numero: 31, nombre: 'TC031 - Filtrar por "Value"', funcion: filtrarPorValue, prioridad: 'MEDIA' },
+        { numero: 32, nombre: 'TC032 - Ocultar columna desde menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
+        { numero: 33, nombre: 'TC033 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
+        { numero: 34, nombre: 'TC034 - Scroll en tabla', funcion: scrollEnTabla, prioridad: 'BAJA' },
+        { numero: 35, nombre: 'TC035 - Reinicio de filtros al recargar', funcion: reinicioFiltros, prioridad: 'MEDIA' },
     ];
 
     // Resumen al final
@@ -42,8 +42,14 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
     });
 
     // Iterador de casos con protección anti-doble-registro
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
             // Reset de flags por test
             cy.resetearFlagsTest();
 

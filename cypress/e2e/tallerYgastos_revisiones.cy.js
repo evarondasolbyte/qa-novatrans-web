@@ -2,37 +2,37 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     const casos = [
-        { numero: 1, nombre: 'TC001 - Carga inicial de la pantalla de Revisiones', funcion: TC001 },
-        { numero: 2, nombre: 'TC002 - Ordenar por "Nombre" ascendente', funcion: TC002 },
-        { numero: 3, nombre: 'TC003 - Ordenar por "Nombre" descendente', funcion: TC003 },
-        { numero: 4, nombre: 'TC004 - Filtrar por "Nombre" (ejemplo: "cisterna")', funcion: TC004 },
-        { numero: 5, nombre: 'TC005 - Filtrar por "Kms" exacto (40000)', funcion: TC005 },
-        { numero: 6, nombre: 'TC006 - Filtrar por "General"', funcion: TC006 },
-        { numero: 7, nombre: 'TC007 - Filtrar por "Neumático"', funcion: TC007 },
-        { numero: 8, nombre: 'TC008 - Filtrar por "ITV"', funcion: TC008 },
-        { numero: 9, nombre: 'TC009 - Filtrar por "Tacógrafo"', funcion: TC009 },
-        { numero: 10, nombre: 'TC010 - Filtrar por "Chassis"', funcion: TC010 },
-        { numero: 11, nombre: 'TC011 - Filtrar por "Mecánica"', funcion: TC011 },
-        { numero: 12, nombre: 'TC012 - Filtrar por "Aceites"', funcion: TC012 },
-        { numero: 13, nombre: 'TC013 - Filtrar por "Filtros"', funcion: TC013 },
-        { numero: 14, nombre: 'TC014 - Filtrar por "Otros"', funcion: TC014 },
-        { numero: 15, nombre: 'TC015 - Limpiar filtros seleccionando "Todos"', funcion: TC015 },
-        { numero: 16, nombre: 'TC016 - Filtrar en Revisiones con valor sin coincidencias', funcion: TC016 },
-        { numero: 17, nombre: 'TC017 - Seleccionar una fila individual en Revisiones', funcion: TC017 },
-        { numero: 18, nombre: 'TC018 - Botón "Editar" no visible sin selección en Revisiones', funcion: TC018 },
-        { numero: 19, nombre: 'TC019 - Editar revisión al hacer doble clic en una fila', funcion: TC019 },
-        { numero: 20, nombre: 'TC020 - Botón "Eliminar" sin selección en Revisiones', funcion: TC020 },
-        { numero: 21, nombre: 'TC021 - Eliminar una revisión si es posible y confirmar su desaparición', funcion: TC021 },
-        { numero: 22, nombre: 'TC022 - Validar botón "+ Añadir" en Revisiones', funcion: TC022 },
-        { numero: 23, nombre: 'TC023 - Ocultar columna desde el menú contextual en Revisiones', funcion: TC023 },
-        { numero: 24, nombre: 'TC024 - Mostrar columna oculta desde Manage Columns en Revisiones', funcion: TC024 },
-        { numero: 25, nombre: 'TC025 - Scroll horizontal/vertical en la tabla de Revisiones', funcion: TC025 },
-        { numero: 26, nombre: 'TC026 - Recargar la página con filtros aplicados en Revisiones', funcion: TC026 },
-        { numero: 27, nombre: 'TC027 - Cambiar idioma a Inglés en Revisiones', funcion: TC027 },
-        { numero: 28, nombre: 'TC028 - Cambiar idioma a Catalán en Revisiones', funcion: TC028 },
-        { numero: 29, nombre: 'TC029 - Cambiar idioma a Español en Revisiones', funcion: TC029 },
-        { numero: 30, nombre: 'TC030 - Alternar mayúsculas y minúsculas en el buscador de Revisiones', funcion: TC030 },
-        { numero: 31, nombre: 'TC031 - Buscar caracteres especiales en el buscador de Revisiones', funcion: TC031 },
+        { numero: 1, nombre: 'TC001 - Carga inicial de la pantalla de Revisiones', funcion: TC001, prioridad: 'ALTA' },
+        { numero: 2, nombre: 'TC002 - Ordenar por "Nombre" ascendente', funcion: TC002, prioridad: 'MEDIA' },
+        { numero: 3, nombre: 'TC003 - Ordenar por "Nombre" descendente', funcion: TC003, prioridad: 'MEDIA' },
+        { numero: 4, nombre: 'TC004 - Filtrar por "Nombre" (ejemplo: "cisterna")', funcion: TC004, prioridad: 'ALTA' },
+        { numero: 5, nombre: 'TC005 - Filtrar por "Kms" exacto (40000)', funcion: TC005, prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Filtrar por "General"', funcion: TC006, prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Filtrar por "Neumático"', funcion: TC007, prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Filtrar por "ITV"', funcion: TC008, prioridad: 'ALTA' },
+        { numero: 9, nombre: 'TC009 - Filtrar por "Tacógrafo"', funcion: TC009, prioridad: 'ALTA' },
+        { numero: 10, nombre: 'TC010 - Filtrar por "Chassis"', funcion: TC010, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Filtrar por "Mecánica"', funcion: TC011, prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Filtrar por "Aceites"', funcion: TC012, prioridad: 'ALTA' },
+        { numero: 13, nombre: 'TC013 - Filtrar por "Filtros"', funcion: TC013, prioridad: 'ALTA' },
+        { numero: 14, nombre: 'TC014 - Filtrar por "Otros"', funcion: TC014, prioridad: 'ALTA' },
+        { numero: 15, nombre: 'TC015 - Limpiar filtros seleccionando "Todos"', funcion: TC015, prioridad: 'MEDIA' },
+        { numero: 16, nombre: 'TC016 - Filtrar en Revisiones con valor sin coincidencias', funcion: TC016, prioridad: 'MEDIA' },
+        { numero: 17, nombre: 'TC017 - Seleccionar una fila individual en Revisiones', funcion: TC017, prioridad: 'ALTA' },
+        { numero: 18, nombre: 'TC018 - Botón "Editar" no visible sin selección en Revisiones', funcion: TC018, prioridad: 'MEDIA' },
+        { numero: 19, nombre: 'TC019 - Editar revisión al hacer doble clic en una fila', funcion: TC019, prioridad: 'ALTA' },
+        { numero: 20, nombre: 'TC020 - Botón "Eliminar" sin selección en Revisiones', funcion: TC020, prioridad: 'MEDIA' },
+        { numero: 21, nombre: 'TC021 - Eliminar una revisión si es posible y confirmar su desaparición', funcion: TC021, prioridad: 'ALTA' },
+        { numero: 22, nombre: 'TC022 - Validar botón "+ Añadir" en Revisiones', funcion: TC022, prioridad: 'ALTA' },
+        { numero: 23, nombre: 'TC023 - Ocultar columna desde el menú contextual en Revisiones', funcion: TC023, prioridad: 'BAJA' },
+        { numero: 24, nombre: 'TC024 - Mostrar columna oculta desde Manage Columns en Revisiones', funcion: TC024, prioridad: 'BAJA' },
+        { numero: 25, nombre: 'TC025 - Scroll horizontal/vertical en la tabla de Revisiones', funcion: TC025, prioridad: 'BAJA' },
+        { numero: 26, nombre: 'TC026 - Recargar la página con filtros aplicados en Revisiones', funcion: TC026, prioridad: 'MEDIA' },
+        { numero: 27, nombre: 'TC027 - Cambiar idioma a Inglés en Revisiones', funcion: TC027, prioridad: 'BAJA' },
+        { numero: 28, nombre: 'TC028 - Cambiar idioma a Catalán en Revisiones', funcion: TC028, prioridad: 'BAJA' },
+        { numero: 29, nombre: 'TC029 - Cambiar idioma a Español en Revisiones', funcion: TC029, prioridad: 'BAJA' },
+        { numero: 30, nombre: 'TC030 - Alternar mayúsculas y minúsculas en el buscador de Revisiones', funcion: TC030, prioridad: 'MEDIA' },
+        { numero: 31, nombre: 'TC031 - Buscar caracteres especiales en el buscador de Revisiones', funcion: TC031, prioridad: 'BAJA' },
     ];
 
     // Resumen al final
@@ -41,9 +41,15 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.procesarResultadosPantalla('Taller y Gastos (Revisiones)');
     });
 
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
-            // ✅ reset estándar
+    // Filtrar casos por prioridad si se especifica
+    const prioridadFiltro = Cypress.env('prioridad');
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+        : casos;
+
+    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
+        it(`${nombre} [${prioridad}]`, () => {
+            //  reset estándar
             cy.resetearFlagsTest();
 
             // Captura de errores y registro
