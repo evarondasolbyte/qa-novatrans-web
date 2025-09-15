@@ -9,21 +9,38 @@ REM   (o solo con alias: run-simple.bat siniestros --prioridad alta)
 REM ============================================================
 
 REM --------- Parseo de argumentos (robusto) ----------
+REM --------- Parseo de argumentos (robusto) ----------
+
+REM Inicializo las variables:
+REM - CATEGORIA → primer argumento (ej: ficheros, procesos, etc.)
+REM - SUBCAT → segundo argumento (ej: siniestros, clientes, etc.)
+REM - PRIORIDAD → valor por defecto = "todas"
+REM - EXPECT_PRIO_VALUE → bandera que me indica que el siguiente argumento es la prioridad
 set "CATEGORIA="
 set "SUBCAT="
 set "PRIORIDAD=todas"
 set "EXPECT_PRIO_VALUE="
 
+REM Recorro todos los argumentos que recibe el .bat (%* = todos los parámetros)
 for %%A in (%*) do (
+  
+  REM Si la bandera EXPECT_PRIO_VALUE está activa,
+  REM este argumento actual (%%A) es el valor de la prioridad (alta, media, baja)
   if defined EXPECT_PRIO_VALUE (
     set "PRIORIDAD=%%~A"
     set "EXPECT_PRIO_VALUE="
+  
   ) else (
+    REM Si el argumento actual es "--prioridad", activo la bandera
     if /I "%%~A"=="--prioridad" (
       set "EXPECT_PRIO_VALUE=1"
+    
     ) else (
+      REM Si aún no he guardado categoría, lo guardo aquí
       if not defined CATEGORIA (
         set "CATEGORIA=%%~A"
+      
+      REM Si ya tengo categoría pero no subcategoría, guardo aquí
       ) else if not defined SUBCAT (
         set "SUBCAT=%%~A"
       )
