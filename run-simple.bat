@@ -167,6 +167,15 @@ if /I "%CATEGORIA%"=="dietas_predefinidas" (
   set "SUBCAT=dietas_predefinidas"
 )
 
+REM ---- ALMACEN
+if /I "%CATEGORIA%"=="familias_subfamilias_almacenes" (
+  set "CATEGORIA=almacen"
+  set "SUBCAT=familias_subfamilias_almacenes"
+) else if /I "%CATEGORIA%"=="almacen" (
+  set "CATEGORIA=almacen"
+  set "SUBCAT=familias_subfamilias_almacenes"
+)
+
 REM ---- LOGIN (archivo suelto)
 if /I "%CATEGORIA%"=="login" (
   set "SUBCAT="
@@ -242,6 +251,11 @@ if /I "%CATEGORIA%"=="utilidades" (
 if /I "%CATEGORIA%"=="remuneracion" (
   if /I "%SUBCAT%"=="dietas_predefinidas" set "SPEC_PATTERN=cypress/e2e/remuneracion_dietas_predefinidas*.cy.js"
   if not defined SUBCAT set "SPEC_PATTERN=cypress/e2e/remuneracion_*.cy.js"
+)
+
+if /I "%CATEGORIA%"=="almacen" (
+  if /I "%SUBCAT%"=="familias_subfamilias_almacenes" set "SPEC_PATTERN=cypress/e2e/almacen_familias_subfamilias_almacenes.cy.js"
+  if not defined SUBCAT set "SPEC_PATTERN=cypress/e2e/almacen_*.cy.js"
 )
 
 if /I "%CATEGORIA%"=="login" (

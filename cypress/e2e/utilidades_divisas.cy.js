@@ -174,23 +174,6 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
             }
         });
     }
-
-    // ---- helper: si no hay datos, crea dos para poder ordenar/mostrar algo
-    function ensureAtLeastTwoRows() {
-        cy.get('.MuiDataGrid-row:visible').then($rows => {
-            if ($rows.length >= 2) return;
-
-            reseleccionarDivisa('EUR - Euro');
-
-            setInicioDateByCalendar({ day: 2, month: 9, year: 2025 });
-            cy.get('input[name="valueEuros"]').clear().type('10'); cy.get('body').click(0, 0);
-            cy.contains('button', 'Crear').click({ force: true }); reseleccionarDivisa('EUR - Euro');
-
-            setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
-            cy.get('input[name="valueEuros"]').clear().type('7'); cy.get('body').click(0, 0);
-            cy.contains('button', 'Crear').click({ force: true }); reseleccionarDivisa('EUR - Euro');
-        });
-    }
     // === FUNCIONES DE VALIDACIÓN ===
     function cargarPantallaDivisas() {
         cy.navegarAMenu('Utilidades', 'Divisas');
@@ -213,6 +196,7 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
         cy.get('select#languageSwitcher').select('ca', { force: true });
+        cy.wait(1500); // Esperar a que se aplique el cambio de idioma
         
         // Verificar elementos que deberían estar en catalán
         return cy.get('.MuiDataGrid-columnHeaders').then(($headers) => {
@@ -245,17 +229,33 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
             
             cy.log(`Elementos correctos: ${elementosCorrectos}, Elementos incorrectos: ${elementosIncorrectos}`);
             
-            // Siempre registrar ERROR porque la traducción no funciona correctamente
-            cy.log('Registrando ERROR porque la traducción a catalán no funciona correctamente');
-            cy.registrarResultados({
-                numero: 3,
-                nombre: 'TC003 - Cambiar idioma a Catalán',
-                esperado: 'La interfaz cambia correctamente a catalán',
-                obtenido: 'La interfaz no cambia correctamente a catalán - elementos en español',
-                resultado: 'ERROR',
-                archivo,
-                pantalla: 'Utilidades (Divisas)'
-            });
+            // Determinar si la traducción funciona correctamente
+            const traduccionCorrecta = elementosCorrectos > 0 && elementosIncorrectos === 0;
+            
+            if (traduccionCorrecta) {
+                // Si funciona, registrar OK
+                cy.registrarResultados({
+                    numero: 3,
+                    nombre: 'TC003 - Cambiar idioma a Catalán',
+                    esperado: 'La interfaz cambia correctamente a catalán',
+                    obtenido: 'La interfaz cambia correctamente a catalán',
+                    resultado: 'OK',
+                    archivo,
+                    pantalla: 'Utilidades (Divisas)'
+                });
+            } else {
+                // Si no funciona, registrar ERROR
+                cy.registrarResultados({
+                    numero: 3,
+                    nombre: 'TC003 - Cambiar idioma a Catalán',
+                    esperado: 'La interfaz cambia correctamente a catalán',
+                    obtenido: 'La interfaz no cambia correctamente a catalán - elementos en español',
+                    resultado: 'ERROR',
+                    archivo,
+                    pantalla: 'Utilidades (Divisas)'
+                });
+            }
+            
             return cy.wrap(true); // Devolver algo para que la promesa se resuelva
         });
     }
