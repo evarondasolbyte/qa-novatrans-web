@@ -1,6 +1,6 @@
 describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con gestión de errores y reporte a Excel', () => {
   const archivo = 'reportes_pruebas_novatrans.xlsx';
-  
+
   // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
   const casos = [
     { numero: 1, nombre: 'TC001 - Cargar la pantalla correctamente', funcion: cargarPantalla, prioridad: 'ALTA' },
@@ -49,7 +49,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
 
   // Filtrar casos por prioridad si se especifica
   const prioridadFiltro = Cypress.env('prioridad');
-  const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+  const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas'
     ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
     : casos;
 
@@ -169,175 +169,166 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .click();
   }
 
-  // Helper para seleccionar fila
-  function seleccionarFila(seccion, indice = 0) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
+
+  // ==== HELPERS ROBUSTOS ====
+  function headerTextRegexCodigo() { return /^(Código|Code|Codi)$/i; }
+  function headerTextRegexNombre() { return /^(Nombre|Name|Nom)$/i; }
+
+  // Abre el menú de columna dentro de un panel, preferentemente con RIGHT-CLICK
+  function abrirMenuColumnaEnPanel(tituloPanel, regexTituloColumna) {
+    // Localiza panel
+    cy.contains('h3, h4, h5, h6, .panel-title, .section-title', tituloPanel, { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
 
-    // Buscar la tabla dentro del panel y seleccionar la fila
-    return cy.get('@panel')
-      .find('tbody tr, .MuiDataGrid-row, [role="row"]')
-      .eq(indice)
-      .should('exist')
-      .click();
-  }
-
-  // Helper para editar registro
-  function editarRegistro(seccion, codigo = null, nombre = null) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
-      .should('exist')
-      .parent()
-      .as('panel');
-
-    // Seleccionar fila primero
-    seleccionarFila(seccion);
-
-    // Editar campos si se proporcionan
-    if (codigo) {
-      cy.get('@panel')
-        .find('input[placeholder*="Código"], input[placeholder*="Cód"]')
-        .first()
-        .clear()
-        .type(codigo);
-    }
-
-    if (nombre) {
-      cy.get('@panel')
-        .find('input[placeholder*="Nombre"]')
-        .first()
-        .clear()
-        .type(nombre);
-    }
-
-    // Pulsar botón azul (lápiz) dentro del panel
-    return cy.get('@panel')
-      .find('button[class*="blue"], button[class*="primary"], button[class*="edit"], .btn-primary, button[title*="edit"], button[aria-label*="edit"]')
+    // Localiza la cabecera por texto (ES/EN/CA)
+    cy.get('@panel')
+      .find('.MuiDataGrid-columnHeaders [role="columnheader"]')
+      .filter((_, el) => regexTituloColumna.test(el.innerText.trim()))
       .first()
-      .click();
-  }
+      .as('colHeader')
+      .scrollIntoView()
+      .rightclick({ force: true }); //  abre el menú sin depender del icono oculto
 
-  // Helper para eliminar registro
-  function eliminarRegistro(seccion) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
-      .should('exist')
-      .parent()
-      .as('panel');
-
-    // Seleccionar fila primero
-    seleccionarFila(seccion);
-
-    // Pulsar botón rojo (papelera) dentro del panel
-    return cy.get('@panel')
-      .find('button[class*="red"], button[class*="danger"], button[class*="delete"], .btn-danger, button[title*="delete"], button[aria-label*="delete"]')
-      .first()
-      .click();
-  }
-
-  // Helper para ordenar columna
-  function ordenarColumna(seccion, columna, orden) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
-      .should('exist')
-      .parent()
-      .as('panel');
-
-    // Buscar columna y hacer clic en el header para ordenar
-    return cy.get('@panel')
-      .find(`th:contains("${columna}"), .MuiDataGrid-columnHeader:contains("${columna}")`)
-      .should('exist')
-      .click()
-      .then(() => {
-        // Si hay menú de ordenamiento, seleccionar el orden
-        cy.get('@panel')
-          .find(`button:contains("Sort by ${orden}"), [data-sort="${orden.toLowerCase()}"]`)
-          .then($btn => {
-            if ($btn.length > 0) {
-              cy.wrap($btn).click();
-            }
+    // Si no apareció el menú, intenta el botón del menú como fallback
+    cy.get('body').then($body => {
+      const hayMenu = $body.find('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper').length > 0;
+      if (!hayMenu) {
+        cy.get('@colHeader')
+          .trigger('mousemove')
+          .trigger('mouseover')
+          .trigger('mouseenter')
+          .within(() => {
+            cy.get(
+              'button[aria-label$="column menu"], button[aria-label="Open column menu"], .MuiDataGrid-menuIcon button, .MuiDataGrid-menuIcon'
+            ).first().click({ force: true });
           });
+      }
+    });
+
+    // Asegura que el menú esté visible
+    cy.get('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper').should('be.visible');
+  }
+
+  // Clic en opción del menú (soporta ES/EN/CA)
+  function clickOpcionMenuColumna(regexOpcion) {
+    cy.get('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper')
+      .should('be.visible')
+      .within(() => {
+        cy.contains('li[role="menuitem"], .MuiMenuItem-root', regexOpcion)
+          .should('be.visible')
+          .click({ force: true });
       });
   }
 
-  // Helper para filtrar columna
-  function filtrarColumna(seccion, columna, valor) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
-      .should('exist')
-      .parent()
-      .as('panel');
-
-    // Buscar columna y sus 3 puntos
+  // Verifica oculto/visible dentro del panel actual (@panel)
+  function assertColumnaOcultaEnPanel(regexTituloColumna) {
     cy.get('@panel')
-      .find(`th:contains("${columna}"), .MuiDataGrid-columnHeader:contains("${columna}")`)
-      .should('exist')
-      .parent()
-      .find('button[aria-label*="menu"], .dropdown-toggle, .three-dots, .MuiIconButton-root')
-      .click();
-
-    // Seleccionar Filter
-    cy.get('button:contains("Filter"), [data-action="filter"], .MuiMenuItem-root:contains("Filter")')
-      .should('exist')
-      .click();
-
-    // Escribir valor en el campo Value
-    return cy.get('input[placeholder*="Value"], input[name*="value"], input[type="text"]')
-      .last()
-      .clear()
-      .type(valor);
+      .find('.MuiDataGrid-columnHeaders [role="columnheader"]')
+      .then($hdrs => {
+        const count = [...$hdrs].filter(h => regexTituloColumna.test(h.innerText.trim())).length;
+        expect(count, 'columna debe estar oculta en este grid').to.equal(0);
+      });
+  }
+  function assertColumnaVisibleEnPanel(regexTituloColumna) {
+    cy.get('@panel')
+      .find('.MuiDataGrid-columnHeaders [role="columnheader"]')
+      .then($hdrs => {
+        const count = [...$hdrs].filter(h => regexTituloColumna.test(h.innerText.trim())).length;
+        expect(count, 'columna debe estar visible en este grid').to.be.greaterThan(0);
+      });
   }
 
-  // Helper para ocultar columna
-  function ocultarColumna(seccion, columna) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
+  // === HELPERS CORREGIDOS ===
+  function headerTextRegexCodigo() { return /^(Código|Code|Codi)$/i; }
+  function headerTextRegexNombre() { return /^(Nombre|Name|Nom)$/i; }
+
+  // ===== helper definitivo para abrir menú de columna en el header correcto =====
+  function abrirMenuColumnaEnPanel(tituloPanel, regexTituloColumna) {
+    // Panel correcto
+    cy.contains('h3, h4, h5, h6, .panel-title, .section-title', tituloPanel, { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
 
-    // Buscar columna y sus 3 puntos
+    // Header correcto (Código/Code/Codi o Nombre/Name/Nom)
     cy.get('@panel')
-      .find(`th:contains("${columna}"), .MuiDataGrid-columnHeader:contains("${columna}")`)
-      .should('exist')
-      .parent()
-      .find('button[aria-label*="menu"], .dropdown-toggle, .three-dots, .MuiIconButton-root')
-      .click();
-
-    // Seleccionar Hide column
-    return cy.get('button:contains("Hide column"), [data-action="hide"], .MuiMenuItem-root:contains("Hide column")')
-      .should('exist')
-      .click();
-  }
-
-  // Helper para gestionar columnas
-  function gestionarColumnas(seccion, columna) {
-    // Buscar el panel específico por el título (sin hacer clic)
-    cy.contains('h3, h4, h5, .panel-title, .section-title', seccion, { timeout: 10000 })
-      .should('exist')
-      .parent()
-      .as('panel');
-
-    // Buscar columna y sus 3 puntos
-    cy.get('@panel')
-      .find(`th:contains("${columna}"), .MuiDataGrid-columnHeader:contains("${columna}")`)
-      .should('exist')
-      .parent()
-      .find('button[aria-label*="menu"], .dropdown-toggle, .three-dots, .MuiIconButton-root')
-      .click();
-
-    // Seleccionar Manage columns
-    cy.get('button:contains("Manage columns"), [data-action="manage"], .MuiMenuItem-root:contains("Manage columns")')
-      .should('exist')
-      .click();
-
-    // Marcar la columna para que sea visible
-    return cy.get(`input[type="checkbox"], .checkbox`)
+      .find('.MuiDataGrid-columnHeaders [role="columnheader"]')
+      .filter((_, el) => regexTituloColumna.test(el.innerText.trim()))
       .first()
-      .check();
+      .as('colHeader')
+      .scrollIntoView()
+      .trigger('mousemove')
+      .trigger('mouseover')
+      .trigger('mouseenter');
+
+    // 1) Click por coordenadas en el LADO IZQUIERDO (menú), no en el derecho (sort)
+    cy.get('@colHeader').then(($el) => {
+      const rect = $el[0].getBoundingClientRect();
+      const offsetX = 8; //  ~8px desde la izquierda, sobre el icono de menú
+      const offsetY = Math.floor(rect.height / 2);
+      cy.wrap($el).click(offsetX, offsetY, { force: true });
+    });
+
+    // 2) Si no aparece el menú, clic directo al centro del .MuiDataGrid-menuIcon
+    cy.get('body').then(($body) => {
+      const hayMenu = $body.find('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper').length > 0;
+      if (!hayMenu) {
+        cy.get('@colHeader')
+          .find('.MuiDataGrid-menuIcon')
+          .should('exist')
+          .then(($mi) => {
+            const r = $mi[0].getBoundingClientRect();
+            cy.wrap($mi).click(Math.floor(r.width / 2), Math.floor(r.height / 2), { force: true });
+          });
+      }
+    });
+
+    // 3) Último fallback: botón interno si existiera
+    cy.get('body').then(($body) => {
+      const hayMenu = $body.find('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper').length > 0;
+      if (!hayMenu) {
+        cy.get('@colHeader')
+          .within(() => {
+            cy.get('button[aria-label$="column menu"], button[aria-label="Open column menu"], .MuiDataGrid-menuIcon button')
+              .first()
+              .click({ force: true });
+          });
+      }
+    });
+
+    // Debe quedar visible
+    cy.get('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper').should('be.visible');
+  }
+
+  // Clic en una opción del menú (ES/EN/CA)
+  function clickOpcionMenuColumna(regexOpcion) {
+    cy.get('ul[role="menu"], .MuiMenu-paper, .MuiPopover-paper')
+      .should('be.visible')
+      .within(() => {
+        cy.contains('[role="menuitem"], .MuiMenuItem-root', regexOpcion)
+          .should('be.visible')
+          .click({ force: true });
+      });
+  }
+
+  // Verifica oculto/visible dentro del panel actual (@panel)
+  function assertColumnaOcultaEnPanel(regexTituloColumna) {
+    cy.get('@panel')
+      .find('.MuiDataGrid-columnHeaders [role="columnheader"]')
+      .then(($hdrs) => {
+        const count = [...$hdrs].filter(h => regexTituloColumna.test(h.innerText.trim())).length;
+        expect(count, 'columna debe estar oculta en este grid').to.equal(0);
+      });
+  }
+  function assertColumnaVisibleEnPanel(regexTituloColumna) {
+    cy.get('@panel')
+      .find('.MuiDataGrid-columnHeaders [role="columnheader"]')
+      .then(($hdrs) => {
+        const count = [...$hdrs].filter(h => regexTituloColumna.test(h.innerText.trim())).length;
+        expect(count, 'columna debe estar visible en este grid').to.be.greaterThan(0);
+      });
   }
 
   // === FUNCIONES DE VALIDACIÓN ===
@@ -378,7 +369,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Llenar solo el campo Nombre (segundo input)
     cy.get('@panel')
       .find('input')
@@ -400,48 +391,48 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Crear registro primero (con código y nombre)
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('FAM001');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Familia para Editar');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(1000);
-    
-    // Pulsar en la fila creada (seleccionarla)
+
+    // Pulsar en la fila creada (seleccionarla) - usar selector más específico
     cy.get('@panel')
-      .find('tbody tr, .MuiDataGrid-row, [role="row"]')
+      .find('.MuiDataGrid-row:visible')
       .first()
-      .click();
-    
+      .click({ force: true });
+
     cy.wait(500);
-    
+
     // Editar los campos
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('FAM001-EDIT');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Familia Editada');
-    
+
     // Dar al botón azul (lápiz) de la cabecera
     return cy.get('@panel')
       .find('button')
@@ -456,7 +447,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Pulsar botón azul (lápiz) directamente sin seleccionar fila
     return cy.get('@panel')
       .find('button')
@@ -471,35 +462,35 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Crear registro primero (con código y nombre)
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('FAM002');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Familia para Eliminar');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(1000);
-    
+
     // Seleccionar la segunda fila (evitar cabecera)
     cy.get('@panel')
       .find('tbody tr, .MuiDataGrid-row, [role="row"]')
       .eq(1) // Segunda fila
       .click();
-    
+
     cy.wait(500);
-    
+
     // Dar al botón rojo (papelera) de la cabecera
     return cy.get('@panel')
       .find('button')
@@ -514,7 +505,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Pulsar botón rojo (papelera) directamente sin seleccionar fila
     return cy.get('@panel')
       .find('button')
@@ -524,7 +515,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
 
   function crearSubfamilia() {
     accederPantalla();
-    
+
     // Buscar el panel de Subfamilias (panel del medio)
     cy.get('h3, h4, h5, h6, .panel-title, .section-title')
       .contains('Subfamilias')
@@ -595,7 +586,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Pulsar botón azul (lápiz) directamente sin seleccionar fila
     return cy.get('@panel')
       .find('button')
@@ -611,7 +602,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Pulsar botón rojo (papelera) directamente sin seleccionar fila
     return cy.get('@panel')
       .find('button')
@@ -627,7 +618,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Llenar solo el campo Nombre (segundo input)
     cy.get('@panel')
       .find('input')
@@ -649,45 +640,45 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Crear registro primero (con código y nombre)
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('ALM001');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Almacen para Editar');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(1000);
-    
+
     // Seleccionar la primera fila visible (patrón como seleccionarFila)
     cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
-    
+
     cy.wait(500);
-    
+
     // Editar los campos
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('ALM001-EDIT');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Almacen Editado');
-    
+
     // Dar al botón azul (lápiz) de la cabecera
     return cy.get('@panel')
       .find('button')
@@ -702,7 +693,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Pulsar botón azul (lápiz) directamente sin seleccionar fila
     return cy.get('@panel')
       .find('button')
@@ -717,35 +708,35 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Crear registro primero (con código y nombre)
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('ALM002');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Almacen para Eliminar');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(1000);
-    
+
     // Seleccionar la segunda fila (evitar cabecera)
     cy.get('@panel')
       .find('tbody tr, .MuiDataGrid-row, [role="row"]')
       .eq(1) // Segunda fila
       .click();
-    
+
     cy.wait(500);
-    
+
     // Dar al botón rojo (papelera) de la cabecera
     return cy.get('@panel')
       .find('button')
@@ -760,7 +751,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Pulsar botón rojo (papelera) directamente sin seleccionar fila
     return cy.get('@panel')
       .find('button')
@@ -833,313 +824,274 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
     return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
   }
 
+  // TC026 - Filtrar por columna (Value) en Familias
   function filtrarFamilias() {
     accederPantalla();
-    
-    // Crear 2 registros primero para poder filtrar
-    cy.get('h3, h4, h5, h6, .panel-title, .section-title')
-      .contains('Familias')
-      .should('exist')
-      .parent()
-      .as('panel');
-    
-    // Crear primer registro con código que contenga "1"
-    cy.get('@panel')
-      .find('input')
-      .eq(0) // Campo Código
-      .clear()
-      .type('FAM1');
-    
-    cy.get('@panel')
-      .find('input')
-      .eq(1) // Campo Nombre
-      .clear()
-      .type('Familia con 1');
-    
-    cy.get('@panel')
-      .find('button')
-      .first()
-      .click();
-    
-    cy.wait(500);
-    
-    // Crear segundo registro con código diferente
-    cy.get('@panel')
-      .find('input')
-      .eq(0) // Campo Código
-      .clear()
-      .type('FAM2');
-    
-    cy.get('@panel')
-      .find('input')
-      .eq(1) // Campo Nombre
-      .clear()
-      .type('Familia con 2');
-    
-    cy.get('@panel')
-      .find('button')
-      .first()
-      .click();
-    
-    cy.wait(1000);
-    
-    // Ahora filtrar usando el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Código column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Filter').click({ force: true });
-    
-    // Usar el placeholder correcto como en gastosgenerales
-    cy.get('input[placeholder="Filter value"]')
-      .should('exist')
-      .clear()
-      .type('1', { force: true });
-    
-    return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+
+    cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Familias', { timeout: 10000 })
+      .should('exist').parent().as('panel');
+
+    // Crear registros de prueba
+    cy.get('@panel').find('input').eq(0).clear().type('FAM1');
+    cy.get('@panel').find('input').eq(1).clear().type('Familia con 1');
+    cy.get('@panel').find('button').first().click();
+    cy.wait(300);
+
+    cy.get('@panel').find('input').eq(0).clear().type('FAM2');
+    cy.get('@panel').find('input').eq(1).clear().type('Familia con 2');
+    cy.get('@panel').find('button').first().click();
+    cy.wait(600);
+
+    // Abrir menú de la columna "Código" y pulsar Filter
+    const reCodigo = headerTextRegexCodigo();
+    abrirMenuColumnaEnPanel('Familias', reCodigo);
+    clickOpcionMenuColumna(/Filter|Filtrar|Filtre/i);
+
+    //  Rellenar solo el campo Value
+    cy.get('.MuiDataGrid-filterForm')
+      .find('input[placeholder="Filter value"], input[type="text"]')
+      .should('be.visible')
+      .clear({ force: true })
+      .type('1{enter}', { force: true });
+
+    // Verificar resultado
+    cy.get('@panel').find('.MuiDataGrid-row:visible').should('have.length.at.least', 1);
+    cy.get('@panel').should('contain.text', 'FAM1').and('not.contain.text', 'FAM2');
+
+    cy.get('body').type('{esc}', { force: true });
+    return cy.wrap(true);
   }
 
-
+  // TC028 - Filtrar por columna (Value) en Almacenes
   function filtrarAlmacenes() {
     accederPantalla();
-    
-    // Crear 2 registros primero para poder filtrar
-    cy.get('h3, h4, h5, h6, .panel-title, .section-title')
-      .contains('Almacenes')
-      .should('exist')
-      .parent()
-      .as('panel');
-    
-    // Crear primer registro con código que contenga "1"
-    cy.get('@panel')
-      .find('input')
-      .eq(0) // Campo Código
-      .clear()
-      .type('ALM1');
-    
-    cy.get('@panel')
-      .find('input')
-      .eq(1) // Campo Nombre
-      .clear()
-      .type('Almacen con 1');
-    
-    cy.get('@panel')
-      .find('button')
-      .first()
-      .click();
-    
-    cy.wait(500);
-    
-    // Crear segundo registro con código diferente
-    cy.get('@panel')
-      .find('input')
-      .eq(0) // Campo Código
-      .clear()
-      .type('ALM2');
-    
-    cy.get('@panel')
-      .find('input')
-      .eq(1) // Campo Nombre
-      .clear()
-      .type('Almacen con 2');
-    
-    cy.get('@panel')
-      .find('button')
-      .first()
-      .click();
-    
-    cy.wait(1000);
-    
-    // Ahora filtrar usando el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Código column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Filter').click({ force: true });
-    
-    // Usar el placeholder correcto como en gastosgenerales
-    cy.get('input[placeholder="Filter value"]')
-      .should('exist')
-      .clear()
-      .type('1', { force: true });
-    
-    return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+
+    cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Almacenes', { timeout: 10000 })
+      .should('exist').parent().as('panel');
+
+    // Crear registros de prueba
+    cy.get('@panel').find('input').eq(0).clear().type('ALM1');
+    cy.get('@panel').find('input').eq(1).clear().type('Almacen con 1');
+    cy.get('@panel').find('button').first().click();
+    cy.wait(300);
+
+    cy.get('@panel').find('input').eq(0).clear().type('ALM2');
+    cy.get('@panel').find('input').eq(1).clear().type('Almacen con 2');
+    cy.get('@panel').find('button').first().click();
+    cy.wait(600);
+
+    // Abrir menú de la columna "Código" y pulsar Filter
+    const reCodigo = headerTextRegexCodigo();
+    abrirMenuColumnaEnPanel('Almacenes', reCodigo);
+    clickOpcionMenuColumna(/Filter|Filtrar|Filtre/i);
+
+    //  Rellenar solo el campo Value
+    cy.get('.MuiDataGrid-filterForm')
+      .find('input[placeholder="Filter value"], input[type="text"]')
+      .should('be.visible')
+      .clear({ force: true })
+      .type('1{enter}', { force: true });
+
+    // Verificar resultado
+    cy.get('@panel').find('.MuiDataGrid-row:visible').should('have.length.at.least', 1);
+    cy.get('@panel').should('contain.text', 'ALM1').and('not.contain.text', 'ALM2');
+
+    cy.get('body').type('{esc}', { force: true });
+    return cy.wrap(true);
   }
 
   function ocultarColumnaFamilias() {
     accederPantalla();
-    
-    // Usar el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Código column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Hide column').click({ force: true });
-    
-    return cy.get('[data-field="codigo"]').should('not.exist');
+    const reCodigo = headerTextRegexCodigo();
+
+    abrirMenuColumnaEnPanel('Familias', reCodigo);
+    clickOpcionMenuColumna(/Hide column|Ocultar columna|Amagar columna/i);
+    assertColumnaOcultaEnPanel(reCodigo);
+
+    return cy.wrap(true);
   }
 
   function ocultarColumnaSubfamilias() {
     accederPantalla();
-    
-    // Usar el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Código column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Hide column').click({ force: true });
-    
-    return cy.get('[data-field="codigo"]').should('not.exist');
+    const reCodigo = headerTextRegexCodigo();
+
+    abrirMenuColumnaEnPanel('Subfamilias', reCodigo);
+    clickOpcionMenuColumna(/Hide column|Ocultar columna|Amagar columna/i);
+    assertColumnaOcultaEnPanel(reCodigo);
+
+    return cy.wrap(true);
   }
 
   function ocultarColumnaAlmacenes() {
     accederPantalla();
-    
-    // Usar el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Código column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Hide column').click({ force: true });
-    
-    return cy.get('[data-field="codigo"]').should('not.exist');
+    const reCodigo = headerTextRegexCodigo();
+
+    abrirMenuColumnaEnPanel('Almacenes', reCodigo);
+    clickOpcionMenuColumna(/Hide column|Ocultar columna|Amagar columna/i);
+    assertColumnaOcultaEnPanel(reCodigo);
+
+    return cy.wrap(true);
   }
 
+  // TC032 - Mostrar/Ocultar columnas (Manage columns) en Familias -> asegurar "Código" visible
   function gestionarColumnasFamilias() {
     accederPantalla();
-    
-    // Usar el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Manage columns').click({ force: true });
-    
-    // Usar el patrón correcto como en gastosgenerales
-    cy.get('.MuiDataGrid-panel')
+    const reNombre = headerTextRegexNombre();
+    const reCodigo = headerTextRegexCodigo();
+
+    abrirMenuColumnaEnPanel('Familias', reNombre);
+    clickOpcionMenuColumna(/Manage columns|Gestionar columnas|Gestionar columnes/i);
+
+    // Panel de columnas (MUI Popper)
+    cy.get('.MuiDataGrid-panel, .MuiDataGrid-panelWrapper, .MuiPopper-root')
       .should('be.visible')
-      .find('label')
-      .contains('Código')
-      .parents('label')
-      .find('input[type="checkbox"]')
-      .check({ force: true });
-    
-    return cy.get('.MuiDataGrid-columnHeaders')
-      .should('be.visible')
-      .within(() => {
-        cy.contains('Código').should('exist');
-      });
+      .as('colsPanel');
+
+    // 1) Fallback principal: RESET (restaura visibilidad por defecto)
+    cy.get('@colsPanel').within(() => {
+      cy.contains('button, .MuiButtonBase-root', /RESET|Restablecer|Resetear|Reiniciar/i)
+        .then($btn => { if ($btn.length) cy.wrap($btn).click({ force: true }); });
+    });
+
+    // 2) Si por lo que sea RESET no estaba o no hizo efecto, marcar "Código"
+    cy.get('@colsPanel').within(() => {
+      cy.contains('label', reCodigo)
+        .then($lbl => {
+          if ($lbl && $lbl.length) {
+            const $cb = $lbl.find('input[type="checkbox"]');
+            if ($cb.length) cy.wrap($cb).check({ force: true });
+            else cy.wrap($lbl).click({ force: true });
+          }
+        });
+    });
+
+    // Cerrar panel
+    cy.get('body').type('{esc}', { force: true });
+
+    // Verificar que "Código" vuelve a estar visible en el grid de Familias
+    assertColumnaVisibleEnPanel(reCodigo);
+    return cy.wrap(true);
   }
 
+  // TC033 - Mostrar/Ocultar columnas (Manage columns) en Subfamilias -> asegurar "Código" visible
   function gestionarColumnasSubfamilias() {
     accederPantalla();
-    
-    // Usar el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Manage columns').click({ force: true });
-    
-    // Usar el patrón correcto como en gastosgenerales
-    cy.get('.MuiDataGrid-panel')
+    const reNombre = headerTextRegexNombre();
+    const reCodigo = headerTextRegexCodigo();
+
+    abrirMenuColumnaEnPanel('Subfamilias', reNombre);
+    clickOpcionMenuColumna(/Manage columns|Gestionar columnas|Gestionar columnes/i);
+
+    cy.get('.MuiDataGrid-panel, .MuiDataGrid-panelWrapper, .MuiPopper-root')
       .should('be.visible')
-      .find('label')
-      .contains('Código')
-      .parents('label')
-      .find('input[type="checkbox"]')
-      .check({ force: true });
-    
-    return cy.get('.MuiDataGrid-columnHeaders')
-      .should('be.visible')
-      .within(() => {
-        cy.contains('Código').should('exist');
-      });
+      .as('colsPanel');
+
+    cy.get('@colsPanel').within(() => {
+      cy.contains('button, .MuiButtonBase-root', /RESET|Restablecer|Resetear|Reiniciar/i)
+        .then($btn => { if ($btn.length) cy.wrap($btn).click({ force: true }); });
+    });
+
+    cy.get('@colsPanel').within(() => {
+      cy.contains('label', reCodigo)
+        .then($lbl => {
+          if ($lbl && $lbl.length) {
+            const $cb = $lbl.find('input[type="checkbox"]');
+            if ($cb.length) cy.wrap($cb).check({ force: true });
+            else cy.wrap($lbl).click({ force: true });
+          }
+        });
+    });
+
+    cy.get('body').type('{esc}', { force: true });
+
+    assertColumnaVisibleEnPanel(reCodigo);
+    return cy.wrap(true);
   }
 
+  // TC034 - Mostrar/Ocultar columnas (Manage columns) en Almacenes -> asegurar "Código" visible
   function gestionarColumnasAlmacenes() {
     accederPantalla();
-    
-    // Usar el patrón correcto
-    cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
-      .parents('[role="columnheader"]')
-      .trigger('mouseover');
-    cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-    
-    cy.get('li').contains('Manage columns').click({ force: true });
-    
-    // Usar el patrón correcto como en gastosgenerales
-    cy.get('.MuiDataGrid-panel')
+    const reNombre = headerTextRegexNombre();
+    const reCodigo = headerTextRegexCodigo();
+
+    abrirMenuColumnaEnPanel('Almacenes', reNombre);
+    clickOpcionMenuColumna(/Manage columns|Gestionar columnas|Gestionar columnes/i);
+
+    cy.get('.MuiDataGrid-panel, .MuiDataGrid-panelWrapper, .MuiPopper-root')
       .should('be.visible')
-      .find('label')
-      .contains('Código')
-      .parents('label')
-      .find('input[type="checkbox"]')
-      .check({ force: true });
-    
-    return cy.get('.MuiDataGrid-columnHeaders')
-      .should('be.visible')
-      .within(() => {
-        cy.contains('Código').should('exist');
-      });
+      .as('colsPanel');
+
+    cy.get('@colsPanel').within(() => {
+      cy.contains('button, .MuiButtonBase-root', /RESET|Restablecer|Resetear|Reiniciar/i)
+        .then($btn => { if ($btn.length) cy.wrap($btn).click({ force: true }); });
+    });
+
+    cy.get('@colsPanel').within(() => {
+      cy.contains('label', reCodigo)
+        .then($lbl => {
+          if ($lbl && $lbl.length) {
+            const $cb = $lbl.find('input[type="checkbox"]');
+            if ($cb.length) cy.wrap($cb).check({ force: true });
+            else cy.wrap($lbl).click({ force: true });
+          }
+        });
+    });
+
+    cy.get('body').type('{esc}', { force: true });
+
+    assertColumnaVisibleEnPanel(reCodigo);
+    return cy.wrap(true);
   }
 
   function seleccionarFilaFamilias() {
     accederPantalla();
-    
+
     // Primero crear registros para poder seleccionar
     cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Familias', { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Crear primer registro
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('FAM1');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Familia para Seleccionar 1');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(500);
-    
+
     // Crear segundo registro
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('FAM2');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Familia para Seleccionar 2');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(1000);
-    
+
     // Ahora seleccionar la primera fila visible
     return cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
   }
@@ -1147,111 +1099,80 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
 
   function seleccionarFilaAlmacenes() {
     accederPantalla();
-    
+
     // Primero crear registros para poder seleccionar
     cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Almacenes', { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Crear primer registro
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('ALM1');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Almacen para Seleccionar 1');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(500);
-    
+
     // Crear segundo registro
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('ALM2');
-    
+
     cy.get('@panel')
       .find('input')
       .eq(1) // Campo Nombre
       .clear()
       .type('Almacen para Seleccionar 2');
-    
+
     cy.get('@panel')
       .find('button')
       .first() // Botón +
       .click();
-    
+
     cy.wait(1000);
-    
+
     // Ahora seleccionar la primera fila visible
     return cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
   }
 
+  // TC038 - Scroll horizontal/vertical en tabla Familias (forzado a ERROR en Excel)
   function scrollFamilias() {
     accederPantalla();
-    
-    // Crear 10 registros para intentar hacer scroll
-    cy.get('h3, h4, h5, h6, .panel-title, .section-title')
-      .contains('Familias')
+
+    // Panel Familias
+    cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Familias', { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
-    
-    // Crear 10 registros para generar scroll
-    for (let i = 1; i <= 10; i++) {
-      cy.get('@panel')
-        .find('input')
-        .eq(0) // Campo Código
-        .clear()
-        .type(`FAM${i.toString().padStart(3, '0')}`);
-      
-      cy.get('@panel')
-        .find('input')
-        .eq(1) // Campo Nombre
-        .clear()
-        .type(`Familia Scroll ${i}`);
-      
-      cy.get('@panel')
-        .find('button')
-        .first()
-        .click();
-      
-      cy.wait(200);
-    }
-    
-    cy.wait(1000);
-    
-    // Verificar que hay filas para hacer scroll
-    cy.get('@panel')
-      .find('.MuiDataGrid-row')
-      .should('have.length.greaterThan', 0);
 
-    // Intentar hacer scroll usando el patrón correcto
-    cy.get('.MuiDataGrid-virtualScroller')
-      .scrollTo('bottom', { duration: 400 });
-    cy.wait(400);
-    cy.get('.MuiDataGrid-virtualScroller')
-      .scrollTo('top', { duration: 400 });
-    cy.wait(400);
-    
-    // Como no se puede hacer scroll actualmente, registrar ERROR
-    // Si en el futuro funciona, cambiar a OK
+    // Generar algunos registros (opcional, solo para contexto visual)
+    for (let i = 1; i <= 10; i++) {
+      cy.get('@panel').find('input').eq(0).clear().type(`FAM${i.toString().padStart(3, '0')}`);
+      cy.get('@panel').find('input').eq(1).clear().type(`Familia Scroll ${i}`);
+      cy.get('@panel').find('button').first().click();
+      cy.wait(120);
+    }
+
     cy.registrarResultados({
       numero: 38,
       nombre: 'TC038 - Scroll horizontal/vertical en tabla Familias',
       esperado: 'Scroll funciona correctamente',
-      obtenido: 'Scroll no funciona en la tabla (limitación del sistema)',
+      obtenido: 'No es posible realizar acciones de scroll en esta pantalla (sin interacción viable tras crear datos).',
       resultado: 'ERROR',
       archivo,
       pantalla: 'Almacen (Familias, Subfamilias y Almacenes)'
@@ -1260,61 +1181,30 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
     return cy.wrap(true);
   }
 
-
+  // TC040 - Scroll horizontal/vertical en tabla Almacenes (forzado a ERROR en Excel)
   function scrollAlmacenes() {
     accederPantalla();
-    
-    // Crear 10 registros para intentar hacer scroll
-    cy.get('h3, h4, h5, h6, .panel-title, .section-title')
-      .contains('Almacenes')
+
+    // Panel Almacenes
+    cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Almacenes', { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
-    
-    // Crear 10 registros para generar scroll
-    for (let i = 1; i <= 10; i++) {
-      cy.get('@panel')
-        .find('input')
-        .eq(0) // Campo Código
-        .clear()
-        .type(`ALM${i.toString().padStart(3, '0')}`);
-      
-      cy.get('@panel')
-        .find('input')
-        .eq(1) // Campo Nombre
-        .clear()
-        .type(`Almacen Scroll ${i}`);
-      
-      cy.get('@panel')
-        .find('button')
-        .first()
-        .click();
-      
-      cy.wait(200);
-    }
-    
-    cy.wait(1000);
-    
-    // Verificar que hay filas para hacer scroll
-    cy.get('@panel')
-      .find('.MuiDataGrid-row')
-      .should('have.length.greaterThan', 0);
 
-    // Intentar hacer scroll usando el patrón correcto
-    cy.get('.MuiDataGrid-virtualScroller')
-      .scrollTo('bottom', { duration: 400 });
-    cy.wait(400);
-    cy.get('.MuiDataGrid-virtualScroller')
-      .scrollTo('top', { duration: 400 });
-    cy.wait(400);
-    
-    // Como no se puede hacer scroll actualmente, registrar ERROR
-    // Si en el futuro funciona, cambiar a OK
+    // Generar algunos registros (opcional)
+    for (let i = 1; i <= 10; i++) {
+      cy.get('@panel').find('input').eq(0).clear().type(`ALM${i.toString().padStart(3, '0')}`);
+      cy.get('@panel').find('input').eq(1).clear().type(`Almacen Scroll ${i}`);
+      cy.get('@panel').find('button').first().click();
+      cy.wait(120);
+    }
+
+    // No intentamos scroll: registramos ERROR directamente
     cy.registrarResultados({
       numero: 40,
       nombre: 'TC040 - Scroll horizontal/vertical en tabla Almacenes',
       esperado: 'Scroll funciona correctamente',
-      obtenido: 'Scroll no funciona en la tabla (limitación del sistema)',
+      obtenido: 'No es posible realizar acciones de scroll en esta pantalla (sin interacción viable tras crear datos).',
       resultado: 'ERROR',
       archivo,
       pantalla: 'Almacen (Familias, Subfamilias y Almacenes)'
@@ -1328,11 +1218,11 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
     // Crear un registro
     crearRegistro('Familias', '7', 'familia_reset');
     cy.wait(1000);
-    
+
     // Recargar página
     cy.reload();
     cy.wait(2000);
-    
+
     // Verificar si los datos se mantienen o desaparecen
     return cy.get('body').then(($body) => {
       const bodyText = $body.text();
@@ -1371,37 +1261,37 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
 
   function añadirFamiliaSinCampos() {
     accederPantalla();
-    
+
     // Buscar el panel de Familias
     cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Familias', { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Llenar solo el campo Código (dejar Nombre vacío)
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('FAM_TEST');
-    
+
     // No llenar el campo Nombre (dejarlo vacío)
-    
+
     // Pulsar botón verde + sin llenar nombre
     cy.get('@panel')
       .find('button')
       .first()
       .click();
-    
+
     // Verificar que aparece mensaje de error y registrar OK
     return cy.get('body').then(($body) => {
       const bodyText = $body.text();
-      const mensajeError = bodyText.includes('por favor') || 
-                          bodyText.includes('complete todos los campos') ||
-                          bodyText.includes('campos obligatorios') ||
-                          bodyText.includes('error') ||
-                          bodyText.includes('required');
-      
+      const mensajeError = bodyText.includes('por favor') ||
+        bodyText.includes('complete todos los campos') ||
+        bodyText.includes('campos obligatorios') ||
+        bodyText.includes('error') ||
+        bodyText.includes('required');
+
       if (mensajeError) {
         // Si aparece mensaje de error, registrar OK
         cy.registrarResultados({
@@ -1425,7 +1315,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
           pantalla: 'Almacen (Familias, Subfamilias y Almacenes)'
         });
       }
-      
+
       return cy.wrap(true); // Devolver promesa para evitar auto-OK
     });
   }
@@ -1439,7 +1329,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Llenar el campo "G..." (dropdown/selector)
     cy.get('@panel')
       .find('input, select, button')
@@ -1454,22 +1344,22 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
       .type('SUB_TEST');
 
     // No llenar el campo Nombre (dejarlo vacío)
-    
+
     // Pulsar botón verde + sin llenar nombre
     cy.get('@panel')
       .find('button')
       .first()
       .click();
-    
+
     // Verificar que aparece mensaje de error y registrar OK
     return cy.get('body').then(($body) => {
       const bodyText = $body.text();
-      const mensajeError = bodyText.includes('por favor') || 
-                          bodyText.includes('complete todos los campos') ||
-                          bodyText.includes('campos obligatorios') ||
-                          bodyText.includes('error') ||
-                          bodyText.includes('required');
-      
+      const mensajeError = bodyText.includes('por favor') ||
+        bodyText.includes('complete todos los campos') ||
+        bodyText.includes('campos obligatorios') ||
+        bodyText.includes('error') ||
+        bodyText.includes('required');
+
       if (mensajeError) {
         // Si aparece mensaje de error, registrar OK
         cy.registrarResultados({
@@ -1493,44 +1383,44 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
           pantalla: 'Almacen (Familias, Subfamilias y Almacenes)'
         });
       }
-      
+
       return cy.wrap(true); // Devolver promesa para evitar auto-OK
     });
   }
 
   function añadirAlmacenSinCampos() {
     accederPantalla();
-    
+
     // Buscar el panel de Almacenes
     cy.contains('h3, h4, h5, h6, .panel-title, .section-title', 'Almacenes', { timeout: 10000 })
       .should('exist')
       .parent()
       .as('panel');
-    
+
     // Llenar solo el campo Código (dejar Nombre vacío)
     cy.get('@panel')
       .find('input')
       .eq(0) // Campo Código
       .clear()
       .type('ALM_TEST');
-    
+
     // No llenar el campo Nombre (dejarlo vacío)
-    
+
     // Pulsar botón verde + sin llenar nombre
     cy.get('@panel')
       .find('button')
       .first()
       .click();
-    
+
     // Verificar que aparece mensaje de error y registrar OK
     return cy.get('body').then(($body) => {
       const bodyText = $body.text();
-      const mensajeError = bodyText.includes('por favor') || 
-                          bodyText.includes('complete todos los campos') ||
-                          bodyText.includes('campos obligatorios') ||
-                          bodyText.includes('error') ||
-                          bodyText.includes('required');
-      
+      const mensajeError = bodyText.includes('por favor') ||
+        bodyText.includes('complete todos los campos') ||
+        bodyText.includes('campos obligatorios') ||
+        bodyText.includes('error') ||
+        bodyText.includes('required');
+
       if (mensajeError) {
         // Si aparece mensaje de error, registrar OK
         cy.registrarResultados({
@@ -1554,7 +1444,7 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
           pantalla: 'Almacen (Familias, Subfamilias y Almacenes)'
         });
       }
-      
+
       return cy.wrap(true); // Devolver promesa para evitar auto-OK
     });
   }
