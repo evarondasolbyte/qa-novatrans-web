@@ -82,21 +82,25 @@ Cypress.Commands.add('login', ({
 // Abro el drawer y navego por texto de menú y submenú.
 // Me apoyo en scrollIntoView y expects explícitos para estabilidad.
 Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu) => {
-  cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click();
+  cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click({ force: true });
   cy.get('.MuiDrawer-root', { timeout: 10000 }).should('exist');
 
   cy.get('.MuiDrawer-root')
-    .contains('span', textoMenu, { timeout: 10000 })
+    .contains(textoMenu, { timeout: 10000 })
     .scrollIntoView()
     .should('exist')
     .closest('div[role="button"]')
-    .click();
+    .click({ force: true });
 
   cy.get('.MuiDrawer-root')
-    .contains('span', textoSubmenu, { timeout: 10000 })
+    .contains(textoSubmenu, { timeout: 10000 })
     .scrollIntoView()
     .should('exist')
-    .click();
+    .click({ force: true });
+
+  // Cerrar la barra lateral después de navegar
+  cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click({ force: true });
+  cy.get('.MuiDrawer-root').should('not.exist');
 });
 
 // ===== ACUMULADOR POR PANTALLA =====

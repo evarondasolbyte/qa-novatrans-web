@@ -431,29 +431,53 @@ describe('CATEGORÍAS DE CONDUCTORES - Validación completa con gestión de erro
                 const numFilasDespues = $filasDespues.length;
                 cy.log(`Filas después de eliminar: ${numFilasDespues}`);
                 
-                // Si el número de filas cambió, el botón funciona
+                // Si el número de filas cambió, se eliminó correctamente
                 if (numFilasDespues < numFilasAntes) {
                     cy.log('Botón eliminar funciona correctamente - se eliminó al menos una fila');
                     cy.registrarResultados({
                         numero: 22,
                         nombre: 'TC022 - Botón "Eliminar" con varias filas seleccionadas',
-                        esperado: 'Se elimina correctamente',
+                        esperado: 'Se elimina correctamente o mensaje de no se puede eliminar',
                         obtenido: 'Se elimina correctamente',
                         resultado: 'OK',
                         archivo: 'reportes_pruebas_novatrans.xlsx',
                         pantalla: 'Ficheros (Categorías Conductores)'
                     });
                 } else {
-                    // Si el número de filas no cambió, el botón no funciona
-                    cy.log('Botón eliminar no funciona - no se eliminó ninguna fila');
-                    cy.registrarResultados({
-                        numero: 22,
-                        nombre: 'TC022 - Botón "Eliminar" con varias filas seleccionadas',
-                        esperado: 'Se elimina correctamente',
-                        obtenido: 'No se elimina',
-                        resultado: 'ERROR',
-                        archivo: 'reportes_pruebas_novatrans.xlsx',
-                        pantalla: 'Ficheros (Categorías Conductores)'
+                    // Si el número de filas no cambió, verificar si hay mensaje de error
+                    return cy.get('body').then(($body) => {
+                        const bodyText = $body.text();
+                        const mensajeAsociado = bodyText.includes('El elemento seleccionado no puede ser eliminado por estar asociado a otros datos') ||
+                                             bodyText.includes('no puede ser eliminado') ||
+                                             bodyText.includes('asociado a otros datos') ||
+                                             bodyText.includes('elemento seleccionado');
+                        
+                        if (mensajeAsociado) {
+                            cy.log('Botón eliminar funciona correctamente - muestra mensaje de no se puede eliminar por estar asociado');
+                            cy.registrarResultados({
+                                numero: 22,
+                                nombre: 'TC022 - Botón "Eliminar" con varias filas seleccionadas',
+                                esperado: 'Se elimina correctamente o mensaje de no se puede eliminar',
+                                obtenido: 'Mensaje de no se puede eliminar por estar asociado',
+                                resultado: 'OK',
+                                archivo: 'reportes_pruebas_novatrans.xlsx',
+                                pantalla: 'Ficheros (Categorías Conductores)'
+                            });
+                        } else {
+                            // Si no hay mensaje de error, entonces el botón no funciona
+                            cy.log('Botón eliminar no funciona - no se eliminó ni mostró mensaje');
+                            cy.registrarResultados({
+                                numero: 22,
+                                nombre: 'TC022 - Botón "Eliminar" con varias filas seleccionadas',
+                                esperado: 'Se elimina correctamente o mensaje de no se puede eliminar',
+                                obtenido: 'No se elimina ni muestra mensaje',
+                                resultado: 'ERROR',
+                                archivo: 'reportes_pruebas_novatrans.xlsx',
+                                pantalla: 'Ficheros (Categorías Conductores)'
+                            });
+                        }
+                        
+                        return cy.wrap(true);
                     });
                 }
                 

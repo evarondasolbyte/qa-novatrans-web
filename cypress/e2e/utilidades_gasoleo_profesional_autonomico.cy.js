@@ -88,17 +88,6 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
         cy.get('select#languageSwitcher').select('en', { force: true });
         cy.wait(1500);
 
-        // Siempre registrar ERROR por ahora, según la indicación del usuario
-        cy.registrarResultados({
-            numero: 2,
-            nombre: 'TC002 - Cambiar idioma a Inglés',
-            esperado: 'Cambia idioma correctamente',
-            obtenido: 'Algunos títulos no cambian',
-            resultado: 'ERROR',
-            pantalla: 'Utilidades (Gasóleo Prof. Autonómico)',
-            archivo
-        });
-
         return cy.get('body').should('be.visible');
     }
 
