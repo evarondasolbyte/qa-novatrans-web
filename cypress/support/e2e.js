@@ -16,3 +16,4 @@
 // Import commands.js using ES2015 syntax:
 // cypress/support/e2e.js
 import './commands';
+import './excelReader';
