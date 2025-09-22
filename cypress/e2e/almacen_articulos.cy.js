@@ -385,8 +385,13 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
         cy.navegarAMenu('Almacen', 'Artículos');
         cy.url().should('include', '/dashboard/items');
 
-        // Header por data-field (no dependemos del scroll ni del texto)
-        cy.get('[role="columnheader"][data-field="listaReferenciasProveedores"]')
+        // Hacer scroll horizontal para encontrar la columna "Ref. Proveedor"
+        cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 800 });
+        cy.wait(800);
+
+        // Buscar la columna por su título
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Ref. Proveedor')
+            .parents('[role="columnheader"]')
             .as('colRefProv')
             .trigger('mouseover');
 
@@ -540,23 +545,6 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
         return cy.get('.MuiDataGrid-columnHeaders').should('be.visible');
     }
 
-    function ordenarPorRefProveedor() {
-        cy.navegarAMenu('Almacen', 'Artículos');
-        cy.url().should('include', '/dashboard/items');
-
-        // Hacer hover sobre la cabecera para activar el botón de menú
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Ref. Proveedor')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        // Forzar clic en el botón del menú de columna
-        cy.get('[aria-label="Ref. Proveedor column menu"]').click({ force: true });
-
-        // Seleccionar orden ascendente
-        cy.get('li[data-value="asc"]').contains('Sort by ASC').click({ force: true });
-
-        return cy.wait(1000);
-    }
 
     function resetFiltrosRecarga() {
         cy.navegarAMenu('Almacen', 'Artículos');
@@ -594,22 +582,9 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
         cy.navegarAMenu('Almacen', 'Artículos');
         cy.url().should('include', '/dashboard/items');
 
-        // Selecciona la opción que contenga "07 - CUBAS" ignorando espacios alrededor del guion
-        cy.get('select#family[name="family"]').should('exist').then($sel => {
-            const selectEl = $sel[0];
-            const rx = /^07\s*-\s*CUBAS$/i;
-
-            // Busca la opción por su texto visible
-            const opt = Array.from(selectEl.options).find(o => rx.test(o.text));
-
-            // Asegúrate de que existe
-            expect(opt, 'Opción "07 - CUBAS" encontrada en Familia').to.exist;
-
-            // Selecciona por value (más robusto) o por el propio texto si value coincide
-            cy.wrap($sel).select(opt.value || opt.text, { force: true });
-        });
-
+        cy.get('select#family[name="family"]').should('be.visible').select('07 - CUBAS', { force: true });
         cy.wait(800);
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
