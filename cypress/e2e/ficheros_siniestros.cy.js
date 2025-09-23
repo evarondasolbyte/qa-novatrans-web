@@ -40,7 +40,7 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
 
     // Filtrar casos por prioridad si se especifica
     const prioridadFiltro = Cypress.env('prioridad');
-    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas'
         ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
         : casos;
 
@@ -84,8 +84,6 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
         });
     });
 
-    
-
     // ===== FUNCIONES DE PRUEBA =====
 
     function verListaSiniestros() {
@@ -97,17 +95,21 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
 
     // FUNCIÓN QUE EJECUTA UN FILTRO INDIVIDUAL
     function ejecutarFiltroIndividual(numeroCaso) {
+        // Primero navego al menú de "Ficheros > Siniestros"
         cy.navegarAMenu('Ficheros', 'Siniestros');
-            cy.url().should('include', '/dashboard/crash-reports');
-            cy.get('.MuiDataGrid-root').should('be.visible');
+        cy.url().should('include', '/dashboard/crash-reports');
+        cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Obtener datos del Excel para Ficheros-Siniestros
+        // Cargo los datos del Excel específico para esta pantalla
         return cy.obtenerDatosExcel('Ficheros-Siniestros').then((datosFiltros) => {
+            // Formateo el número de caso a 3 dígitos (ejemplo: 1 → "001")
             const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
             cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
-            
+
+            // Busco dentro del Excel el caso concreto
             const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
-            
+
+            // Si no existe en el Excel, registro el error en el reporte
             if (!filtroEspecifico) {
                 cy.log(`No se encontró TC${numeroCasoFormateado}`);
                 cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
@@ -123,24 +125,26 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                 return cy.wrap(false);
             }
 
+            // Si sí lo encuentro, muestro en logs sus datos
             cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
             cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
             cy.log(`Datos completos del filtro:`, JSON.stringify(filtroEspecifico, null, 2));
 
-            // Ejecutar el filtro específico
+            // 🔹 Caso 1: Si el filtro es por columna
             if (filtroEspecifico.valor_etiqueta_1 === 'columna') {
-                // Filtro por columna específica
                 cy.log(`Aplicando filtro por columna: ${filtroEspecifico.dato_1}`);
-                
+
+                // Selecciono la columna en el dropdown
                 cy.get('select[name="column"], select#column').then($select => {
                     const options = [...$select[0].options].map(opt => opt.text.trim());
                     cy.log(`Opciones disponibles en dropdown: ${options.join(', ')}`);
-                    
-                    const columnaEncontrada = options.find(opt => 
+
+                    const columnaEncontrada = options.find(opt =>
                         opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
                         filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
                     );
-                    
+
+                    // Si existe la columna la selecciono, si no, cojo la primera opción
                     if (columnaEncontrada) {
                         cy.wrap($select).select(columnaEncontrada, { force: true });
                         cy.log(`Seleccionada columna: ${columnaEncontrada}`);
@@ -149,8 +153,8 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                         cy.wrap($select).select(1, { force: true });
                     }
                 });
-                
-                // Verificar que dato_2 no esté vacío
+
+                // Valido que el valor de búsqueda no esté vacío
                 if (!filtroEspecifico.dato_2 || filtroEspecifico.dato_2.trim() === '') {
                     cy.log(`TC${numeroCasoFormateado}: ERROR - dato_2 está vacío para columna "${filtroEspecifico.dato_1}"`);
                     cy.registrarResultados({
@@ -164,7 +168,8 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                     });
                     return cy.wrap(true);
                 }
-                
+
+                // Aplico el valor en el buscador
                 cy.log(`Buscando valor: "${filtroEspecifico.dato_2}"`);
                 cy.get('input#search')
                     .should('be.visible')
@@ -172,25 +177,23 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                     .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
                 cy.wait(2000);
 
-                // Verificar si hay resultados después del filtro
-                cy.wait(1000); // Esperar un poco más para que se aplique el filtro
+                // Valido los resultados después del filtro
+                cy.wait(1000);
                 cy.get('body').then($body => {
                     const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
                     const totalFilas = $body.find('.MuiDataGrid-row').length;
-                    
+
                     cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}, Total filas: ${totalFilas}`);
                     cy.log(`Filtro aplicado: Columna "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`);
-                    
-                    // Verificar si el filtro realmente se aplicó
+
                     const filtroSeAplico = filasVisibles < totalFilas || filasVisibles === 0;
-                    
+
                     if (filtroSeAplico) {
-                        // El filtro se aplicó correctamente
                         const resultado = filasVisibles > 0 ? 'OK' : 'ERROR';
                         const obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
-                        
+
                         cy.log(`TC${numeroCasoFormateado}: Filtro aplicado correctamente - ${resultado}`);
-                        
+
                         cy.registrarResultados({
                             numero: numeroCaso,
                             nombre: `TC${numeroCasoFormateado} - Filtrar siniestros por ${filtroEspecifico.dato_1}`,
@@ -201,7 +204,6 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                             pantalla: 'Ficheros (Siniestros)'
                         });
                     } else {
-                        // El filtro no se aplicó
                         cy.log(`TC${numeroCasoFormateado}: Filtro NO se aplicó - ERROR`);
                         cy.registrarResultados({
                             numero: numeroCaso,
@@ -214,37 +216,36 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                         });
                     }
                 });
-            } else if (filtroEspecifico.valor_etiqueta_1 === 'search') {
-                // Búsqueda general
+            }
+
+            // 🔹 Caso 2: Si el filtro es búsqueda general
+            else if (filtroEspecifico.valor_etiqueta_1 === 'search') {
                 cy.log(`Aplicando búsqueda general: ${filtroEspecifico.dato_1}`);
-                
+
                 cy.get('input#search')
                     .should('be.visible')
                     .clear({ force: true })
                     .type(`${filtroEspecifico.dato_1}{enter}`, { force: true });
-                
+
                 cy.log(`Buscando valor: ${filtroEspecifico.dato_1}`);
                 cy.wait(2000);
 
-                // Verificar si hay resultados después del filtro
-                cy.wait(1000); // Esperar un poco más para que se aplique el filtro
+                cy.wait(1000);
                 cy.get('body').then($body => {
                     const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
                     const totalFilas = $body.find('.MuiDataGrid-row').length;
-                    
+
                     cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}, Total filas: ${totalFilas}`);
                     cy.log(`Búsqueda aplicada: "${filtroEspecifico.dato_1}"`);
-                    
-                    // Verificar si la búsqueda realmente se aplicó
+
                     const busquedaSeAplico = filasVisibles < totalFilas || filasVisibles === 0;
-                    
+
                     if (busquedaSeAplico) {
-                        // La búsqueda se aplicó correctamente
                         const resultado = filasVisibles > 0 ? 'OK' : 'ERROR';
                         const obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
-                        
+
                         cy.log(`TC${numeroCasoFormateado}: Búsqueda aplicada correctamente - ${resultado}`);
-                        
+
                         cy.registrarResultados({
                             numero: numeroCaso,
                             nombre: `TC${numeroCasoFormateado} - Búsqueda general de siniestros`,
@@ -255,7 +256,6 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                             pantalla: 'Ficheros (Siniestros)'
                         });
                     } else {
-                        // La búsqueda no se aplicó
                         cy.log(`TC${numeroCasoFormateado}: Búsqueda NO se aplicó - ERROR`);
                         cy.registrarResultados({
                             numero: numeroCaso,
@@ -268,8 +268,10 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                         });
                     }
                 });
-            } else {
-                // Si no es ni columna ni search, registrar error
+            }
+
+            // 🔹 Caso 3: Si el tipo de filtro no está reconocido
+            else {
                 cy.log(`Tipo de filtro no reconocido: ${filtroEspecifico.valor_etiqueta_1}`);
                 cy.registrarResultados({
                     numero: numeroCaso,
@@ -281,7 +283,7 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
                     pantalla: 'Ficheros (Siniestros)'
                 });
             }
-            
+
             return cy.wrap(true);
         });
     }
@@ -449,19 +451,19 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
     function eliminarSinSeleccion() {
         cy.navegarAMenu('Ficheros', 'Siniestros');
         cy.url().should('include', '/dashboard/crash-reports');
-        
+
         // Verificar que no hay filas seleccionadas
         cy.get('.MuiDataGrid-row.Mui-selected').should('have.length', 0);
-        
+
         // Intentar hacer click en el botón de eliminar
         cy.get('button[aria-label*="delete"], button[title*="delete"], .MuiIconButton-root:has(svg[data-testid="DeleteIcon"])').first().click({ force: true });
-        
+
         // Verificar diferentes posibles respuestas
         return cy.get('body').then($body => {
             const mensajeError = $body.text().includes('Por favor, selecciona un elemento para eliminar') ||
-                                $body.text().includes('No hay elemento seleccionado') ||
-                                $body.text().includes('Selecciona un elemento');
-            
+                $body.text().includes('No hay elemento seleccionado') ||
+                $body.text().includes('Selecciona un elemento');
+
             if (mensajeError) {
                 cy.log('TC024: Aparece mensaje de error como se esperaba - OK');
                 return cy.wrap(true);
@@ -501,7 +503,7 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
     function scrollCabecera() {
         cy.navegarAMenu('Ficheros', 'Siniestros');
         cy.url().should('include', '/dashboard/crash-reports');
-        
+
         cy.get('.MuiDataGrid-virtualScroller').scrollTo('bottom', { duration: 1000 });
         cy.wait(500);
         cy.get('.MuiDataGrid-virtualScroller').scrollTo('top', { duration: 1000 });
@@ -512,38 +514,38 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
     function filtroYOrdenID() {
         cy.navegarAMenu('Ficheros', 'Siniestros');
         cy.url().should('include', '/dashboard/crash-reports');
-        
+
         // Aplicar filtro
         cy.get('select[name="column"]').select('ID', { force: true });
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('1{enter}', { force: true });
         cy.wait(1000);
-        
+
         // Ordenar
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'ID')
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="ID column menu"]').click({ force: true });
         cy.get('li').contains('Sort by DESC').click({ force: true });
-        
+
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function recargaConFiltros() {
         cy.navegarAMenu('Ficheros', 'Siniestros');
-            cy.url().should('include', '/dashboard/crash-reports');
-        
+        cy.url().should('include', '/dashboard/crash-reports');
+
         // Aplicar filtro
         cy.get('select[name="column"]').select('ID', { force: true });
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('1{enter}', { force: true });
-                cy.wait(1000);
+        cy.wait(1000);
 
         // Recargar página
         cy.reload();
         cy.wait(2000);
-        
+
         // Verificar que el filtro se mantiene
         return cy.get('body').then(($body) => {
-                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
             cy.log(`Después de recargar: ${hayFilas ? 'hay filas visibles' : 'no hay filas visibles'}`);
             return cy.wrap(true);
         });
@@ -551,8 +553,8 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
 
     function cambiarIdiomaEspanol() {
         cy.navegarAMenu('Ficheros', 'Siniestros');
-            cy.url().should('include', '/dashboard/crash-reports');
-        
+        cy.url().should('include', '/dashboard/crash-reports');
+
         cy.get('select#languageSwitcher').select('es', { force: true });
         cy.wait(1500);
         return cy.get('body').should('be.visible');
