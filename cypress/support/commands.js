@@ -304,6 +304,52 @@ Cypress.Commands.add('hacerLogin', (datosCaso) => {
   performLogin();
 });
 
+// ===== FUNCIONES CENTRALIZADAS PARA CONFIGURACIÓN PERFILES =====
+
+// Función centralizada para cambiar idioma
+Cypress.Commands.add('cambiarIdioma', (idioma) => {
+  const idiomas = {
+    'Inglés': { codigo: 'en', texto: 'Name' },
+    'Catalán': { codigo: 'ca', texto: 'Nom' },
+    'Español': { codigo: 'es', texto: 'Nombre' }
+  };
+  
+  const config = idiomas[idioma];
+  if (!config) {
+    cy.log(`Idioma no soportado: ${idioma}, usando valores por defecto`);
+    // Valores por defecto si no se reconoce el idioma
+    const configDefault = { codigo: 'en', texto: 'Name' };
+    cy.get('select#languageSwitcher').select(configDefault.codigo, { force: true });
+    cy.wait(1500);
+    return cy.get('body').should('contain.text', configDefault.texto);
+  }
+  
+  cy.log(`Cambiando idioma a: ${idioma} (${config.codigo})`);
+  cy.get('select#languageSwitcher').select(config.codigo, { force: true });
+  cy.wait(1500);
+  
+  // Verificar que el cambio se aplicó correctamente
+  return cy.get('body').should('contain.text', config.texto).then(() => {
+    cy.log(`Idioma cambiado exitosamente a ${idioma}`);
+    return cy.wrap(true);
+  });
+});
+
+// Función centralizada para ejecutar filtros de búsqueda
+Cypress.Commands.add('ejecutarFiltroPerfiles', (valorBusqueda) => {
+  cy.get('input[placeholder="Buscar"]')
+    .should('be.visible')
+    .clear({ force: true })
+    .type(`${valorBusqueda}{enter}`, { force: true });
+  cy.wait(2000);
+  
+  return cy.get('body').then($body => {
+    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+    return cy.wrap({ filasVisibles, valorBusqueda });
+  });
+});
+
+
 // ===== CAPTURA DE ERRORES =====
 // Centralizo la forma de capturar errores: registro, screenshot,
 // clasificación WARNING/ERROR (según "sin datos"), y re-lanzo si es ERROR.
