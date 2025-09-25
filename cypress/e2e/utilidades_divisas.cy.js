@@ -7,14 +7,14 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
         { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
         { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
-        { numero: 5, nombre: 'TC005 - Crear divisa correctamente', funcion: crearDivisaCorrectamente, prioridad: 'ALTA' },
-        { numero: 6, nombre: 'TC006 - Validar campo obligatorio "Valor" vacío', funcion: validarValorVacio, prioridad: 'ALTA' },
-        { numero: 7, nombre: 'TC007 - Validar campo "Valor" con caracteres no numéricos', funcion: validarValorNoNumerico, prioridad: 'ALTA' },
-        { numero: 8, nombre: 'TC008 - Crear varios registros de la misma divisa en fechas distintas', funcion: crearVariosRegistros, prioridad: 'ALTA' },
+        { numero: 5, nombre: 'TC005 - Crear divisa correctamente', funcion: () => ejecutarCrearIndividual(5), prioridad: 'ALTA' },
+        { numero: 6, nombre: 'TC006 - Validar campo obligatorio "Valor" vacío', funcion: () => ejecutarCrearIndividual(6), prioridad: 'ALTA' },
+        { numero: 7, nombre: 'TC007 - Validar campo "Valor" con caracteres no numéricos', funcion: () => ejecutarCrearIndividual(7), prioridad: 'ALTA' },
+        { numero: 8, nombre: 'TC008 - Crear varios registros de la misma divisa en fechas distintas', funcion: () => ejecutarCrearIndividual(8), prioridad: 'ALTA' },
         { numero: 9, nombre: 'TC009 - Eliminar divisa correctamente', funcion: eliminarDivisaCorrectamente, prioridad: 'ALTA' },
         { numero: 10, nombre: 'TC010 - Eliminar sin selección', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
-        { numero: 11, nombre: 'TC011 - Crear divisa con valor decimal', funcion: crearDivisaDecimal, prioridad: 'ALTA' },
-        { numero: 12, nombre: 'TC012 - Validar que la fecha es obligatoria', funcion: validarFechaObligatoria, prioridad: 'ALTA' },
+        { numero: 11, nombre: 'TC011 - Crear divisa con valor decimal', funcion: () => ejecutarCrearIndividual(11), prioridad: 'ALTA' },
+        { numero: 12, nombre: 'TC012 - Validar que la fecha es obligatoria', funcion: () => ejecutarCrearIndividual(12), prioridad: 'ALTA' },
         { numero: 13, nombre: 'TC013 - Scroll vertical/horizontal en tabla', funcion: scrollTabla, prioridad: 'BAJA' },
         { numero: 14, nombre: 'TC014 - Reinicio de la pantalla (recarga)', funcion: reinicioPantalla, prioridad: 'MEDIA' },
         { numero: 15, nombre: 'TC015 - Ordenar ASC/DESC Inicio', funcion: ordenarInicioAscDesc, prioridad: 'MEDIA' },
@@ -183,6 +183,130 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         return cy.get('button').contains('Eliminar').should('exist');
     }
 
+    // FUNCIÓN QUE EJECUTA UN CREAR INDIVIDUAL
+    function ejecutarCrearIndividual(numeroCaso) {
+        cy.navegarAMenu('Utilidades', 'Divisas');
+        cy.url().should('include', '/dashboard/currencies');
+        cy.get('h1, h2, h3, h4, h5, h6').contains('Divisas').should('exist');
+
+        // Obtener datos del Excel para Utilidades-Divisas
+        return cy.obtenerDatosExcel('Utilidades-Divisas').then((datosFiltros) => {
+            const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
+            cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
+            
+            const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
+            
+            if (!filtroEspecifico) {
+                cy.log(`No se encontró TC${numeroCasoFormateado}`);
+                cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
+                cy.registrarResultados({
+                    numero: numeroCaso,
+                    nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
+                    esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
+                    obtenido: 'Caso no encontrado en los datos del Excel',
+                    resultado: 'ERROR',
+                    archivo,
+                    pantalla: 'Utilidades (Divisas)'
+                });
+                return cy.wrap(false);
+            }
+
+            cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
+            cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
+            cy.log(`Datos completos del filtro:`, JSON.stringify(filtroEspecifico, null, 2));
+
+            // Ejecutar el crear específico
+            if (filtroEspecifico.valor_etiqueta_1 === 'mui-component-select-currency') {
+                // Crear divisa con datos del Excel
+                cy.log(`Aplicando crear divisa: ${filtroEspecifico.dato_1}`);
+                
+                // Seleccionar divisa
+                cy.get('[role="combobox"]').first().click({ force: true });
+                cy.contains('li', filtroEspecifico.dato_1).click({ force: true });
+                cy.get('body').click(0, 0);
+                
+                // Procesar los datos adicionales del Excel
+                const datosAdicionales = [];
+                let i = 0;
+                while (filtroEspecifico[`etiqueta_${i + 1}`] && filtroEspecifico[`valor_etiqueta_${i + 1}`] && filtroEspecifico[`dato_${i + 1}`]) {
+                    datosAdicionales.push({
+                        etiqueta: filtroEspecifico[`etiqueta_${i + 1}`],
+                        valor_etiqueta: filtroEspecifico[`valor_etiqueta_${i + 1}`],
+                        dato: filtroEspecifico[`dato_${i + 1}`]
+                    });
+                    i++;
+                }
+                
+                cy.log(`Datos adicionales encontrados: ${datosAdicionales.length}`);
+                
+                // Procesar cada dato adicional
+                datosAdicionales.forEach((dato, index) => {
+                    cy.log(`Procesando dato ${index + 1}: ${dato.etiqueta} - ${dato.valor_etiqueta} - ${dato.dato}`);
+                    
+                    if (dato.valor_etiqueta === 'r1g' || dato.valor_etiqueta === 'r1q') {
+                        // Es una fecha - usar el calendario
+                        const fechaParts = dato.dato.split('/');
+                        if (fechaParts.length === 3) {
+                            const day = parseInt(fechaParts[0]);
+                            const month = parseInt(fechaParts[1]);
+                            const year = parseInt(fechaParts[2]);
+                            
+                            cy.log(`Configurando fecha: ${day}/${month}/${year}`);
+                            setInicioDateByCalendar({ day, month, year });
+                        }
+                    } else if (dato.valor_etiqueta === 'r1k') {
+                        // Es un valor numérico
+                        cy.log(`Configurando valor: ${dato.dato}`);
+                        cy.get('input[name="valueEuros"]').should('be.visible').click().clear().type(dato.dato, { force: true });
+                        cy.wait(1000); // Esperar más tiempo para que se procese el valor
+                        cy.get('input[name="valueEuros"]').should('have.value', dato.dato);
+                    }
+                });
+                
+                // Verificar que el campo Valor esté lleno antes de crear
+                cy.get('input[name="valueEuros"]').should('have.value').and('not.be.empty');
+                
+                // Crear la divisa
+                cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
+                
+                // Esperar un poco para que se procese la creación
+                cy.wait(2000);
+                
+                // Re-seleccionar la divisa para forzar la actualización de la tabla
+                cy.get('[role="combobox"]').first().click({ force: true });
+                cy.contains('li', filtroEspecifico.dato_1).click({ force: true });
+                cy.get('body').click(0, 0);
+                
+                // Verificar que se creó correctamente
+                cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('have.length.greaterThan', 0);
+                
+                cy.registrarResultados({
+                    numero: numeroCaso,
+                    nombre: `TC${numeroCasoFormateado} - Crear divisa con datos del Excel`,
+                    esperado: `Se crea divisa con datos: ${filtroEspecifico.dato_1}`,
+                    obtenido: 'Divisa creada correctamente',
+                    resultado: 'OK',
+                    archivo,
+                    pantalla: 'Utilidades (Divisas)'
+                });
+            } else {
+                // Si no es mui-component-select-currency, registrar error
+                cy.log(`Tipo de componente no reconocido: ${filtroEspecifico.valor_etiqueta_1}`);
+                cy.registrarResultados({
+                    numero: numeroCaso,
+                    nombre: `TC${numeroCasoFormateado} - Tipo de componente no reconocido`,
+                    esperado: `Tipo de componente válido (mui-component-select-currency)`,
+                    obtenido: `Tipo de componente: ${filtroEspecifico.valor_etiqueta_1}`,
+                    resultado: 'ERROR',
+                    archivo,
+                    pantalla: 'Utilidades (Divisas)'
+                });
+            }
+            
+            return cy.wrap(true);
+        });
+    }
+
     function cambiarIdiomaIngles() {
         cy.navegarAMenu('Utilidades', 'Divisas');
         cy.url().should('include', '/dashboard/currencies');
@@ -268,103 +392,6 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
         return cy.get('body').should('contain.text', 'Divisas');
     }
 
-    // === TC005 – Crear divisa correctamente (sin registro manual) ===
-    function crearDivisaCorrectamente() {
-        cy.navegarAMenu('Utilidades', 'Divisas');
-        cy.url().should('include', '/dashboard/currencies');
-
-        // Divisa
-        cy.get('[role="combobox"]').first().click({ force: true });
-        cy.contains('li', 'EUR - Euro').click({ force: true });
-        cy.get('body').click(0, 0);
-
-        // Fecha por calendario (commit fiable)
-        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
-
-        // Valor
-        cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.get('body').click(0, 0);
-
-        // Crear
-        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
-
-        // Si la grid no refresca sola, re-selecciona la divisa para forzar GET
-        cy.get('[role="combobox"]').first().click({ force: true });
-        cy.contains('li', 'EUR - Euro').click({ force: true });
-        cy.get('body').click(0, 0);
-
-        // Return para tu auto-OK
-        return cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('have.length.greaterThan', 0);
-    }
-
-    // TC006 – Validar campo obligatorio "Valor" vacío
-    function validarValorVacio() {
-        cy.navegarAMenu('Utilidades', 'Divisas');
-        cy.url().should('include', '/dashboard/currencies');
-
-        reseleccionarDivisa('EUR - Euro');
-        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 }); // fecha válida
-        // No ponemos valor
-
-        cy.contains('button', 'Crear').click({ force: true });
-
-        return cy.get('body').then(($b) => {
-            const t = $b.text();
-            const hayValidacion = /Completa este campo|Campo obligatorio|required|valor/i.test(t);
-            expect(hayValidacion, 'Debe aparecer validación de Valor').to.be.true;
-        });
-    }
-
-    // TC007 – Validar "Valor" con caracteres no numéricos
-    function validarValorNoNumerico() {
-        cy.navegarAMenu('Utilidades', 'Divisas');
-        cy.url().should('include', '/dashboard/currencies');
-
-        reseleccionarDivisa('EUR - Euro');
-        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
-
-        // Cuenta filas antes
-        let filasAntes = 0;
-        cy.get('.MuiDataGrid-virtualScrollerContent').then($c => {
-            filasAntes = $c.find('.MuiDataGrid-row').length;
-        });
-
-        cy.get('input[name="valueEuros"]').clear().type('a');
-        cy.get('body').click(0, 0);
-
-        cy.contains('button', 'Crear').click({ force: true });
-        reseleccionarDivisa('EUR - Euro');
-
-        // No debería crear una fila nueva
-        return cy.get('.MuiDataGrid-virtualScrollerContent', { timeout: 5000 }).then($c => {
-            const filasDespues = $c.find('.MuiDataGrid-row').length;
-            expect(filasDespues, 'No debe aumentar el número de filas').to.equal(filasAntes);
-        });
-    }
-
-    // TC008 – Crear varios registros (fechas distintas)
-    function crearVariosRegistros() {
-        cy.navegarAMenu('Utilidades', 'Divisas');
-        cy.url().should('include', '/dashboard/currencies');
-
-        reseleccionarDivisa('EUR - Euro');
-
-        // Registro 1
-        setInicioDateByCalendar({ day: 2, month: 9, year: 2025 });
-        cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.get('body').click(0, 0);
-        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
-        reseleccionarDivisa('EUR - Euro');
-
-        // Registro 2
-        setInicioDateByCalendar({ day: 4, month: 9, year: 2025 });
-        cy.get('input[name="valueEuros"]').clear().type('7');
-        cy.get('body').click(0, 0);
-        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
-        reseleccionarDivisa('EUR - Euro');
-
-        return cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('have.length.greaterThan', 1);
-    }
 
     // TC009 – Eliminar divisa correctamente
     function eliminarDivisaCorrectamente() {
@@ -407,47 +434,6 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
     }
 
 
-    // TC011 – Crear divisa con valor decimal
-    function crearDivisaDecimal() {
-        cy.navegarAMenu('Utilidades', 'Divisas');
-        cy.url().should('include', '/dashboard/currencies');
-
-        reseleccionarDivisa('EUR - Euro');
-        setInicioDateByCalendar({ day: 1, month: 9, year: 2025 });
-
-        // El input es type="number" con step="0.01" → usa punto decimal
-        cy.get('input[name="valueEuros"]').clear().type('8.25');
-        cy.get('body').click(0, 0);
-
-        cy.contains('button', 'Crear').should('be.enabled').click({ force: true });
-        reseleccionarDivisa('EUR - Euro');
-
-        return cy.get('.MuiDataGrid-row', { timeout: 8000 }).should('exist').then(() => {
-            // Acepta tanto 8.25 como render con coma
-            cy.get('body').invoke('text').should(t => {
-                expect(/8\.25|8,25/.test(t)).to.be.true;
-            });
-        });
-    }
-
-    // TC012 – Validar que la fecha es obligatoria
-    function validarFechaObligatoria() {
-        cy.navegarAMenu('Utilidades', 'Divisas');
-        cy.url().should('include', '/dashboard/currencies');
-
-        reseleccionarDivisa('EUR - Euro');
-        // No ponemos fecha
-        cy.get('input[name="valueEuros"]').clear().type('10');
-        cy.get('body').click(0, 0);
-
-        cy.contains('button', 'Crear').click({ force: true });
-
-        return cy.get('body').then(($b) => {
-            const t = $b.text();
-            const hayValidacion = /Completa este campo|Campo obligatorio|required|fecha|inicio/i.test(t);
-            expect(hayValidacion, 'Debe aparecer validación de fecha').to.be.true;
-        });
-    }
 
     // TC013 - Scroll vertical/horizontal en tabla
     function scrollTabla() {

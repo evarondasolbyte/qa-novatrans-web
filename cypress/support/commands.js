@@ -261,6 +261,49 @@ Cypress.Commands.add('registrarResultados', (params) => {
   resultadoYaRegistrado = true;
 });
 
+// ===== FUNCIÓN CENTRALIZADA PARA LOGIN =====
+// Función única para ejecutar todos los casos de login
+Cypress.Commands.add('hacerLogin', (datosCaso) => {
+  const {
+    dato_1: database = 'NTDesarrolloGonzalo',
+    dato_2: server = 'SERVER\\DESARROLLO', 
+    dato_3: username = 'AdminNovatrans',
+    dato_4: password = 'solbyte@2023'
+  } = datosCaso;
+
+  // Encapsulo el flujo real de login para reutilizarlo
+  const performLogin = () => {
+    // Voy directo al login (con timeout generoso por si tarda en cargar)
+    cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app/login', {
+      timeout: 120000,
+      waitUntil: 'domcontentloaded'
+    });
+
+    // Helper seguro: siempre limpio antes de escribir y respeto valores vacíos
+    const safeType = (selector, value) => {
+      cy.get(selector).clear();
+      if (value !== '' && value !== null && value !== undefined) {
+        cy.get(selector).type(value);
+      }
+    };
+
+    // Relleno las credenciales/campos
+    safeType('input[name="database"]', database);
+    safeType('input[name="server"]', server);
+    safeType('input[name="username"]', username);
+    safeType('input[name="password"]', password);
+
+    // Envío el formulario
+    cy.get('button[type="submit"]').click();
+    
+    // Esperar a que se procese el login (tiempo reducido)
+    cy.wait(1000);
+  };
+
+  // Para casos de login, siempre ejecuto sin sesión cacheada
+  performLogin();
+});
+
 // ===== CAPTURA DE ERRORES =====
 // Centralizo la forma de capturar errores: registro, screenshot,
 // clasificación WARNING/ERROR (según "sin datos"), y re-lanzo si es ERROR.
