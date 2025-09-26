@@ -64,6 +64,8 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
     gid = '1766248160'; // GID específico para la hoja LOGIN
   } else if (hoja === 'CONFIGURACIÓN-PERFILES') {
     gid = '1896958952'; // GID específico para la hoja CONFIGURACIÓN-PERFILES
+  } else if (hoja === 'FICHEROS-CLIENTES') {
+    gid = '520599147'; // GID específico para la hoja FICHEROS-CLIENTES
   }
   
   // Construyo la URL de exportación en formato CSV
@@ -127,6 +129,8 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
     hoja = 'LOGIN';
   } else if (pantallaSafe === 'configuración (perfiles)' || pantallaSafe === 'configuracion (perfiles)') {
     hoja = 'CONFIGURACIÓN-PERFILES';
+  } else if (pantallaSafe === 'ficheros (clientes)' || pantallaSafe === 'ficheros-clientes') {
+    hoja = 'FICHEROS-CLIENTES';
   }
 
   return cy.leerDatosGoogleSheets(hoja).then((filasExcel) => {
@@ -181,6 +185,40 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
         datosFiltrados.push(datoFiltro);
       } else if (hoja === 'CONFIGURACIÓN-PERFILES') {
         // Para la hoja CONFIGURACIÓN-PERFILES, usar estructura específica
+        const caso = safe(fila[2]);
+        
+        // Solo procesar filas que tengan un caso válido (TC001, TC002, etc.)
+        if (caso && caso.toUpperCase().match(/^TC\d+$/)) {
+          const datoFiltro = {
+            pantalla: safe(fila[0]),          // A: Pantalla
+            funcionalidad: safe(fila[1]),     // B: Funcionalidad
+            caso: caso,                       // C: N°Caso
+            nombre: safe(fila[3]),           // D: Nombre
+            prioridad: safe(fila[4]),         // E: Prioridad
+            funcion: safe(fila[5]),           // F: Función
+            etiqueta_1: safe(fila[6]),        // G: etiqueta_1
+            valor_etiqueta_1: safe(fila[7]),  // H: valor_etiqueta_1
+            dato_1: safe(fila[8]),            // I: dato_1
+            etiqueta_2: safe(fila[9]),        // J: etiqueta_2
+            valor_etiqueta_2: safe(fila[10]), // K: valor_etiqueta_2
+            dato_2: safe(fila[11]),           // L: dato_2
+            etiqueta_3: safe(fila[12]),       // M: etiqueta_3
+            valor_etiqueta_3: safe(fila[13]), // N: valor_etiqueta_3
+            dato_3: safe(fila[14]),           // O: dato_3
+            etiqueta_4: safe(fila[15]),       // P: etiqueta_4
+            valor_etiqueta_4: safe(fila[16]), // Q: valor_etiqueta_4
+            dato_4: safe(fila[17])            // R: dato_4
+          };
+
+          cy.log(`ENCONTRADO ${datoFiltro.caso}: ${datoFiltro.nombre}`);
+          cy.log(`DEBUG ${datoFiltro.caso}: función="${datoFiltro.funcion}", dato_1="${datoFiltro.dato_1}"`);
+
+          datosFiltrados.push(datoFiltro);
+        } else {
+          cy.log(`FILA ${i} IGNORADA: caso="${caso}" no es válido`);
+        }
+      } else if (hoja === 'FICHEROS-CLIENTES') {
+        // Para la hoja FICHEROS-CLIENTES, usar estructura específica
         const caso = safe(fila[2]);
         
         // Solo procesar filas que tengan un caso válido (TC001, TC002, etc.)

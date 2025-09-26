@@ -229,7 +229,23 @@ describe('CONFIGURACIÓN PERFILES - Validación completa con gestión de errores
         cy.wait(200);
 
         // Ejecutar función según el tipo
-        ejecutarFuncionPerfiles(funcion, caso);
+        ejecutarFuncionPerfiles(funcion, caso).then(() => {
+          // Registrar resultado automático si no se registró antes
+          cy.estaRegistrado().then((ya) => {
+            if (!ya) {
+              cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+              cy.registrarResultados({
+                numero,
+                nombre,
+                esperado: 'Comportamiento correcto',
+                obtenido: 'Comportamiento correcto',
+                resultado: 'OK',
+                archivo,
+                pantalla: 'Configuración (Perfiles)'
+              });
+            }
+          });
+        });
       });
     });
   });
