@@ -1,287 +1,197 @@
 // === Parser CSV que funciona con formato vertical de Google Sheets ===
 function parseCsvRespectingQuotes(csv) {
-  // Si el CSV viene con un BOM al inicio, lo elimino
-  if (csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1);
-
-  cy.log(`CSV raw length: ${csv.length} caracteres`);
-
-  // Divido el contenido en líneas y elimino las vacías
-  const lines = csv.split(/\r?\n/).filter(line => line.trim() !== '');
-  cy.log(`Número de líneas: ${lines.length}`);
-
-  // Recorro cada línea para parsearla respetando comillas
+  if (csv && csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1); // quita BOM
+  const lines = (csv || '').split(/\r?\n/).filter(l => l.trim() !== '');
   const rows = lines.map(line => {
     const cells = [];
-    let current = '';
-    let inQuotes = false;
-
+    let cur = '', inQuotes = false;
     for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          // Manejo de comillas escapadas (dobles)
-          current += '"';
-          i++;
-        } else {
-          // Cambio el estado de dentro/fuera de comillas
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        // Si encuentro coma fuera de comillas, cierro celda
-        cells.push(current.trim());
-        current = '';
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        cells.push(cur);
+        cur = '';
       } else {
-        // Voy acumulando el carácter en la celda actual
-        current += char;
+        cur += ch;
       }
     }
-
-    // Al final agrego la última celda
-    cells.push(current.trim());
-
-    return cells;
+    cells.push(cur);
+    return cells.map(c => c.trim());
   });
-
-  cy.log(`Filas parseadas: ${rows.length}`);
   return rows;
 }
 
-// Helper para limpiar valores nulos o con espacios
+// Helpers
 const safe = (v) => (v ?? '').toString().trim();
+const lower = (v) => safe(v).toLowerCase();
 
-// Función para leer datos de Google Sheets publicado como CSV
+// --- Mapa de GIDs por hoja (puedes sobreescribir con env si quieres) ---
+const SHEET_GIDS = {
+  'LOGIN': '1766248160',
+  'CONFIGURACIÓN-PERFILES': '1896958952',
+  'FICHEROS-CLIENTES': '520599147',
+  'PROCESOS-PRESUPUESTOS': '1905879024',
+  'PROCESOS-ÓRDENES DE CARGA-CARGAS/DESCARGAS': '1000000000', // GID temporal, necesita el real
+  'Datos': '0'
+};
+
+// Normaliza "TC001" → "tc001"
+const normalizeTc = (s) => {
+  const v = safe(s);
+  const m = v.match(/^tc(\d{1,})$/i);
+  return m ? `tc${m[1].padStart(3, '0')}` : v.toLowerCase();
+};
+
+// Lee CSV público de Google Sheets con reintentos básicos
 Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
-  cy.log('NUEVO PARSER CSV - Intentando leer datos desde Google Sheets (CSV público)...');
-
   const spreadsheetId = '1m3B_HFT8fJduBxloh8Kj36bVr0hwnj5TioUHAq5O7Zs';
-  const range = `${hoja}!A:R`; // Leer todas las columnas hasta R
-  const sheetName = range.split('!')[0]; // Nombre de la hoja
-  
-  // Determinar el gid correcto según la hoja
-  let gid = '0'; // Por defecto para la primera hoja
-  if (hoja === 'LOGIN') {
-    gid = '1766248160'; // GID específico para la hoja LOGIN
-  } else if (hoja === 'CONFIGURACIÓN-PERFILES') {
-    gid = '1896958952'; // GID específico para la hoja CONFIGURACIÓN-PERFILES
-  } else if (hoja === 'FICHEROS-CLIENTES') {
-    gid = '520599147'; // GID específico para la hoja FICHEROS-CLIENTES
-  }
-  
-  // Construyo la URL de exportación en formato CSV
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}&range=${encodeURIComponent(range)}`;
+  const range = `${hoja}!A:R`;
+  const gidEnvKey = `GID_${hoja.replace(/[^A-Z0-9]/gi, '_')}`;
+  const gid = Cypress.env(gidEnvKey) || SHEET_GIDS[hoja] || '0';
+  const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}&range=${encodeURIComponent(range)}`;
 
-  cy.log(`Spreadsheet ID: ${spreadsheetId}`);
-  cy.log(`Range: ${range}`);
-  cy.log(`GID: ${gid}`);
-  cy.log(`Intentando leer desde: ${csvUrl}`);
-
-  return cy.request({
-    method: 'GET',
-    url: csvUrl,
-    failOnStatusCode: false,
-  }).then((response) => {
-    cy.log(`Respuesta del servidor: ${response.status}`);
-
-    if (response.status === 200 && response.body) {
-      const csvData = response.body;
-      cy.log(`Datos CSV recibidos: ${csvData.length} caracteres`);
-
-      // Debug inicial: muestro algunas líneas crudas del CSV
-      const lineas = csvData.split('\n');
-      cy.log(`CSV RAW - Primera línea: "${lineas[0]}"`);
-      if (lineas.length > 1) {
-        cy.log(`CSV RAW - Segunda línea: "${lineas[1]}"`);
+  const tryRequest = (attempt = 1) => {
+    return cy.request({ method: 'GET', url, failOnStatusCode: false }).then((res) => {
+      if ((res.status >= 500 || res.status === 429) && attempt < 3) {
+        cy.wait(800 * attempt);
+        return tryRequest(attempt + 1);
       }
-
-      let filasExcel = parseCsvRespectingQuotes(csvData);
-
-      // Normalizo todas las filas para que tengan el número correcto de columnas
-      const COLS = filasExcel[0] ? filasExcel[0].length : 18; // Usar el número real de columnas
-      filasExcel = filasExcel.map(f => {
-        const row = Array.from(f);
-        while (row.length < COLS) row.push('');
-        return row.slice(0, COLS);
-      });
-
-      // Valido que tenga cabecera + al menos una fila de datos
-      if (filasExcel.length > 1) {
-        cy.log(`Leídas ${filasExcel.length} filas desde Google Sheets CSV (parser robusto)`);
-        return cy.wrap(filasExcel);
+      if (res.status === 200 && res.body) {
+        const rows = parseCsvRespectingQuotes(res.body);
+        // normaliza ancho por cabeceras
+        const COLS = rows[0] ? rows[0].length : 18;
+        const fixed = rows.map(r => {
+          const row = Array.from(r);
+          while (row.length < COLS) row.push('');
+          return row.slice(0, COLS);
+        });
+        return fixed.length > 1 ? cy.wrap(fixed) : cy.wrap([]);
       }
-    }
+      cy.log(`Error leyendo CSV (${res.status}) -> ${url}`);
+      return cy.wrap([]);
+    });
+  };
 
-    // Si hubo error al leer
-    cy.log('Error al leer Google Sheets CSV');
-    cy.log(`Status: ${response.status}`);
-    cy.log(`URL: ${csvUrl}`);
-    return cy.wrap([]);
-  });
+  return tryRequest();
 });
+
+// Selecciona la hoja por nombre de pantalla
+function seleccionarHojaPorPantalla(pantallaSafe) {
+  if (pantallaSafe === 'login') return 'LOGIN';
+  if (/(configuración|configuracion).*\(perfiles\)/.test(pantallaSafe) || pantallaSafe === 'configuración-perfiles') return 'CONFIGURACIÓN-PERFILES';
+  if (pantallaSafe.includes('ficheros') && (pantallaSafe.includes('clientes') || pantallaSafe === 'ficheros-clientes')) return 'FICHEROS-CLIENTES';
+  if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('presupuestos') || pantallaSafe === 'procesos-presupuestos')) return 'PROCESOS-PRESUPUESTOS';
+  return 'Datos';
+}
+
+// Mapea cabeceras -> índice (independiente del orden)
+function mapHeaderIndexes(headers) {
+  const idx = {};
+  const find = (regexArr) =>
+    headers.findIndex(h => regexArr.some(r => r.test(h)));
+
+  idx.pantalla      = find([/^\s*pantalla\s*$/i]);
+  idx.funcionalidad = find([/^\s*funcionalidad\s*$/i]);
+  idx.caso          = find([/^\s*n.?°?\s*caso\s*$/i, /^\s*caso\s*$/i]);
+  idx.nombre        = find([/^\s*nombre\s*$/i]);
+  idx.prioridad     = find([/^\s*prioridad\s*$/i]);
+  idx.funcion       = find([/^\s*funci[oó]n\s*$/i, /^\s*function\s*$/i]);
+
+  // etiquetas/valores/datos 1..4 - mapeo directo por posición
+  idx.etiqueta_1 = 6;      // G
+  idx.valor_etiqueta_1 = 7; // H  
+  idx.dato_1 = 8;          // I
+  idx.etiqueta_2 = 9;       // J
+  idx.valor_etiqueta_2 = 10; // K
+  idx.dato_2 = 11;         // L
+  idx.etiqueta_3 = 12;     // M
+  idx.valor_etiqueta_3 = 13; // N
+  idx.dato_3 = 14;         // O
+  idx.etiqueta_4 = 15;     // P
+  idx.valor_etiqueta_4 = 16; // Q
+  idx.dato_4 = 17;         // R
+  return idx;
+}
+
+// Construye objeto caso a partir de una fila + mapeo
+function buildCaso(fila, idx) {
+  const get = (k) => idx[k] >= 0 ? safe(fila[idx[k]]) : '';
+  const casoRaw = safe(get('caso')).toUpperCase();
+  
+  
+  if (!/^TC\d+(\.\d+)?$/i.test(casoRaw)) return null;
+
+  return {
+    pantalla:      get('pantalla'),
+    funcionalidad: get('funcionalidad'),
+    caso:          casoRaw,                        // "TC001"
+    nombre:        get('nombre'),
+    prioridad:     get('prioridad'),
+    funcion:       normalizeTc(get('funcion')),    // "tc001", "tc010", etc.
+    etiqueta_1:    get('etiqueta_1'),
+    valor_etiqueta_1: get('valor_etiqueta_1'),
+    dato_1:        get('dato_1'),
+    etiqueta_2:    get('etiqueta_2'),
+    valor_etiqueta_2: get('valor_etiqueta_2'),
+    dato_2:        get('dato_2'),
+    etiqueta_3:    get('etiqueta_3'),
+    valor_etiqueta_3: get('valor_etiqueta_3'),
+    dato_3:        get('dato_3'),
+    etiqueta_4:    get('etiqueta_4'),
+    valor_etiqueta_4: get('valor_etiqueta_4'),
+    dato_4:        get('dato_4'),
+  };
+}
 
 // Función que filtra los datos del Excel en base a la pantalla
 Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
-  const pantallaSafe = safe(pantalla).toLowerCase();
-  
-  // Determinar la hoja correcta según la pantalla
-  let hoja = 'Datos'; // Por defecto
-  if (pantallaSafe === 'login') {
-    hoja = 'LOGIN';
-  } else if (pantallaSafe === 'configuración (perfiles)' || pantallaSafe === 'configuracion (perfiles)') {
-    hoja = 'CONFIGURACIÓN-PERFILES';
-  } else if (pantallaSafe === 'ficheros (clientes)' || pantallaSafe === 'ficheros-clientes') {
-    hoja = 'FICHEROS-CLIENTES';
-  }
+  const pantallaSafe = lower(pantalla);
+  const hoja = seleccionarHojaPorPantalla(pantallaSafe);
 
-  return cy.leerDatosGoogleSheets(hoja).then((filasExcel) => {
-    if (!filasExcel || filasExcel.length === 0) {
-      cy.log('No se pudieron leer datos del Excel');
-      return cy.wrap([]);
-    }
+  return cy.leerDatosGoogleSheets(hoja).then((filas) => {
+    if (!filas || filas.length === 0) return cy.wrap([]);
 
-    // Obtengo los headers
-    const headers = (filasExcel[0] || []).map(safe);
-    cy.log(`Headers del Excel: [${headers.map(h => `"${h}"`).join(', ')}]`);
-    cy.log(`Número de columnas: ${headers.length}`);
+    const headers = (filas[0] || []).map(safe);
+    cy.log(`Headers del Excel: ${JSON.stringify(headers)}`);
+    const idx = mapHeaderIndexes(headers);
+    cy.log(`Mapeo de índices: ${JSON.stringify(idx)}`);
 
-    const datosFiltrados = [];
-
-    // Recorro todas las filas de datos
-    for (let i = 1; i < filasExcel.length; i++) {
-      const fila = (filasExcel[i] || []).map(safe);
-
-      // Ignoro filas completamente vacías
+    const out = [];
+    for (let i = 1; i < filas.length; i++) {
+      const fila = (filas[i] || []).map(safe);
       if (fila.every(c => c === '')) continue;
+      
+      const caso = buildCaso(fila, idx);
+      if (caso) out.push(caso);
+    }
 
-      // Para la hoja LOGIN, usar la estructura específica
-      if (hoja === 'LOGIN') {
-        const datoFiltro = {
-          pantalla: safe(fila[0]),          // A: Pantalla
-          funcionalidad: safe(fila[1]),     // B: Funcionalidad
-          caso: safe(fila[2]),              // C: N°Caso
-          nombre: safe(fila[3]),             // D: Nombre
-          prioridad: safe(fila[4]),         // E: Prioridad
-          funcion: safe(fila[5]),           // F: Función
-          etiqueta_1: safe(fila[6]),        // G: etiqueta_1
-          valor_etiqueta_1: safe(fila[7]),  // H: valor_etiqueta_1
-          dato_1: safe(fila[8]),            // I: dato_1
-          etiqueta_2: safe(fila[9]),        // J: etiqueta_2
-          valor_etiqueta_2: safe(fila[10]), // K: valor_etiqueta_2
-          dato_2: safe(fila[11]),           // L: dato_2
-          etiqueta_3: safe(fila[12]),       // M: etiqueta_3
-          valor_etiqueta_3: safe(fila[13]), // N: valor_etiqueta_3
-          dato_3: safe(fila[14]),           // O: dato_3
-          etiqueta_4: safe(fila[15]),       // P: etiqueta_4
-          valor_etiqueta_4: safe(fila[16]), // Q: valor_etiqueta_4
-          dato_4: safe(fila[17])            // R: dato_4
-        };
-
-        // Si el caso es un TC, hago debugging adicional
-        if (datoFiltro.caso && datoFiltro.caso.toUpperCase().startsWith('TC')) {
-          cy.log(`ENCONTRADO ${datoFiltro.caso}: ${datoFiltro.nombre}`);
-          cy.log(`DEBUG ${datoFiltro.caso}: dato_1="${datoFiltro.dato_1}", dato_2="${datoFiltro.dato_2}", dato_3="${datoFiltro.dato_3}", dato_4="${datoFiltro.dato_4}"`);
-        }
-
-        datosFiltrados.push(datoFiltro);
-      } else if (hoja === 'CONFIGURACIÓN-PERFILES') {
-        // Para la hoja CONFIGURACIÓN-PERFILES, usar estructura específica
-        const caso = safe(fila[2]);
-        
-        // Solo procesar filas que tengan un caso válido (TC001, TC002, etc.)
-        if (caso && caso.toUpperCase().match(/^TC\d+$/)) {
-          const datoFiltro = {
-            pantalla: safe(fila[0]),          // A: Pantalla
-            funcionalidad: safe(fila[1]),     // B: Funcionalidad
-            caso: caso,                       // C: N°Caso
-            nombre: safe(fila[3]),           // D: Nombre
-            prioridad: safe(fila[4]),         // E: Prioridad
-            funcion: safe(fila[5]),           // F: Función
-            etiqueta_1: safe(fila[6]),        // G: etiqueta_1
-            valor_etiqueta_1: safe(fila[7]),  // H: valor_etiqueta_1
-            dato_1: safe(fila[8]),            // I: dato_1
-            etiqueta_2: safe(fila[9]),        // J: etiqueta_2
-            valor_etiqueta_2: safe(fila[10]), // K: valor_etiqueta_2
-            dato_2: safe(fila[11]),           // L: dato_2
-            etiqueta_3: safe(fila[12]),       // M: etiqueta_3
-            valor_etiqueta_3: safe(fila[13]), // N: valor_etiqueta_3
-            dato_3: safe(fila[14]),           // O: dato_3
-            etiqueta_4: safe(fila[15]),       // P: etiqueta_4
-            valor_etiqueta_4: safe(fila[16]), // Q: valor_etiqueta_4
-            dato_4: safe(fila[17])            // R: dato_4
-          };
-
-          cy.log(`ENCONTRADO ${datoFiltro.caso}: ${datoFiltro.nombre}`);
-          cy.log(`DEBUG ${datoFiltro.caso}: función="${datoFiltro.funcion}", dato_1="${datoFiltro.dato_1}"`);
-
-          datosFiltrados.push(datoFiltro);
-        } else {
-          cy.log(`FILA ${i} IGNORADA: caso="${caso}" no es válido`);
-        }
-      } else if (hoja === 'FICHEROS-CLIENTES') {
-        // Para la hoja FICHEROS-CLIENTES, usar estructura específica
-        const caso = safe(fila[2]);
-        
-        // Solo procesar filas que tengan un caso válido (TC001, TC002, etc.)
-        if (caso && caso.toUpperCase().match(/^TC\d+$/)) {
-          const datoFiltro = {
-            pantalla: safe(fila[0]),          // A: Pantalla
-            funcionalidad: safe(fila[1]),     // B: Funcionalidad
-            caso: caso,                       // C: N°Caso
-            nombre: safe(fila[3]),           // D: Nombre
-            prioridad: safe(fila[4]),         // E: Prioridad
-            funcion: safe(fila[5]),           // F: Función
-            etiqueta_1: safe(fila[6]),        // G: etiqueta_1
-            valor_etiqueta_1: safe(fila[7]),  // H: valor_etiqueta_1
-            dato_1: safe(fila[8]),            // I: dato_1
-            etiqueta_2: safe(fila[9]),        // J: etiqueta_2
-            valor_etiqueta_2: safe(fila[10]), // K: valor_etiqueta_2
-            dato_2: safe(fila[11]),           // L: dato_2
-            etiqueta_3: safe(fila[12]),       // M: etiqueta_3
-            valor_etiqueta_3: safe(fila[13]), // N: valor_etiqueta_3
-            dato_3: safe(fila[14]),           // O: dato_3
-            etiqueta_4: safe(fila[15]),       // P: etiqueta_4
-            valor_etiqueta_4: safe(fila[16]), // Q: valor_etiqueta_4
-            dato_4: safe(fila[17])            // R: dato_4
-          };
-
-          cy.log(`ENCONTRADO ${datoFiltro.caso}: ${datoFiltro.nombre}`);
-          cy.log(`DEBUG ${datoFiltro.caso}: función="${datoFiltro.funcion}", dato_1="${datoFiltro.dato_1}"`);
-
-          datosFiltrados.push(datoFiltro);
-        } else {
-          cy.log(`FILA ${i} IGNORADA: caso="${caso}" no es válido`);
-        }
-      } else {
-        // Para otras hojas, usar la lógica original
-        const pantallaFila = (fila[0] || '').toLowerCase();
-        if (pantallaFila === pantallaSafe) {
-          cy.log(`PROCESANDO FILA ${i}: pantalla="${pantallaFila}" === "${pantallaSafe}"`);
-          const datoFiltro = {
-            pantalla: safe(fila[0]),          // A
-            funcionalidad: safe(fila[1]),     // B
-            caso: safe(fila[2]),              // C
-            etiqueta_1: safe(fila[3]),        // D
-            valor_etiqueta_1: safe(fila[4]),  // E
-            dato_1: safe(fila[5]),            // F
-            etiqueta_2: safe(fila[6]),        // G
-            valor_etiqueta_2: safe(fila[7]),  // H
-            dato_2: safe(fila[8])             // I
-          };
-
-          datosFiltrados.push(datoFiltro);
-        }
+    // Eliminar duplicados basado en caso + nombre
+    const casosUnicos = [];
+    const casosVistos = new Set();
+    
+    for (const caso of out) {
+      const clave = `${caso.caso}-${caso.nombre}`;
+      if (!casosVistos.has(clave)) {
+        casosVistos.add(clave);
+        casosUnicos.push(caso);
       }
     }
 
-    cy.log(`DEBUGGING COMPLETO - Encontrados ${datosFiltrados.length} casos para pantalla "${pantalla}"`);
-
-    // Resumen de todos los casos encontrados
-    datosFiltrados.forEach(dato => {
-      if (dato.caso && dato.caso.toUpperCase().startsWith('TC')) {
-        cy.log(`RESUMEN ${dato.caso}: ${dato.nombre || 'Sin nombre'}`);
-      }
+    // Ordena por número de TC
+    casosUnicos.sort((a, b) => {
+      const na = parseInt(a.caso.replace(/\D/g, ''), 10);
+      const nb = parseInt(b.caso.replace(/\D/g, ''), 10);
+      return na - nb;
     });
 
-    return cy.wrap(datosFiltrados);
+    // Log resumen
+    cy.log(`Leídos ${out.length} casos de "${hoja}" (${casosUnicos.length} únicos después de eliminar duplicados)`);
+    const casosTC008 = casosUnicos.filter(c => c.caso === 'TC008');
+    cy.log(`Casos TC008 encontrados: ${casosTC008.length}`);
+    casosTC008.forEach(c => cy.log(`TC008: ${c.dato_1} = ${c.dato_2}`));
+
+    return cy.wrap(casosUnicos);
   });
 });

@@ -82,9 +82,11 @@ Cypress.Commands.add('login', ({
 // Abro el drawer y navego por texto de menú y submenú.
 // Me apoyo en scrollIntoView y expects explícitos para estabilidad.
 Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu) => {
+  // Abrir drawer
   cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click({ force: true });
   cy.get('.MuiDrawer-root', { timeout: 10000 }).should('exist');
 
+  // Navegar al menú principal
   cy.get('.MuiDrawer-root')
     .contains(textoMenu, { timeout: 10000 })
     .scrollIntoView()
@@ -92,15 +94,24 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu) => {
     .closest('div[role="button"]')
     .click({ force: true });
 
+  // Navegar al submenú
   cy.get('.MuiDrawer-root')
     .contains(textoSubmenu, { timeout: 10000 })
     .scrollIntoView()
     .should('exist')
     .click({ force: true });
 
+  // Esperar a que la navegación se complete
+  cy.wait(1000);
+
   // Cerrar la barra lateral después de navegar
   cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click({ force: true });
-  cy.get('.MuiDrawer-root').should('not.exist');
+  
+  // Esperar a que el drawer se cierre completamente
+  cy.get('.MuiDrawer-root').should('not.exist', { timeout: 5000 });
+  
+  // Esperar un poco más para asegurar que la página se haya cargado
+  cy.wait(1000);
 });
 
 // ===== ACUMULADOR POR PANTALLA =====

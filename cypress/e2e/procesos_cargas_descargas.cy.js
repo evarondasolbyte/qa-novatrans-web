@@ -1,41 +1,6 @@
 describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
-    const casos = [
-        { numero: 1, nombre: 'TC001 - Verificar que se muestran correctamente las órdenes de carga', funcion: tc001, prioridad: 'ALTA' },
-        { numero: 2, nombre: 'TC002 - Filtrar por campo "O.C." con coincidencia exacta', funcion: () => ejecutarFiltroIndividual(2), prioridad: 'ALTA' },
-        { numero: 3, nombre: 'TC003 - Filtrar por campo "Proveedor" con coincidencia parcial', funcion: () => ejecutarFiltroIndividual(3), prioridad: 'ALTA' },
-        { numero: 4, nombre: 'TC004 - Filtrar por campo "Lugar" sin coincidencias', funcion: () => ejecutarFiltroIndividual(4), prioridad: 'MEDIA' },
-        { numero: 5, nombre: 'TC005 - Filtrar por campo "Ruta" sensible a mayúsculas', funcion: () => ejecutarFiltroIndividual(5), prioridad: 'MEDIA' },
-        { numero: 6, nombre: 'TC006 - Ingresar caracteres especiales en el filtro de "Domicilio"', funcion: () => ejecutarFiltroIndividual(6), prioridad: 'BAJA' },
-        { numero: 7, nombre: 'TC007 - Aplicar filtro combinado: "Proveedor" + Fecha desde/hasta', funcion: tc007, prioridad: 'ALTA' },
-        { numero: 8, nombre: 'TC008 - Limpiar filtro y verificar recuperación de todos los datos', funcion: tc008, prioridad: 'MEDIA' },
-        { numero: 9, nombre: 'TC009 - Ingresar Fecha Desde y Fechas Hasta válidas', funcion: tc009, prioridad: 'ALTA' },
-        { numero: 10, nombre: 'TC010 - Ingresar solo Fecha Desde', funcion: tc010, prioridad: 'MEDIA' },
-        { numero: 11, nombre: 'TC011 - Ingresar solo Fecha Hasta', funcion: tc011, prioridad: 'MEDIA' },
-        { numero: 12, nombre: 'TC012 - Ingresar Fecha Desde mayor que Fecha Hasta', funcion: tc012, prioridad: 'MEDIA' },
-        { numero: 13, nombre: 'TC013 - Usar formato incorrecto en el campo de fecha', funcion: tc013, prioridad: 'MEDIA' },
-        { numero: 14, nombre: 'TC014 - Ordenar columna "Fecha" ascendente', funcion: tc014, prioridad: 'MEDIA' },
-        { numero: 15, nombre: 'TC015 - Ordenar columna "Fecha" descendente', funcion: tc015, prioridad: 'MEDIA' },
-        { numero: 16, nombre: 'TC016 - Ordenar por columna "Proveedor" alfabéticamente en orden descendente', funcion: tc016, prioridad: 'MEDIA' },
-        { numero: 17, nombre: 'TC017 - Ordenar columna "O.C." (número) ascendente', funcion: tc017, prioridad: 'MEDIA' },
-        { numero: 18, nombre: 'TC018 - Aplicar orden y luego un filtro', funcion: tc018, prioridad: 'MEDIA' },
-        { numero: 19, nombre: 'TC019 - Seleccionar una fila individual', funcion: tc019, prioridad: 'ALTA' },
-        { numero: 20, nombre: 'TC020 - Botón "Editar" sin selección', funcion: tc020, prioridad: 'MEDIA' },
-        { numero: 21, nombre: 'TC021 - Botón "Editar" con una sola fila seleccionada', funcion: tc021, prioridad: 'ALTA' },
-        { numero: 22, nombre: 'TC022 - Botón "+ Añadir"', funcion: tc022, prioridad: 'ALTA' },
-        { numero: 23, nombre: 'TC023 - Scroll horizontal/vertical', funcion: tc023, prioridad: 'BAJA' },
-        { numero: 24, nombre: 'TC024 - Menú de columnas: Sort ASC/DESC', funcion: tc024, prioridad: 'BAJA' },
-        { numero: 25, nombre: 'TC025 - Menú de columna: Filter', funcion: tc025, prioridad: 'MEDIA' },
-        { numero: 26, nombre: 'TC026 - Menú de columna: Hide column', funcion: tc026, prioridad: 'BAJA' },
-        { numero: 27, nombre: 'TC027 - Menú de columna: Manage columns', funcion: tc027, prioridad: 'BAJA' },
-        { numero: 28, nombre: 'TC028 - Cambiar idioma a Inglés', funcion: tc028, prioridad: 'BAJA' },
-        { numero: 29, nombre: 'TC029 - Cambiar idioma a Catalán', funcion: tc029, prioridad: 'BAJA' },
-        { numero: 30, nombre: 'TC030 - Cambiar idioma a Español', funcion: tc030, prioridad: 'BAJA' },
-        { numero: 31, nombre: 'TC031 - Eliminar con selección', funcion: tc031, prioridad: 'ALTA' },
-        { numero: 32, nombre: 'TC032 - Eliminar sin selección', funcion: tc032, prioridad: 'MEDIA' },
-    ];
-
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
     after(() => {
         cy.log('Procesando resultados finales para Procesos (Órdenes de Carga - CARGAS/DESCARGAS)');
@@ -49,243 +14,154 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
         cy.procesarResultadosPantalla('Procesos (Órdenes de Carga - CARGAS/DESCARGAS)');
     });
 
-    // Iterador de casos con protección anti-doble-registro
-    // Filtrar casos por prioridad si se especifica
-    const prioridadFiltro = Cypress.env('prioridad');
-    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
-        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
-        : casos;
+    // Test único que ejecuta todos los casos secuencialmente
+    it('Ejecutar casos de Procesos (Órdenes de Carga - CARGAS/DESCARGAS)', () => {
+        cy.obtenerDatosExcel('Procesos-Órdenes de Carga- CARGAS/DESCARGAS').then((casos) => {
+            cy.log(`Encontrados ${casos.length} casos en Excel`);
+            
+            // Filtrar casos por prioridad si se especifica
+            const prioridadFiltro = Cypress.env('prioridad');
+            const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
+                ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
+                : casos;
 
-    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
-        it(`${nombre} [${prioridad}]`, () => {
-            // Reset de flags por test (muy importante)
-            cy.resetearFlagsTest();
+            cy.log(`Ejecutando ${casosFiltrados.length} casos filtrados`);
 
-            // Captura de errores y registro
-            cy.on('fail', (err) => {
-                cy.capturarError(nombre, err, {
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    archivo,
-                    pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
+            // Ejecutar casos uno por uno usando cy.wrap().each()
+            return cy.wrap(casosFiltrados).each((caso, index) => {
+                cy.log(`Procesando caso ${index + 1}/${casosFiltrados.length}: ${caso.caso} - ${caso.nombre}`);
+                
+                // Reset de flags por test
+                cy.resetearFlagsTest();
+
+                // Captura de errores y registro
+                cy.once('fail', (err) => {
+                    cy.capturarError(caso.nombre, err, {
+                        numero: caso.caso,
+                        nombre: caso.nombre,
+                        esperado: 'Comportamiento correcto',
+                        archivo,
+                        pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
+                    });
+                    return false;
                 });
-                return false;
-            });
 
-            cy.login();
-            cy.wait(500);
-
-            // Ejecuta el caso y sólo auto-OK si nadie registró antes
-            return funcion().then(() => {
+                cy.login();
                 cy.wait(500);
-                cy.estaRegistrado().then((ya) => {
-                    if (!ya) {
-                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                        cy.log(`Pantalla: Procesos (Órdenes de Carga - CARGAS/DESCARGAS)`);
-                        cy.registrarResultados({
-                            numero,
-                            nombre,
-                            esperado: 'Comportamiento correcto',
-                            obtenido: 'Comportamiento correcto',
-                            resultado: 'OK',
-                            archivo,
-                            pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
+
+                // Ejecutar función según el número de caso
+                const numeroCaso = parseInt(caso.caso.replace(/\D/g, ''), 10);
+                
+                let funcion;
+                if (numeroCaso >= 2 && numeroCaso <= 6) {
+                    funcion = () => ejecutarFiltroIndividual(numeroCaso, caso);
+                } else {
+                    // Mapeo directo para casos específicos
+                    const funcionesMap = {
+                        1: tc001, 7: tc007, 8: tc008, 9: tc009, 10: tc010,
+                        11: tc011, 12: tc012, 13: tc013, 14: tc014, 15: tc015,
+                        16: tc016, 17: tc017, 18: tc018, 19: tc019, 20: tc020,
+                        21: tc021, 22: tc022, 23: tc023, 24: tc024, 25: tc025,
+                        26: tc026, 27: tc027, 28: tc028, 29: tc029, 30: tc030,
+                        31: tc031, 32: tc032
+                    };
+                    funcion = funcionesMap[numeroCaso];
+                }
+                
+                if (funcion) {
+                    return funcion().then(() => {
+                        cy.wait(500);
+                        cy.estaRegistrado().then((ya) => {
+                            if (!ya) {
+                                cy.log(`Registrando OK automático para test ${caso.caso}: ${caso.nombre}`);
+                                cy.registrarResultados({
+                                    numero: caso.caso,
+                                    nombre: caso.nombre,
+                                    esperado: 'Comportamiento correcto',
+                                    obtenido: 'Comportamiento correcto',
+                                    resultado: 'OK',
+                                    archivo,
+                                    pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
+                                });
+                            } else {
+                                cy.log(`Test ${caso.caso} ya registrado, saltando auto-OK`);
+                            }
                         });
-                    } else {
-                        cy.log(`Test ${numero} ya registrado, saltando auto-OK`);
-                    }
-                });
+                    });
+                } else {
+                    cy.log(`No se encontró función para caso ${caso.caso}`);
+                    return cy.wrap(false);
+                }
             });
         });
     });
 
 
     // === FUNCIÓN PARA FILTROS CON DATOS DEL EXCEL ===
-    function ejecutarFiltroIndividual(numeroCaso) {
+    function ejecutarFiltroIndividual(numeroCaso, caso) {
+        cy.log(`Ejecutando filtro individual para TC${numeroCaso}: ${caso.nombre}`);
+        
         cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
         cy.url().should('include', '/loads-unloads');
         cy.get('.MuiDataGrid-root').should('be.visible');
 
-        // Obtener datos del Excel para Procesos-Órdenes de Carga- CARGAS/DESCARGAS
-        return cy.obtenerDatosExcel('Procesos-Órdenes de Carga- CARGAS/DESCARGAS').then((datosFiltros) => {
-            const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
-            cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
+        const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
+        cy.log(`Ejecutando TC${numeroCasoFormateado}: ${caso.valor_etiqueta_1} - ${caso.dato_1}`);
+        cy.log(`Datos del filtro: columna="${caso.dato_1}", valor="${caso.dato_2}"`);
+
+        // Verificar que dato_2 no esté vacío
+        if (!caso.dato_2 || caso.dato_2.trim() === '') {
+            cy.log(`TC${numeroCasoFormateado}: dato_2 está vacío, saltando filtro`);
+            return cy.wrap(false);
+        }
+        
+        // Ejecutar el filtro específico
+        cy.get('select[name="column"]').select(caso.dato_1);
+        
+        cy.log(`Buscando valor: "${caso.dato_2}"`);
+        cy.get('input[placeholder*="search"]')
+            .should('be.visible')
+            .clear({ force: true })
+            .type(caso.dato_2, { force: true });
+        cy.wait(2000);
+
+        // Verificar si hay resultados después del filtro
+        cy.wait(1000);
+        cy.get('body').then($body => {
+            const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+            const totalFilas = $body.find('.MuiDataGrid-row').length;
             
-            const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
+            cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}, Total filas: ${totalFilas}`);
+            cy.log(`Filtro aplicado: Columna "${caso.dato_1}" = "${caso.dato_2}"`);
             
-            if (!filtroEspecifico) {
-                cy.log(`No se encontró TC${numeroCasoFormateado} en Excel, usando datos por defecto`);
-                
-                // Datos por defecto para casos específicos de cargas/descargas
-                const datosPorDefecto = {
-                    '002': { columna: 'O.C.', valor: '1700342' },
-                    '003': { columna: 'Proveedor', valor: '368' },
-                    '004': { columna: 'Lugar', valor: 'Marbella' },
-                    '005': { columna: 'Ruta', valor: 'Origen' },
-                    '006': { columna: 'Domicilio', valor: '$%' }
-                };
-                
-                const datosDefecto = datosPorDefecto[numeroCasoFormateado] || { columna: 'O.C.', valor: '1700342' };
-                
-                cy.log(`Usando datos por defecto: columna="${datosDefecto.columna}", valor="${datosDefecto.valor}"`);
-                
-                // Ejecutar filtro con datos por defecto
-                cy.get('select[name="column"]').select(datosDefecto.columna);
-                cy.get('input#search[placeholder="Buscar"]')
-                    .should('be.visible')
-                    .clear({ force: true })
-                    .type(`${datosDefecto.valor}{enter}`, { force: true });
-                cy.wait(2000);
-
-                // Verificar si hay resultados después del filtro
-                cy.wait(1000);
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}`);
-                    cy.log(`Filtro aplicado (por defecto): Columna "${datosDefecto.columna}" = "${datosDefecto.valor}"`);
-                    
-                    let resultado, obtenido;
-                    
-                    if (numeroCasoFormateado === '004' || numeroCasoFormateado === '006') {
-                        // TC004 busca "Marbella" y TC006 busca "$%" que no existen, por lo que 0 resultados es correcto
-                        resultado = 'OK';
-                        obtenido = `No se muestran resultados (comportamiento esperado para búsqueda inexistente)`;
-                    } else {
-                        // Para otros casos, esperamos encontrar resultados
-                        resultado = filasVisibles > 0 ? 'OK' : 'ERROR';
-                        obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
-                    }
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Filtro aplicado correctamente - ${resultado}`);
-                    
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar carga/descarga por ${datosDefecto.columna}`,
-                        esperado: `Se ejecuta filtro por columna "${datosDefecto.columna}" con valor "${datosDefecto.valor}"`,
-                        obtenido: obtenido,
-                        resultado: resultado,
-                        archivo,
-                        pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
-                    });
-                });
-                
-                return cy.wrap(true);
-            }
-
-            cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
-            cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
-
-            // Verificar que dato_2 no esté vacío, pero usar datos por defecto si está vacío
-            if (!filtroEspecifico.dato_2 || filtroEspecifico.dato_2.trim() === '') {
-                cy.log(`TC${numeroCasoFormateado}: dato_2 está vacío, usando datos por defecto`);
-                
-                // Datos por defecto para casos específicos de cargas/descargas
-                const datosPorDefecto = {
-                    '002': { columna: 'O.C.', valor: '1700342' },
-                    '003': { columna: 'Proveedor', valor: '368' },
-                    '004': { columna: 'Lugar', valor: 'Marbella' },
-                    '005': { columna: 'Ruta', valor: 'Origen' },
-                    '006': { columna: 'Domicilio', valor: '$%' }
-                };
-                
-                const datosDefecto = datosPorDefecto[numeroCasoFormateado] || { columna: 'O.C.', valor: '1700342' };
-                
-                cy.log(`Usando datos por defecto: columna="${datosDefecto.columna}", valor="${datosDefecto.valor}"`);
-                
-                // Ejecutar filtro con datos por defecto
-                cy.get('select[name="column"]').select(datosDefecto.columna);
-                cy.get('input#search[placeholder="Buscar"]')
-                    .should('be.visible')
-                    .clear({ force: true })
-                    .type(`${datosDefecto.valor}{enter}`, { force: true });
-                cy.wait(2000);
-
-                // Verificar si hay resultados después del filtro
-                cy.wait(1000);
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}`);
-                    cy.log(`Filtro aplicado (por defecto): Columna "${datosDefecto.columna}" = "${datosDefecto.valor}"`);
-                    
-                    let resultado, obtenido;
-                    
-                    if (numeroCasoFormateado === '004' || numeroCasoFormateado === '006') {
-                        // TC004 busca "Marbella" y TC006 busca "$%" que no existen, por lo que 0 resultados es correcto
-                        resultado = 'OK';
-                        obtenido = `No se muestran resultados (comportamiento esperado para búsqueda inexistente)`;
-                    } else {
-                        // Para otros casos, esperamos encontrar resultados
-                        resultado = filasVisibles > 0 ? 'OK' : 'ERROR';
-                        obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
-                    }
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Filtro aplicado correctamente - ${resultado}`);
-                    
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar carga/descarga por ${datosDefecto.columna}`,
-                        esperado: `Se ejecuta filtro por columna "${datosDefecto.columna}" con valor "${datosDefecto.valor}"`,
-                        obtenido: obtenido,
-                        resultado: resultado,
-                        archivo,
-                        pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
-                    });
-                });
-                
-                return cy.wrap(true);
+            // Para Procesos-Órdenes de Carga- CARGAS/DESCARGAS, verificamos que el filtro funcione
+            // Para TC004 y TC006, esperamos 0 resultados, por lo que es OK
+            let resultado, obtenido;
+            
+            if (numeroCasoFormateado === '004' || numeroCasoFormateado === '006') {
+                // TC004 busca "Marbella" y TC006 busca "$%" que no existen, por lo que 0 resultados es correcto
+                resultado = 'OK';
+                obtenido = `No se muestran resultados (comportamiento esperado para búsqueda inexistente)`;
+            } else {
+                // Para otros casos, esperamos encontrar resultados
+                resultado = filasVisibles > 0 ? 'OK' : 'ERROR';
+                obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
             }
             
-            // Ejecutar el filtro específico
-            cy.get('select[name="column"]').select(filtroEspecifico.dato_1);
+            cy.log(`TC${numeroCasoFormateado}: Filtro completado - ${resultado}`);
             
-            cy.log(`Buscando valor: "${filtroEspecifico.dato_2}"`);
-            cy.get('input#search[placeholder="Buscar"]')
-                .should('be.visible')
-                .clear({ force: true })
-                .type(filtroEspecifico.dato_2, { force: true });
-            cy.wait(2000);
-
-            // Verificar si hay resultados después del filtro
-            cy.wait(1000);
-            cy.get('body').then($body => {
-                const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                const totalFilas = $body.find('.MuiDataGrid-row').length;
-                
-                cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}, Total filas: ${totalFilas}`);
-                cy.log(`Filtro aplicado: Columna "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`);
-                
-                // Para Procesos-Órdenes de Carga- CARGAS/DESCARGAS, verificamos que el filtro funcione
-                // Para TC004 y TC006, esperamos 0 resultados, por lo que es OK
-                let resultado, obtenido;
-                
-                if (numeroCasoFormateado === '004' || numeroCasoFormateado === '006') {
-                    // TC004 busca "Marbella" y TC006 busca "$%" que no existen, por lo que 0 resultados es correcto
-                    resultado = 'OK';
-                    obtenido = `No se muestran resultados (comportamiento esperado para búsqueda inexistente)`;
-                } else {
-                    // Para otros casos, esperamos encontrar resultados
-                    resultado = filasVisibles > 0 ? 'OK' : 'ERROR';
-                    obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
-                }
-                
-                cy.log(`TC${numeroCasoFormateado}: Filtro completado - ${resultado}`);
-                
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Filtrar carga/descarga por ${filtroEspecifico.dato_1}`,
-                    esperado: `Se ejecuta filtro por columna "${filtroEspecifico.dato_1}" con valor "${filtroEspecifico.dato_2}"`,
-                    obtenido: obtenido,
-                    resultado: resultado,
-                    archivo,
-                    pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
-                });
+            cy.registrarResultados({
+                numero: numeroCaso,
+                nombre: `TC${numeroCasoFormateado} - Filtrar carga/descarga por ${caso.dato_1}`,
+                esperado: `Se ejecuta filtro por columna "${caso.dato_1}" con valor "${caso.dato_2}"`,
+                obtenido: obtenido,
+                resultado: resultado,
+                archivo,
+                pantalla: 'Procesos (Órdenes de Carga - CARGAS/DESCARGAS)'
             });
-            
-            return cy.wrap(true);
         });
+        
+        return cy.wrap(true);
     }
 
     // === FUNCIONES POR CASO ===
@@ -299,111 +175,6 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
 
         //Validación mínima para asegurar que la pantalla cargó correctamente
         return cy.contains('Proveedor').should('exist');
-    }
-
-    function tc002() {
-        //Primero navego al módulo correcto desde el menú lateral
-        //Este comando personalizado me asegura que estoy en la pantalla de Cargas/Descargas
-        cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
-
-        //Confirmo que la URL realmente haya cambiado al módulo que quiero testear
-        cy.url().should('include', '/loads-unloads');
-
-        //Aplico un filtro: selecciono la columna "O.C." en el select de búsqueda
-        cy.get('select[name="column"]').select('O.C.');
-
-        //Borro lo que haya en el input de búsqueda y escribo "1700342" con Enter
-        //Uso { force: true } porque el campo puede estar tapado por overlays o capas
-        cy.get('input#search[placeholder="Buscar"]')
-            .clear({ force: true })
-            .type('1700342{enter}', { force: true });
-
-        //Ahora valido que el primer resultado visible tenga exactamente "1700342"
-        //Uso [data-field="oc"] porque esa celda representa la columna "O.C." en la fila
-        return cy.get('.MuiDataGrid-row:visible')
-            .first()
-            .find('div[data-field="oc"]')
-            .invoke('text')
-            .should('eq', '1700342'); //Confirmo que el contenido sea exactamente ese número
-    }
-
-    function tc003() {
-        //Accedo a la pantalla de Cargas/Descargas desde el menú lateral
-        cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
-        cy.url().should('include', '/loads-unloads');
-
-        //Aplico el filtro en la columna "Proveedor"
-        cy.get('select[name="column"]').select('Proveedor');
-
-        //Escribo "368" en el campo de búsqueda y disparo el filtro con Enter
-        cy.get('input#search[placeholder="Buscar"]')
-            .clear({ force: true })
-            .type('368{enter}', { force: true });
-
-        //Verifico que el primer resultado visible contenga "368" en la celda correspondiente
-        return cy.get('.MuiDataGrid-row:visible')
-            .first()
-            .find('div[data-field="provider"]')
-            .invoke('text')
-            .should('include', '368');
-    }
-
-    function tc004() {
-        //Accedo al módulo de Cargas/Descargas desde el menú lateral
-        cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
-        cy.url().should('include', '/loads-unloads');
-
-        //Aplico el filtro en la columna "Lugar"
-        cy.get('select[name="column"]').select('Lugar');
-
-        //Escribo un valor sin coincidencias (ej: "Marbella") y presiono Enter
-        cy.get('input#search[placeholder="Buscar"]')
-            .clear({ force: true })
-            .type('Marbella{enter}', { force: true });
-
-        //Verifico que no haya filas visibles en la tabla
-        return cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
-    }
-
-    function tc005() {
-        //Accedo al módulo de Cargas/Descargas
-        cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
-        cy.url().should('include', '/loads-unloads');
-
-        //Aplico el filtro sobre la columna "Ruta"
-        cy.get('select[name="column"]').select('Ruta');
-
-        //Busco con texto en mayúsculas, para comprobar si el filtro es case-insensitive
-        cy.get('input#search[placeholder="Buscar"]')
-            .clear({ force: true })
-            .type('ORIGEN{enter}', { force: true });
-
-        //Verifico que al menos una fila se muestre como resultado
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-
-        //Valido que la columna "Ruta" contenga la palabra "origen" (ignorando mayúsculas)
-        return cy.get('.MuiDataGrid-row:visible')
-            .first()
-            .find('div[data-field="route"]')
-            .invoke('text')
-            .should('match', /origen/i); //insensible a mayúsculas
-    }
-
-    function tc006() {
-        //Accedo al módulo de Cargas/Descargas
-        cy.navegarAMenu('Procesos', 'Órdenes de Carga - CARGAS / DESCARGAS');
-        cy.url().should('include', '/loads-unloads');
-
-        //Aplico el filtro por columna "Domicilio"
-        cy.get('select[name="column"]').select('Domicilio');
-
-        //Ingreso caracteres especiales en el filtro
-        cy.get('input#search[placeholder="Buscar"]')
-            .clear({ force: true })
-            .type('$%{enter}', { force: true });
-
-        //Verifico que el sistema no lance errores y simplemente no muestre resultados
-        return cy.get('.MuiDataGrid-row:visible').should('have.length', 0);
     }
 
     function tc007() {
