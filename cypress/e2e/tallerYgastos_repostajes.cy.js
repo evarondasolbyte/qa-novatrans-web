@@ -1,75 +1,104 @@
 describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
-    const casos = [
-        { numero: 1, nombre: 'TC001 - Carga inicial de la pantalla de Repostajes', funcion: cargaInicial, prioridad: 'ALTA' },
-        { numero: 2, nombre: 'TC002 - Filtrar repostajes por Fecha', funcion: () => ejecutarFiltroIndividual(2), prioridad: 'ALTA' },
-        { numero: 3, nombre: 'TC003 - Filtrar repostajes por Vehículo', funcion: () => ejecutarFiltroIndividual(3), prioridad: 'ALTA' },
-        { numero: 4, nombre: 'TC004 - Filtrar repostajes por PT', funcion: () => ejecutarFiltroIndividual(4), prioridad: 'MEDIA' },
-        { numero: 5, nombre: 'TC005 - Filtrar repostajes por AdBlue', funcion: filtroAdBlue, prioridad: 'MEDIA' },
-        { numero: 6, nombre: 'TC006 - Filtrar por campo "Estación de servicio"', funcion: () => ejecutarFiltroIndividual(6), prioridad: 'MEDIA' },
-        { numero: 7, nombre: 'TC007 - Filtrar por campo "Tarjeta"', funcion: () => ejecutarFiltroIndividual(7), prioridad: 'MEDIA' },
-        { numero: 8, nombre: 'TC008 - Filtrar por campo "Kilómetros/hora"', funcion: () => ejecutarFiltroIndividual(8), prioridad: 'MEDIA' },
-        { numero: 9, nombre: 'TC009 - Filtrar por campo "Litros"', funcion: () => ejecutarFiltroIndividual(9), prioridad: 'ALTA' },
-        { numero: 10, nombre: 'TC010 - Filtrar por campo "Importe"', funcion: () => ejecutarFiltroIndividual(10), prioridad: 'ALTA' },
-        { numero: 11, nombre: 'TC011 - Filtrar repostajes por "Lleno"', funcion: filtroLleno, prioridad: 'MEDIA' },
-        { numero: 12, nombre: 'TC012 - Filtrar por campo "Factura"', funcion: () => ejecutarFiltroIndividual(12), prioridad: 'ALTA' },
-        { numero: 13, nombre: 'TC013 - Filtrar por campo "Precio/L"', funcion: () => ejecutarFiltroIndividual(13), prioridad: 'MEDIA' },
-        { numero: 15, nombre: 'TC015 - Filtrar por "Sólo llenos" activado', funcion: filtroSoloLlenos, prioridad: 'MEDIA' },
-        { numero: 16, nombre: 'TC016 - Check "Sólo sin factura recibida" activado', funcion: filtroSinFacturaRecibida, prioridad: 'MEDIA' },
-        { numero: 17, nombre: 'TC017 - Borrar todos los filtros aplicados', funcion: borrarFiltros, prioridad: 'MEDIA' },
-        { numero: 18, nombre: 'TC018 - Ordenar por "Fecha" ascendente', funcion: ordenarFechaAsc, prioridad: 'MEDIA' },
-        { numero: 19, nombre: 'TC019 - Ordenar por "Fecha" descendente', funcion: ordenarFechaDesc, prioridad: 'MEDIA' },
-        { numero: 20, nombre: 'TC020 - Ordenar por "Litros" ascendente', funcion: ordenarLitrosAsc, prioridad: 'MEDIA' },
-        { numero: 21, nombre: 'TC021 - Ordenar por "Litros" descendente', funcion: ordenarLitrosDesc, prioridad: 'MEDIA' },
-        { numero: 22, nombre: 'TC022 - Seleccionar una fila individual en Repostajes', funcion: seleccionarFila, prioridad: 'ALTA' },
-        { numero: 23, nombre: 'TC023 - Verificar que el botón "Editar" no se muestra sin filas seleccionadas', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
-        { numero: 24, nombre: 'TC024 - Editar repostaje al hacer doble clic en una fila', funcion: editarConSeleccion, prioridad: 'ALTA' },
-        { numero: 25, nombre: 'TC025 - Pulsar "Eliminar" sin seleccionar ninguna fila en Repostajes', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
-        { numero: 26, nombre: 'TC026 - Eliminar un repostaje si es posible y confirmar su desaparición', funcion: eliminarConSeleccion, prioridad: 'ALTA' },
-        { numero: 27, nombre: 'TC027 - Botón "+ Añadir" siempre habilitado y abre formulario', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
-        { numero: 28, nombre: 'TC028 - Scroll horizontal/vertical en la tabla de Repostajes', funcion: scrollTabla, prioridad: 'BAJA' },
-        { numero: 29, nombre: 'TC029 - Filtrar por campo "Importe" (segundo caso)', funcion: () => ejecutarFiltroIndividual(29), prioridad: 'MEDIA' },
-        { numero: 30, nombre: 'TC030 - Recargar la página con filtros aplicados', funcion: recargarConFiltros, prioridad: 'MEDIA' },
-        { numero: 31, nombre: 'TC031 - Cambiar idioma a Inglés en Repostajes', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
-        { numero: 32, nombre: 'TC032 - Cambiar idioma a Español en Repostajes', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
-        { numero: 33, nombre: 'TC033 - Cambiar idioma a Catalán en Repostajes', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
-        { numero: 34, nombre: 'TC034 - Mostrar todos los repostajes al seleccionar "Todos" en tipo de combustible', funcion: filtroTipoTodos, prioridad: 'MEDIA' },
-        { numero: 35, nombre: 'TC035 - Filtrar repostajes por tipo de combustible "Gasoil"', funcion: filtroTipoGasoil, prioridad: 'ALTA' },
-        { numero: 36, nombre: 'TC036 - Filtrar repostajes por tipo de combustible "Gas"', funcion: filtroTipoGas, prioridad: 'ALTA' },
-        { numero: 37, nombre: 'TC037 - Filtrar por tipo de combustible "AdBlue" en Repostajes', funcion: filtroTipoAdBlue, prioridad: 'MEDIA' },
-        { numero: 38, nombre: 'TC038 - Ingresar rango de fechas válido en "Desde" y "Hasta"', funcion: filtroRangoFechas, prioridad: 'ALTA' },
-    ];
-
     // Resumen al final
     after(() => {
         cy.log('Procesando resultados finales para Taller y Gastos (Repostajes)');
         cy.procesarResultadosPantalla('Taller y Gastos (Repostajes)');
     });
 
-    casos.forEach(({ numero, nombre, funcion }) => {
-        it(nombre, () => {
-            // ✅ reset de flags como en tu patrón estándar
-            cy.resetearFlagsTest();
+    // Test que ejecuta todos los casos desde Excel
+    it('Ejecutar todos los casos de prueba desde Excel', () => {
+        cy.obtenerDatosExcel('TallerYGastos-Repostajes').then((casos) => {
+            // Filtrar solo los casos de Repostajes
+            const casosRepostajes = casos.filter(caso => 
+                caso.pantalla && caso.pantalla.toLowerCase().includes('repostajes')
+            );
+            
+            cy.log(`Se encontraron ${casos.length} casos en el Excel`);
+            cy.log(`Casos filtrados para Repostajes: ${casosRepostajes.length}`);
+            
+            // Ejecutar cada caso secuencialmente
+            casosRepostajes.forEach((caso, index) => {
+                const numero = parseInt(caso.caso.replace('TC', ''));
+                const nombre = caso.nombre || `Caso ${caso.caso}`;
+                const prioridad = caso.prioridad || 'MEDIA';
+                
+                cy.log(`Ejecutando caso ${index + 1}/${casosRepostajes.length}: ${caso.caso} - ${nombre}`);
+                
+                // Reset de flags para cada caso
+                cy.resetearFlagsTest();
 
-            // Captura de errores y registro
-            cy.on('fail', (err) => {
-                cy.capturarError(nombre, err, {
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    archivo,
-                    pantalla: 'Taller y Gastos (Repostajes)',
-                });
-                return false;
-            });
+                // Hacer login antes de ejecutar cada caso
+                cy.login();
+                cy.wait(500);
 
-            cy.login();
-            cy.wait(500);
+                // Mapeo de funciones basado en el número de caso (como el original)
+                let funcion;
+                if (numero === 1) {
+                    funcion = cargaInicial;
+                } else if (numero >= 2 && numero <= 13) {
+                    funcion = () => ejecutarFiltroIndividual(numero);
+                } else if (numero === 5) {
+                    funcion = filtroAdBlue;
+                } else if (numero === 11) {
+                    funcion = filtroLleno;
+                } else if (numero === 15) {
+                    funcion = filtroSoloLlenos;
+                } else if (numero === 16) {
+                    funcion = filtroSinFacturaRecibida;
+                } else if (numero === 17) {
+                    funcion = borrarFiltros;
+                } else if (numero === 18) {
+                    funcion = ordenarFechaAsc;
+                } else if (numero === 19) {
+                    funcion = ordenarFechaDesc;
+                } else if (numero === 20) {
+                    funcion = ordenarLitrosAsc;
+                } else if (numero === 21) {
+                    funcion = ordenarLitrosDesc;
+                } else if (numero === 22) {
+                    funcion = seleccionarFila;
+                } else if (numero === 23) {
+                    funcion = editarSinSeleccion;
+                } else if (numero === 24) {
+                    funcion = editarConSeleccion;
+                } else if (numero === 25) {
+                    funcion = eliminarSinSeleccion;
+                } else if (numero === 26) {
+                    funcion = eliminarConSeleccion;
+                } else if (numero === 27) {
+                    funcion = abrirFormularioAlta;
+                } else if (numero === 28) {
+                    funcion = scrollTabla;
+                } else if (numero === 29) {
+                    funcion = () => ejecutarFiltroIndividual(29);
+                } else if (numero === 30) {
+                    funcion = recargarConFiltros;
+                } else if (numero === 31) {
+                    funcion = cambiarIdiomaIngles;
+                } else if (numero === 32) {
+                    funcion = cambiarIdiomaEspanol;
+                } else if (numero === 33) {
+                    funcion = cambiarIdiomaCatalan;
+                } else if (numero === 34) {
+                    funcion = filtroTipoTodos;
+                } else if (numero === 35) {
+                    funcion = filtroTipoGasoil;
+                } else if (numero === 36) {
+                    funcion = filtroTipoGas;
+                } else if (numero === 37) {
+                    funcion = filtroTipoAdBlue;
+                } else if (numero === 38) {
+                    funcion = filtroRangoFechas;
+                } else {
+                    // Función por defecto para casos no mapeados
+                    funcion = () => cy.log(`Caso ${numero} no tiene función asignada`);
+                }
 
-            // Ejecuta el caso y solo auto-OK si nadie registró antes
-            return funcion().then(() => {
-                if (typeof cy.estaRegistrado === 'function') {
+                // Ejecutar la función del caso
+                funcion().then(() => {
+                    // Registrar resultado automático si no se registró antes
                     cy.estaRegistrado().then((ya) => {
                         if (!ya) {
                             cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
@@ -84,17 +113,7 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
                             });
                         }
                     });
-                } else {
-                    cy.registrarResultados({
-                        numero,
-                        nombre,
-                        esperado: 'Comportamiento correcto',
-                        obtenido: 'Comportamiento correcto',
-                        resultado: 'OK',
-                        archivo,
-                        pantalla: 'Taller y Gastos (Repostajes)',
-                    });
-                }
+                });
             });
         });
     });
@@ -102,16 +121,20 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     // ====== FUNCIONES ======
 
     function cargaInicial() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
-        cy.url().should('include', '/dashboard/refueling');
+        // Usar la nueva función de navegación
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('exist');
         return cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
     }
 
     // FUNCIÓN QUE EJECUTA UN FILTRO INDIVIDUAL
     function ejecutarFiltroIndividual(numeroCaso) {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
-        cy.url().should('include', '/dashboard/refueling');
+        // Usar la nueva función de navegación
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.get('.MuiDataGrid-root').should('be.visible');
 
         // Obtener datos del Excel para TallerYGastos-Repostajes
@@ -354,7 +377,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
 
     function filtroAdBlue() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.get('select#column').select('Adblue');
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
@@ -369,7 +394,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
 
     function filtroLleno() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.get('select#column').select('Lleno');
         cy.get('input#search[placeholder="Buscar"]').clear({ force: true }).type('true{enter}', { force: true });
@@ -384,14 +411,18 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
 
     function filtroSoloLlenos() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.contains('span', 'Sólo Llenos').parents('label').find('input[type="checkbox"]').check({ force: true });
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function borrarFiltros() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('span', 'Sólo Llenos').parents('label').find('input[type="checkbox"]').check({ force: true });
@@ -405,7 +436,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function ordenarFechaAsc() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Fecha').click();
@@ -422,7 +455,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function ordenarFechaDesc() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Fecha').click().click();
@@ -439,7 +474,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function ordenarLitrosAsc() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Litros').click();
@@ -452,7 +489,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function ordenarLitrosDesc() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('div.MuiDataGrid-columnHeaderTitle', 'Litros').click().click();
@@ -465,13 +504,17 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function seleccionarFila() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0).first().click({ force: true });
     }
 
     function editarSinSeleccion() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url({ timeout: 15000 }).should('include', '/dashboard/refueling');
         cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         cy.get('div[role="row"]').should('have.length.greaterThan', 1);
@@ -480,7 +523,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function editarConSeleccion() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.get('.MuiDataGrid-row:visible').first().as('filaSeleccionada');
         cy.get('@filaSeleccionada').click({ force: true });
@@ -490,7 +535,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function eliminarSinSeleccion() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
         cy.get('div[role="row"] input[type="checkbox"]:checked').should('have.length', 0);
@@ -498,7 +545,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function eliminarConSeleccion() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         return cy.get('.MuiDataGrid-row:visible').then($filas => {
@@ -522,14 +571,18 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function abrirFormularioAlta() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.contains('button', 'Añadir').should('be.enabled').click();
         return cy.get('form').should('be.visible');
     }
 
     function scrollTabla() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
         cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
 
@@ -568,7 +621,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
 
 
     function recargarConFiltros() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.get('select[name="column"]').select('Importe');
@@ -587,7 +642,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function cambiarIdiomaIngles() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.get('select#languageSwitcher').select('en', { force: true });
@@ -602,7 +659,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function cambiarIdiomaEspanol() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.get('select#languageSwitcher').select('es', { force: true });
@@ -618,7 +677,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function cambiarIdiomaCatalan() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.get('select#languageSwitcher').select('ca', { force: true });
@@ -636,7 +697,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function filtroTipoTodos() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('label', 'Todos').find('input[type="radio"]').check({ force: true });
@@ -645,7 +708,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function filtroTipoGasoil() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('label', 'Gasoil').find('input[type="radio"]').check({ force: true });
@@ -663,7 +728,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function filtroTipoGas() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.get('input[type="radio"][value="gas"]').check({ force: true });
@@ -677,7 +744,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function filtroTipoAdBlue() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('label', 'AdBlue').click({ force: true });
@@ -700,7 +769,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function filtroSinFacturaRecibida() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.contains('span', 'Sólo sin factura recibida').parents('label').find('input[type="checkbox"]').check({ force: true });
@@ -710,7 +781,9 @@ describe('TALLER Y GASTOS - REPOSTAJES - Validación completa con errores y repo
     }
 
     function filtroRangoFechas() {
-        cy.navegarAMenu('TallerYGastos', 'Repostajes');
+        cy.navegar(['TallerYGastos', 'Repostajes'], {
+            expectedPath: '/dashboard/refueling'
+        });
         cy.url().should('include', '/dashboard/refueling');
 
         cy.get('.MuiPickersInputBase-sectionsContainer').first().within(() => {

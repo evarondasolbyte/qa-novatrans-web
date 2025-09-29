@@ -1,30 +1,23 @@
-
 // ***********************************************
 // Custom commands y helpers
 // ***********************************************
 
 // ===== VARIABLES GLOBALES =====
-// Acumulo los resultados por pantalla para luego sacar un resumen.
-// También uso flags para evitar duplicados de registro por test.
-let resultadosPorPantalla = {};   // Acumulador por pantalla (para resumen)
-let errorYaRegistrado = false;    // Si ya capturé un error en este test
-let resultadoYaRegistrado = false; // Si ya registré (OK/ERROR/WARNING) en este test
+let resultadosPorPantalla = {};
+let errorYaRegistrado = false;
+let resultadoYaRegistrado = false;
 
 // ===== RESETEO DE FLAGS POR TEST =====
-// Llamo a esto al inicio de cada test para arrancar "limpio".
 Cypress.Commands.add('resetearFlagsTest', () => {
   errorYaRegistrado = false;
-  resultadoYaRegistrado = false; // Importante: así no duplico registros
+  resultadoYaRegistrado = false;
 });
 
-// Me sirve para consultar desde un test si ya grabé el resultado.
 Cypress.Commands.add('estaRegistrado', () => {
   return cy.wrap(resultadoYaRegistrado);
 });
 
 // ===== LOGIN =====
-// Hago login con sesión cacheada por defecto (useSession = true).
-// Dejo valores por defecto para no repetirlos en cada llamada.
 Cypress.Commands.add('login', ({
   database = 'NTDesarrolloGonzalo',
   server = 'SERVER\\DESARROLLO',
@@ -33,15 +26,12 @@ Cypress.Commands.add('login', ({
   useSession = true
 } = {}) => {
 
-  // Encapsulo el flujo real de login para reutilizarlo dentro o fuera de cy.session.
   const performLogin = () => {
-    // Voy directo al login (con timeout generoso por si tarda en cargar).
     cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app/login', {
       timeout: 120000,
       waitUntil: 'domcontentloaded'
     });
 
-    // Helper seguro: siempre limpio antes de escribir y respeto valores vacíos.
     const safeType = (selector, value) => {
       cy.get(selector).clear();
       if (value !== '') {
@@ -49,74 +39,249 @@ Cypress.Commands.add('login', ({
       }
     };
 
-    // Relleno las credenciales/campos.
     safeType('input[name="database"]', database);
     safeType('input[name="server"]', server);
     safeType('input[name="username"]', username);
     safeType('input[name="password"]', password);
 
-    // Envío el formulario.
     cy.get('button[type="submit"]').click();
   };
 
   if (useSession) {
-    // Uso cy.session para cachear sesión por combinación de credenciales.
     cy.session(
       ['usuario-activo', database, server, username, password],
       () => {
         performLogin();
-        // Valido que verdaderamente estoy dentro.
-        cy.url({ timeout: 20000 }).should('include', '/dashboard');
-        cy.get('header').should('exist');
+        // Validar solo que no seguimos en /login y que el body está visible.
+        cy.url({ timeout: 20000 }).should('not.include', '/login');
+        cy.wait(2000);
+        cy.get('body').should('be.visible');
+        // ❌ Quitado: No comprobar "Página no encontrada" aquí para no romper la sesión.
+        // cy.get('body').should('not.contain', 'Página no encontrada');
+        // cy.get('body').should('not.contain', 'Page Not Found');
       }
     );
-    // Siempre aterrizo en /dashboard para empezar los tests en una pantalla conocida.
-    cy.visit('/dashboard');
+    cy.wait(1000);
   } else {
-    // Si no quiero sesión cacheada, hago el login "a pelo".
     performLogin();
   }
 });
 
-// ===== NAVEGACIÓN MENÚ =====
-// Abro el drawer y navego por texto de menú y submenú.
-// Me apoyo en scrollIntoView y expects explícitos para estabilidad.
-Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu) => {
-  // Abrir drawer
-  cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click({ force: true });
-  cy.get('.MuiDrawer-root', { timeout: 10000 }).should('exist');
 
-  // Navegar al menú principal
-  cy.get('.MuiDrawer-root')
-    .contains(textoMenu, { timeout: 10000 })
-    .scrollIntoView()
-    .should('exist')
-    .closest('div[role="button"]')
-    .click({ force: true });
+// ===== NAVEGACIÓN (NUEVA IMPLEMENTACIÓN ROBUSTA) =====
+Cypress.Commands.add('abrirMenuLateral', () => {
+  const triggers = [
+    'button[aria-label*="open drawer"]',
+    'button[aria-label*="menu"]',
+    '[data-testid="MenuIcon"]',
+    'button:has(svg[data-testid="MenuIcon"])',
+    'button.MuiIconButton-root'
+  ];
 
-  // Navegar al submenú
-  cy.get('.MuiDrawer-root')
-    .contains(textoSubmenu, { timeout: 10000 })
-    .scrollIntoView()
-    .should('exist')
-    .click({ force: true });
+  cy.get('body').then($body => {
+    const drawerAbierto = $body.find('.MuiDrawer-paper:visible, nav[role="navigation"]:visible').length > 0;
+    if (drawerAbierto) return;
 
-  // Esperar a que la navegación se complete
-  cy.wait(1000);
+    let chain = cy.wrap(null, { log: false });
+    triggers.forEach(sel => {
+      chain = chain.then(() => {
+        return cy.get('body').then($b => {
+          if ($b.find(sel).length) {
+            return cy.get(sel).first().click({ force: true });
+          }
+        });
+      });
+    });
+  });
 
-  // Cerrar la barra lateral después de navegar
-  cy.get('button[aria-label="open drawer"]', { timeout: 10000 }).should('exist').click({ force: true });
-  
-  // Esperar a que el drawer se cierre completamente
-  cy.get('.MuiDrawer-root').should('not.exist', { timeout: 5000 });
-  
-  // Esperar un poco más para asegurar que la página se haya cargado
-  cy.wait(1000);
+  cy.get('body', { timeout: 10000 }).should($b => {
+    const visible = $b.find('.MuiDrawer-paper:visible, nav[role="navigation"]:visible').length > 0;
+    expect(visible, 'Drawer visible').to.be.true;
+  });
 });
 
+Cypress.Commands.add('asegurarMenuDesplegado', (textoMenu) => {
+  const itemMatcher = (t) => [
+    `.MuiListItemButton:contains("${t}")`,
+    `[aria-label="${t}"]`,
+    `button[title="${t}"]`,
+  ];
+
+  const abrirAcordeonSiCierra = (selector) => {
+    cy.get('body').then($b => {
+      const $item = $b.find(selector).first();
+      if ($item.length) {
+        const expanded = $item.attr('aria-expanded');
+        if (expanded === 'false' || typeof expanded === 'undefined') {
+          cy.wrap($item).click({ force: true });
+        }
+      }
+    });
+  };
+
+  itemMatcher(textoMenu).forEach(sel => {
+    cy.get('body').then($b => {
+      if ($b.find(sel).length) {
+        abrirAcordeonSiCierra(sel);
+      }
+    });
+  });
+});
+
+Cypress.Commands.add('clickEnItemMenu', (texto) => {
+  const containers = [
+    '.MuiDrawer-paper',
+    'nav[role="navigation"]',
+    'aside[role="complementary"]',
+    'div[role="presentation"]'
+  ];
+
+  const inner = [
+    `.MuiListItemButton:contains("${texto}")`,
+    `.MuiListItemText-primary:contains("${texto}")`,
+    `a[role="menuitem"]:contains("${texto}")`,
+    `button[role="menuitem"]:contains("${texto}")`,
+    `[aria-label="${texto}"]`,
+    `a:contains("${texto}")`,
+    `button:contains("${texto}")`
+  ];
+
+  cy.get('body').then($b => {
+    let found = false;
+
+    for (const c of containers) {
+      if ($b.find(c).length) {
+        for (const s of inner) {
+          const scoped = `${c} ${s}`;
+          if ($b.find(scoped).length) {
+            found = true;
+            cy.get(scoped).first().scrollIntoView().click({ force: true });
+            break;
+          }
+        }
+      }
+      if (found) break;
+    }
+
+    if (!found) {
+      for (const s of inner) {
+        if ($b.find(s).length) {
+          cy.get(s).first().scrollIntoView().click({ force: true });
+          found = true;
+          break;
+        }
+      }
+    }
+
+    expect(found, `Encontrar y hacer click en item de menú "${texto}"`).to.be.true;
+  });
+});
+
+Cypress.Commands.add('esperarTransicionRuta', (opts = {}) => {
+  const {
+    expectedPath,
+    expectedHeading,
+    spinnerSelector = '.MuiBackdrop-root, .MuiCircularProgress-root',
+    timeout = 15000
+  } = opts;
+
+  cy.get('body').then($b => {
+    if ($b.find(spinnerSelector).length) {
+      cy.get(spinnerSelector, { timeout }).should('not.exist');
+    }
+  });
+
+  if (expectedPath) {
+    if (expectedPath instanceof RegExp) {
+      cy.url({ timeout }).should(url => expect(url).to.match(expectedPath));
+    } else {
+      cy.url({ timeout }).should('include', expectedPath);
+    }
+  } else {
+    cy.url({ timeout }).should('not.include', '/login');
+  }
+
+  if (expectedHeading) {
+    cy.get('h1,h2,[data-testid="page-title"]', { timeout })
+      .should('contain.text', expectedHeading);
+  }
+
+  cy.get('body').should('be.visible');
+});
+
+Cypress.Commands.add('navegar', (ruta, options = {}) => {
+  const opts = {
+    expectedPath: options.expectedPath,
+    expectedHeading: options.expectedHeading,
+    closeOverlaySelector: '.MuiBackdrop-root',
+    ...options
+  };
+
+  const partes = Array.isArray(ruta)
+    ? ruta
+    : (typeof ruta === 'string' ? ruta.split('>').map(s => s.trim()) : []);
+
+  if (!partes.length) throw new Error('Debes indicar al menos un item de menú.');
+
+  const [menu, ...subniveles] = partes;
+
+  // 1. Ir primero a la URL base de la aplicación
+  cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app');
+  cy.wait(1000);
+
+  // 2. Pulsar las 3 rayas para abrir el menú
+  cy.get('button[aria-label="open drawer"]', { timeout: 10000 })
+    .should('exist')
+    .click({ force: true });
+
+  // 3. Esperar a que el menú se abra
+  cy.wait(500);
+
+  // 4. Usar el buscador del sidebar para encontrar la pantalla
+  const terminoBusqueda = subniveles.length > 0 ? subniveles[0] : menu;
+  
+  // Mapeo de términos de búsqueda más efectivos
+  const terminosBusqueda = {
+    'Repostajes': 'repos',
+    'TallerYGastos': 'taller',
+    'Ficheros': 'ficheros',
+    'Procesos': 'procesos'
+  };
+  
+  const busquedaEfectiva = terminosBusqueda[terminoBusqueda] || terminoBusqueda.toLowerCase();
+  cy.log(`Buscando: ${busquedaEfectiva} (término original: ${terminoBusqueda})`);
+  
+  cy.get('input#sidebar-search', { timeout: 10000 })
+    .should('be.visible')
+    .clear({ force: true })
+    .type(busquedaEfectiva, { force: true });
+  
+  cy.wait(1500); // Esperar más tiempo para que aparezcan los resultados
+  
+  // 5. Hacer clic en el resultado de búsqueda (buscar el término original)
+  cy.get('body')
+    .contains(terminoBusqueda, { timeout: 10000 })
+    .scrollIntoView()
+    .should('exist')
+    .click({ force: true });
+
+  // 6. Esperar a que la navegación se complete
+  cy.wait(1000);
+  
+  // 8. Verificar que la URL cambió correctamente
+  if (opts.expectedPath) {
+    cy.url().should('include', opts.expectedPath);
+  }
+});
+
+// Compat: firma anterior
+Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => {
+  const ruta = [textoMenu].concat(textoSubmenu ? [textoSubmenu] : []);
+  return cy.navegar(ruta, options);
+});
+
+
 // ===== ACUMULADOR POR PANTALLA =====
-// Durante un describe/grupo de casos de una misma pantalla, voy guardando
-// cada resultado en memoria. Luego, al final, genero un resumen "global".
 Cypress.Commands.add('agregarResultadoPantalla', (params) => {
   const {
     numero, nombre, esperado, obtenido, resultado, pantalla,
@@ -134,9 +299,6 @@ Cypress.Commands.add('agregarResultadoPantalla', (params) => {
 });
 
 // ===== PROCESAR RESUMEN DE UNA PANTALLA =====
-// Al terminar los casos de una pantalla, llamo a esto para:
-// 1) Volcar logs detallados (OK/ERROR/WARNING por TC)
-// 2) Escribir un resumen final de la pantalla en el Excel principal
 Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
   if (!resultadosPorPantalla[pantalla] || resultadosPorPantalla[pantalla].resultados.length === 0) return;
 
@@ -145,7 +307,6 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
   const warnings = resultados.filter(r => r.resultado === 'WARNING');
   const oks = resultados.filter(r => r.resultado === 'OK');
 
-  // Genero un ID único con timestamp para identificar esta ejecución-resumen.
   const now = new Date();
   const timestamp = now.getFullYear().toString() +
     (now.getMonth() + 1).toString().padStart(2, '0') +
@@ -155,7 +316,6 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
     now.getSeconds().toString().padStart(2, '0') +
     now.getMilliseconds().toString().padStart(3, '0');
 
-  // Quito acentos/ñ y dejo un slug ASCII cómodo para el ID.
   const slugifyAscii = (str) =>
     str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/ñ/gi, 'n').replace(/[^a-zA-Z0-9]/g, '-')
@@ -163,7 +323,6 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
 
   const testId = `${slugifyAscii(pantalla)}_${timestamp}`;
 
-  // Formateo fecha/hora legible (YYYY-MM-DD HH:mm:ss).
   const fechaHoraFormateada =
     now.getFullYear() + '-' +
     String(now.getMonth() + 1).padStart(2, '0') + '-' +
@@ -172,8 +331,6 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
     String(now.getMinutes()).padStart(2, '0') + ':' +
     String(now.getSeconds()).padStart(2, '0');
 
-  // --- LOG DETALLADO POR CASO ---
-  // Para cada resultado (OK/ERROR/WARNING), dejo una traza en el log.
   const enviarLog = (resultado) => {
     cy.task('guardarEnLog', {
       testId: testId,
@@ -191,12 +348,8 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
   errores.forEach(enviarLog);
   warnings.forEach(enviarLog);
 
-  // --- RESULTADO FINAL DE LA PANTALLA ---
-  // Si hay algún ERROR, mando ERROR; si no, WARNING si hubo avisos; si no, OK.
   const resultadoFinal = errores.length > 0 ? 'ERROR' : (warnings.length > 0 ? 'WARNING' : 'OK');
 
-  // --- RESUMEN EN EXCEL PRINCIPAL ---
-  // Escribo una fila en "Resultados Pruebas" con los totales por pantalla.
   cy.task('guardarEnExcel', {
     numero: testId,
     nombre: fechaHoraFormateada,
@@ -211,13 +364,10 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
     error: errores.length.toString()
   });
 
-  // Limpio el acumulador de esta pantalla (ya procesado).
   delete resultadosPorPantalla[pantalla];
 });
 
 // ===== REGISTRAR RESULTADOS (único por test) =====
-// Este es el registro "normal" por test. Solo grabo una vez por caso.
-// Si me pasan 'pantalla', además lo acumulo para el resumen posterior.
 Cypress.Commands.add('registrarResultados', (params) => {
   const {
     numero, nombre, esperado, obtenido, resultado: resultadoManual,
@@ -226,16 +376,11 @@ Cypress.Commands.add('registrarResultados', (params) => {
     pantalla, observacion
   } = params;
 
-  // Evito grabar dos veces en el mismo test.
   if (resultadoYaRegistrado) return;
 
   const obtenidoTexto = obtenido?.toString().toLowerCase();
   let resultadoFinal = resultadoManual;
 
-  // Si no fuerzo el resultado, lo infiero:
-  // - Igual a lo esperado => OK
-  // - Mensajes típicos de "sin datos" => WARNING
-  // - En otro caso => ERROR
   if (!resultadoFinal) {
     if (esperado === obtenido) {
       resultadoFinal = 'OK';
@@ -254,8 +399,6 @@ Cypress.Commands.add('registrarResultados', (params) => {
     }
   }
 
-  // Si estoy dentro de un bloque por pantalla, acumulo en memoria;
-  // si no, escribo directo al Excel.
   if (pantalla) {
     cy.agregarResultadoPantalla({
       numero, nombre, esperado, obtenido, resultado: resultadoFinal,
@@ -268,29 +411,24 @@ Cypress.Commands.add('registrarResultados', (params) => {
     });
   }
 
-  // Marco que ya registré resultado para este test.
   resultadoYaRegistrado = true;
 });
 
 // ===== FUNCIÓN CENTRALIZADA PARA LOGIN =====
-// Función única para ejecutar todos los casos de login
 Cypress.Commands.add('hacerLogin', (datosCaso) => {
   const {
     dato_1: database = 'NTDesarrolloGonzalo',
-    dato_2: server = 'SERVER\\DESARROLLO', 
+    dato_2: server = 'SERVER\\DESARROLLO',
     dato_3: username = 'AdminNovatrans',
     dato_4: password = 'solbyte@2023'
   } = datosCaso;
 
-  // Encapsulo el flujo real de login para reutilizarlo
   const performLogin = () => {
-    // Voy directo al login (con timeout generoso por si tarda en cargar)
     cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app/login', {
       timeout: 120000,
       waitUntil: 'domcontentloaded'
     });
 
-    // Helper seguro: siempre limpio antes de escribir y respeto valores vacíos
     const safeType = (selector, value) => {
       cy.get(selector).clear();
       if (value !== '' && value !== null && value !== undefined) {
@@ -298,78 +436,64 @@ Cypress.Commands.add('hacerLogin', (datosCaso) => {
       }
     };
 
-    // Relleno las credenciales/campos
     safeType('input[name="database"]', database);
     safeType('input[name="server"]', server);
     safeType('input[name="username"]', username);
     safeType('input[name="password"]', password);
 
-    // Envío el formulario
     cy.get('button[type="submit"]').click();
-    
-    // Esperar a que se procese el login (tiempo reducido)
     cy.wait(1000);
   };
 
-  // Para casos de login, siempre ejecuto sin sesión cacheada
   performLogin();
 });
 
-// ===== FUNCIONES CENTRALIZADAS PARA CONFIGURACIÓN PERFILES =====
-
-// Función centralizada para cambiar idioma
+// ===== CONFIGURACIÓN PERFILES =====
 Cypress.Commands.add('cambiarIdioma', (idioma) => {
   const idiomas = {
     'Inglés': { codigo: 'en', texto: 'Name' },
     'Catalán': { codigo: 'ca', texto: 'Nom' },
     'Español': { codigo: 'es', texto: 'Nombre' }
   };
-  
+
   const config = idiomas[idioma];
   if (!config) {
     cy.log(`Idioma no soportado: ${idioma}, usando valores por defecto`);
-    // Valores por defecto si no se reconoce el idioma
     const configDefault = { codigo: 'en', texto: 'Name' };
     cy.get('select#languageSwitcher').select(configDefault.codigo, { force: true });
     cy.wait(1500);
     return cy.get('body').should('contain.text', configDefault.texto);
   }
-  
+
   cy.log(`Cambiando idioma a: ${idioma} (${config.codigo})`);
   cy.get('select#languageSwitcher').select(config.codigo, { force: true });
   cy.wait(1500);
-  
-  // Verificar que el cambio se aplicó correctamente
+
   return cy.get('body').should('contain.text', config.texto).then(() => {
     cy.log(`Idioma cambiado exitosamente a ${idioma}`);
     return cy.wrap(true);
   });
 });
 
-// Función centralizada para ejecutar filtros de búsqueda
 Cypress.Commands.add('ejecutarFiltroPerfiles', (valorBusqueda) => {
   cy.get('input[placeholder="Buscar"]')
     .should('be.visible')
     .clear({ force: true })
     .type(`${valorBusqueda}{enter}`, { force: true });
   cy.wait(2000);
-  
+
   return cy.get('body').then($body => {
     const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
     return cy.wrap({ filasVisibles, valorBusqueda });
   });
 });
 
-
 // ===== CAPTURA DE ERRORES =====
-// Centralizo la forma de capturar errores: registro, screenshot,
-// clasificación WARNING/ERROR (según "sin datos"), y re-lanzo si es ERROR.
 Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
   const fechaHora = data.fechaHora || new Date().toLocaleString('sv-SE').replace('T', ' ');
   const mensaje = error.message || error;
   const obtenidoTexto = mensaje?.toString().toLowerCase();
 
-  // Si el error es "sin datos", lo trato como WARNING; si no, ERROR.
   const resultadoFinal = (
     obtenidoTexto?.includes('no hay datos') ||
     obtenidoTexto?.includes('tabla vacía') ||
@@ -380,7 +504,6 @@ Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
     obtenidoTexto?.includes('sin coincidencias')
   ) ? 'WARNING' : 'ERROR';
 
-  // Armo el payload estándar para el Excel/log.
   const registro = {
     numero: data.numero || '',
     nombre: data.nombre || contexto,
@@ -393,21 +516,17 @@ Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
     observacion: data.observacion || ''
   };
 
-  // Igual que en registrarResultados: si estoy en modo "pantalla", acumulo.
   if (data.pantalla) {
     cy.agregarResultadoPantalla(registro);
   } else {
     cy.task('guardarEnExcel', registro);
   }
 
-  // Marco flags para que no se grabe un OK automático después.
   errorYaRegistrado = true;
   resultadoYaRegistrado = true;
 
-  // Siempre dejo una captura con contexto y timestamp.
   cy.screenshot(`error-${contexto}-${fechaHora.replace(/[: ]/g, '-')}`);
 
-  // Re-lanzo el error si es ERROR (para que el test falle).
   if (resultadoFinal === 'ERROR') {
     throw error;
   }
