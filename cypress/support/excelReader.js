@@ -33,7 +33,6 @@ const SHEET_GIDS = {
   'CONFIGURACIÓN-PERFILES': '1896958952',
   'FICHEROS-CLIENTES': '520599147',
   'PROCESOS-PRESUPUESTOS': '1905879024',
-  'PROCESOS-ÓRDENES DE CARGA-CARGAS/DESCARGAS': '1000000000', // GID temporal, necesita el real
   'Datos': '0'
 };
 
@@ -99,19 +98,12 @@ function mapHeaderIndexes(headers) {
   idx.prioridad     = find([/^\s*prioridad\s*$/i]);
   idx.funcion       = find([/^\s*funci[oó]n\s*$/i, /^\s*function\s*$/i]);
 
-  // etiquetas/valores/datos 1..4 - mapeo directo por posición
-  idx.etiqueta_1 = 6;      // G
-  idx.valor_etiqueta_1 = 7; // H  
-  idx.dato_1 = 8;          // I
-  idx.etiqueta_2 = 9;       // J
-  idx.valor_etiqueta_2 = 10; // K
-  idx.dato_2 = 11;         // L
-  idx.etiqueta_3 = 12;     // M
-  idx.valor_etiqueta_3 = 13; // N
-  idx.dato_3 = 14;         // O
-  idx.etiqueta_4 = 15;     // P
-  idx.valor_etiqueta_4 = 16; // Q
-  idx.dato_4 = 17;         // R
+  // etiquetas/valores/datos 1..4
+  for (let n = 1; n <= 4; n++) {
+    idx[`etiqueta_${n}`]      = find([new RegExp(`^\\s*etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`valor_etiqueta_${n}`]= find([new RegExp(`^\\s*valor[_\\s-]?etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`dato_${n}`]          = find([new RegExp(`^\\s*dato[_\\s-]?${n}\\s*$`, 'i')]);
+  }
   return idx;
 }
 
@@ -119,9 +111,7 @@ function mapHeaderIndexes(headers) {
 function buildCaso(fila, idx) {
   const get = (k) => idx[k] >= 0 ? safe(fila[idx[k]]) : '';
   const casoRaw = safe(get('caso')).toUpperCase();
-  
-  
-  if (!/^TC\d+(\.\d+)?$/i.test(casoRaw)) return null;
+  if (!/^TC\d+$/i.test(casoRaw)) return null;
 
   return {
     pantalla:      get('pantalla'),
@@ -154,44 +144,27 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
     if (!filas || filas.length === 0) return cy.wrap([]);
 
     const headers = (filas[0] || []).map(safe);
-    cy.log(`Headers del Excel: ${JSON.stringify(headers)}`);
     const idx = mapHeaderIndexes(headers);
-    cy.log(`Mapeo de índices: ${JSON.stringify(idx)}`);
 
     const out = [];
     for (let i = 1; i < filas.length; i++) {
       const fila = (filas[i] || []).map(safe);
       if (fila.every(c => c === '')) continue;
-      
       const caso = buildCaso(fila, idx);
       if (caso) out.push(caso);
     }
 
-    // Eliminar duplicados basado en caso + nombre
-    const casosUnicos = [];
-    const casosVistos = new Set();
-    
-    for (const caso of out) {
-      const clave = `${caso.caso}-${caso.nombre}`;
-      if (!casosVistos.has(clave)) {
-        casosVistos.add(clave);
-        casosUnicos.push(caso);
-      }
-    }
-
     // Ordena por número de TC
-    casosUnicos.sort((a, b) => {
+    out.sort((a, b) => {
       const na = parseInt(a.caso.replace(/\D/g, ''), 10);
       const nb = parseInt(b.caso.replace(/\D/g, ''), 10);
       return na - nb;
     });
 
     // Log resumen
-    cy.log(`Leídos ${out.length} casos de "${hoja}" (${casosUnicos.length} únicos después de eliminar duplicados)`);
-    const casosTC008 = casosUnicos.filter(c => c.caso === 'TC008');
-    cy.log(`Casos TC008 encontrados: ${casosTC008.length}`);
-    casosTC008.forEach(c => cy.log(`TC008: ${c.dato_1} = ${c.dato_2}`));
+    cy.log(`Leídos ${out.length} casos de "${hoja}"`);
+    out.forEach(c => cy.log(`${c.caso} | ${c.funcion} | ${c.nombre}`));
 
-    return cy.wrap(casosUnicos);
+    return cy.wrap(out);
   });
 });

@@ -237,38 +237,33 @@ Cypress.Commands.add('navegar', (ruta, options = {}) => {
   // 3. Esperar a que el menú se abra
   cy.wait(500);
 
-  // 4. Usar el buscador del sidebar para encontrar la pantalla
+  // 4. Buscar la pantalla específica
   const terminoBusqueda = subniveles.length > 0 ? subniveles[0] : menu;
   
-  // Mapeo de términos de búsqueda más efectivos
+  // Mapeo de términos de búsqueda
   const terminosBusqueda = {
     'Repostajes': 'repos',
+    'Tipos de Vehículo': 'tipos vehiculo',
     'TallerYGastos': 'taller',
     'Ficheros': 'ficheros',
     'Procesos': 'procesos'
   };
   
   const busquedaEfectiva = terminosBusqueda[terminoBusqueda] || terminoBusqueda.toLowerCase();
-  cy.log(`Buscando: ${busquedaEfectiva} (término original: ${terminoBusqueda})`);
   
   cy.get('input#sidebar-search', { timeout: 10000 })
     .should('be.visible')
     .clear({ force: true })
     .type(busquedaEfectiva, { force: true });
   
-  cy.wait(1500); // Esperar más tiempo para que aparezcan los resultados
-  
-  // 5. Hacer clic en el resultado de búsqueda (buscar el término original)
-  cy.get('body')
-    .contains(terminoBusqueda, { timeout: 10000 })
-    .scrollIntoView()
-    .should('exist')
-    .click({ force: true });
-
-  // 6. Esperar a que la navegación se complete
   cy.wait(1000);
   
-  // 8. Verificar que la URL cambió correctamente
+  // 5. Hacer clic en la pantalla encontrada
+  cy.get('body')
+    .contains(terminoBusqueda, { timeout: 10000 })
+    .click({ force: true });
+
+  // 6. Verificar que la URL cambió correctamente
   if (opts.expectedPath) {
     cy.url().should('include', opts.expectedPath);
   }
@@ -279,7 +274,6 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
   const ruta = [textoMenu].concat(textoSubmenu ? [textoSubmenu] : []);
   return cy.navegar(ruta, options);
 });
-
 
 // ===== ACUMULADOR POR PANTALLA =====
 Cypress.Commands.add('agregarResultadoPantalla', (params) => {
@@ -418,7 +412,7 @@ Cypress.Commands.add('registrarResultados', (params) => {
 Cypress.Commands.add('hacerLogin', (datosCaso) => {
   const {
     dato_1: database = 'NTDesarrolloGonzalo',
-    dato_2: server = 'SERVER\\DESARROLLO',
+    dato_2: server = 'SERVER\\DESARROLLO', 
     dato_3: username = 'AdminNovatrans',
     dato_4: password = 'solbyte@2023'
   } = datosCaso;
@@ -455,7 +449,7 @@ Cypress.Commands.add('cambiarIdioma', (idioma) => {
     'Catalán': { codigo: 'ca', texto: 'Nom' },
     'Español': { codigo: 'es', texto: 'Nombre' }
   };
-
+  
   const config = idiomas[idioma];
   if (!config) {
     cy.log(`Idioma no soportado: ${idioma}, usando valores por defecto`);
@@ -464,11 +458,11 @@ Cypress.Commands.add('cambiarIdioma', (idioma) => {
     cy.wait(1500);
     return cy.get('body').should('contain.text', configDefault.texto);
   }
-
+  
   cy.log(`Cambiando idioma a: ${idioma} (${config.codigo})`);
   cy.get('select#languageSwitcher').select(config.codigo, { force: true });
   cy.wait(1500);
-
+  
   return cy.get('body').should('contain.text', config.texto).then(() => {
     cy.log(`Idioma cambiado exitosamente a ${idioma}`);
     return cy.wrap(true);
@@ -481,7 +475,7 @@ Cypress.Commands.add('ejecutarFiltroPerfiles', (valorBusqueda) => {
     .clear({ force: true })
     .type(`${valorBusqueda}{enter}`, { force: true });
   cy.wait(2000);
-
+  
   return cy.get('body').then($body => {
     const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
     return cy.wrap({ filasVisibles, valorBusqueda });
