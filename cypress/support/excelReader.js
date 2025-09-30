@@ -24,23 +24,24 @@ function parseCsvRespectingQuotes(csv) {
 }
 
 // Helpers
-const safe = (v) => (v ?? '').toString().trim();
+const safe  = (v) => (v ?? '').toString().trim();
 const lower = (v) => safe(v).toLowerCase();
 
-// --- Mapa de GIDs por hoja (puedes sobreescribir con env si quieres) ---
+// --- Mapa de GIDs por hoja ---
 const SHEET_GIDS = {
   'LOGIN': '1766248160',
   'CONFIGURACIÓN-PERFILES': '1896958952',
   'FICHEROS-CLIENTES': '520599147',
   'PROCESOS-PRESUPUESTOS': '1905879024',
+  'TALLER Y GASTOS-REPOSTAJES': '431734268',      // 👈 NUEVO (gid de la captura)
   'Datos': '0'
 };
 
-// Normaliza "TC001" → "tc001"
-const normalizeTc = (s) => {
+// Normaliza "TC001" → "tc001" **sólo si** tiene ese patrón; si no, devuelve tal cual
+const normalizeMaybeTc = (s) => {
   const v = safe(s);
   const m = v.match(/^tc(\d{1,})$/i);
-  return m ? `tc${m[1].padStart(3, '0')}` : v.toLowerCase();
+  return m ? `tc${m[1].padStart(3, '0')}` : v;   // 👈 no forzamos a lower, conservamos nombres de función reales
 };
 
 // Lee CSV público de Google Sheets con reintentos básicos
@@ -82,6 +83,14 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
   if (/(configuración|configuracion).*\(perfiles\)/.test(pantallaSafe) || pantallaSafe === 'configuración-perfiles') return 'CONFIGURACIÓN-PERFILES';
   if (pantallaSafe.includes('ficheros') && (pantallaSafe.includes('clientes') || pantallaSafe === 'ficheros-clientes')) return 'FICHEROS-CLIENTES';
   if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('presupuestos') || pantallaSafe === 'procesos-presupuestos')) return 'PROCESOS-PRESUPUESTOS';
+
+  // 👇 NUEVO: detectar Taller y Gastos (Repostajes)
+  if (
+    /taller/.test(pantallaSafe) &&
+    /gastos/.test(pantallaSafe) &&
+    /(repostaje|repostajes)/.test(pantallaSafe)
+  ) return 'TALLER Y GASTOS-REPOSTAJES';
+
   return 'Datos';
 }
 
@@ -100,9 +109,9 @@ function mapHeaderIndexes(headers) {
 
   // etiquetas/valores/datos 1..4
   for (let n = 1; n <= 4; n++) {
-    idx[`etiqueta_${n}`]      = find([new RegExp(`^\\s*etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
-    idx[`valor_etiqueta_${n}`]= find([new RegExp(`^\\s*valor[_\\s-]?etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
-    idx[`dato_${n}`]          = find([new RegExp(`^\\s*dato[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`etiqueta_${n}`]       = find([new RegExp(`^\\s*etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`valor_etiqueta_${n}`] = find([new RegExp(`^\\s*valor[_\\s-]?etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`dato_${n}`]           = find([new RegExp(`^\\s*dato[_\\s-]?${n}\\s*$`, 'i')]);
   }
   return idx;
 }
@@ -116,10 +125,11 @@ function buildCaso(fila, idx) {
   return {
     pantalla:      get('pantalla'),
     funcionalidad: get('funcionalidad'),
-    caso:          casoRaw,                        // "TC001"
+    caso:          casoRaw,                       // "TC001"
     nombre:        get('nombre'),
     prioridad:     get('prioridad'),
-    funcion:       normalizeTc(get('funcion')),    // "tc001", "tc010", etc.
+    // 👇 IMPORTANTE: ya no forzamos "tc###" si no toca. En Repostajes vienen nombres de función reales.
+    funcion:       normalizeMaybeTc(get('funcion')),
     etiqueta_1:    get('etiqueta_1'),
     valor_etiqueta_1: get('valor_etiqueta_1'),
     dato_1:        get('dato_1'),
