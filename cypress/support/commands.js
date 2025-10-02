@@ -243,7 +243,7 @@ Cypress.Commands.add('navegar', (ruta, options = {}) => {
   // Mapeo de términos de búsqueda
   const terminosBusqueda = {
     'Repostajes': 'repos',
-    'Tipos de Vehículo': 'tipos vehiculo',
+    'Tipos de Vehículo': 'Tipos de Vehículo',
     'TallerYGastos': 'taller',
     'Ficheros': 'ficheros',
     'Procesos': 'procesos'
@@ -269,10 +269,40 @@ Cypress.Commands.add('navegar', (ruta, options = {}) => {
   }
 });
 
-// Compat: firma anterior
+// Compat: firma anterior - NAVEGACIÓN DIRECTA SIN BÚSQUEDA
 Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => {
-  const ruta = [textoMenu].concat(textoSubmenu ? [textoSubmenu] : []);
-  return cy.navegar(ruta, options);
+  // 1. Ir primero a la URL base de la aplicación
+  cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app');
+  cy.wait(1000);
+
+  // 2. Pulsar las 3 rayas para abrir el menú
+  cy.get('button[aria-label="open drawer"]', { timeout: 10000 })
+    .should('exist')
+    .click({ force: true });
+
+  // 3. Esperar a que el menú se abra
+  cy.wait(500);
+
+  // 4. Hacer clic en el menú principal (ej: "Ficheros")
+  cy.contains(textoMenu, { timeout: 10000 })
+    .should('be.visible')
+    .click({ force: true });
+  
+  cy.wait(500);
+
+  // 5. Si hay submenú, hacer clic en él (ej: "Tipos de Vehículos")
+  if (textoSubmenu) {
+    cy.contains(textoSubmenu, { timeout: 10000 })
+      .should('be.visible')
+      .click({ force: true });
+    
+    cy.wait(1000);
+  }
+
+  // 6. Verificar que la URL cambió correctamente
+  if (options.expectedPath) {
+    cy.url().should('include', options.expectedPath);
+  }
 });
 
 // ===== ACUMULADOR POR PANTALLA =====
