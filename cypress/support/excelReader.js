@@ -34,6 +34,7 @@ const SHEET_GIDS = {
   'FICHEROS-CLIENTES': '520599147',
   'PROCESOS-PRESUPUESTOS': '1905879024',
   'TALLER Y GASTOS-REPOSTAJES': '431734268',      // 👈 NUEVO (gid de la captura)
+  'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      // 👈 GID REAL de la pestaña
   'Datos': '0'
 };
 
@@ -90,6 +91,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /gastos/.test(pantallaSafe) &&
     /(repostaje|repostajes)/.test(pantallaSafe)
   ) return 'TALLER Y GASTOS-REPOSTAJES';
+
+  // 👇 NUEVO: detectar Ficheros (Tipos de Vehículo)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(tipos.*veh[íi]culo|tipos.*veh[íi]culos)/.test(pantallaSafe)
+  ) return 'FICHEROS-TIPOS DE VEHÍCULO';
 
   return 'Datos';
 }
