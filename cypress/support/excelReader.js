@@ -36,6 +36,7 @@ const SHEET_GIDS = {
   'TALLER Y GASTOS-REPOSTAJES': '431734268',      // 👈 NUEVO (gid de la captura)
   'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      // 👈 GID REAL de la pestaña
   'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      // 👈 NUEVO: Categorías de Conductores
+  'FICHEROS-MULTAS': '523458683',      // 👈 NUEVO: Multas (GID REAL)
   'Datos': '0'
 };
 
@@ -105,6 +106,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(categor[íi]as.*conductores|categor[íi]as.*conductor)/.test(pantallaSafe)
   ) return 'FICHEROS-CATEGORIAS DE CONDUCTORES';
+
+  // 👇 NUEVO: detectar Ficheros (Multas)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(multas|multa)/.test(pantallaSafe)
+  ) return 'FICHEROS-MULTAS';
 
   return 'Datos';
 }
