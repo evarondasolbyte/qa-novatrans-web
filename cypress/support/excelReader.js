@@ -35,6 +35,7 @@ const SHEET_GIDS = {
   'PROCESOS-PRESUPUESTOS': '1905879024',
   'TALLER Y GASTOS-REPOSTAJES': '431734268',      // 👈 NUEVO (gid de la captura)
   'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      // 👈 GID REAL de la pestaña
+  'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      // 👈 NUEVO: Categorías de Conductores
   'Datos': '0'
 };
 
@@ -51,7 +52,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
   const range = `${hoja}!A:R`;
   const gidEnvKey = `GID_${hoja.replace(/[^A-Z0-9]/gi, '_')}`;
   const gid = Cypress.env(gidEnvKey) || SHEET_GIDS[hoja] || '0';
-  const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}&range=${encodeURIComponent(range)}`;
+  const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
 
   const tryRequest = (attempt = 1) => {
     return cy.request({ method: 'GET', url, failOnStatusCode: false }).then((res) => {
@@ -71,6 +72,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
         return fixed.length > 1 ? cy.wrap(fixed) : cy.wrap([]);
       }
       cy.log(`Error leyendo CSV (${res.status}) -> ${url}`);
+      cy.log(`Response body: ${res.body ? res.body.substring(0, 200) : 'No body'}`);
       return cy.wrap([]);
     });
   };
@@ -97,6 +99,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(tipos.*veh[íi]culo|tipos.*veh[íi]culos)/.test(pantallaSafe)
   ) return 'FICHEROS-TIPOS DE VEHÍCULO';
+
+  // 👇 NUEVO: detectar Ficheros (Categorías de Conductores)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(categor[íi]as.*conductores|categor[íi]as.*conductor)/.test(pantallaSafe)
+  ) return 'FICHEROS-CATEGORIAS DE CONDUCTORES';
 
   return 'Datos';
 }
