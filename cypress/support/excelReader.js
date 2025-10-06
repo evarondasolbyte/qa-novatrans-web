@@ -33,12 +33,13 @@ const SHEET_GIDS = {
   'CONFIGURACIÓN-PERFILES': '1896958952',
   'FICHEROS-CLIENTES': '520599147',
   'PROCESOS-PRESUPUESTOS': '1905879024',
-  'TALLER Y GASTOS-REPOSTAJES': '431734268',      // 👈 NUEVO (gid de la captura)
-  'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      // 👈 GID REAL de la pestaña
-  'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      // 👈 NUEVO: Categorías de Conductores
-  'FICHEROS-MULTAS': '523458683',      // 👈 NUEVO: Multas (GID REAL)
-  'FICHEROS-SINIESTROS': '1011892651',      // 👈 NUEVO: Siniestros (GID REAL)
-  'FICHEROS-TARJETAS': '1774716711',      // 👈 NUEVO: Tarjetas (GID REAL)
+  'TALLER Y GASTOS-REPOSTAJES': '431734268',      
+  'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      
+  'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      
+  'FICHEROS-MULTAS': '523458683',      
+  'FICHEROS-SINIESTROS': '1011892651',    
+  'FICHEROS-TARJETAS': '1774716711',   
+  'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',     
   'Datos': '0'
 };
 
@@ -46,7 +47,7 @@ const SHEET_GIDS = {
 const normalizeMaybeTc = (s) => {
   const v = safe(s);
   const m = v.match(/^tc(\d{1,})$/i);
-  return m ? `tc${m[1].padStart(3, '0')}` : v;   // 👈 no forzamos a lower, conservamos nombres de función reales
+  return m ? `tc${m[1].padStart(3, '0')}` : v;   //  no forzamos a lower, conservamos nombres de función reales
 };
 
 // Lee CSV público de Google Sheets con reintentos básicos
@@ -126,6 +127,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(tarjetas|tarjeta)/.test(pantallaSafe)
   ) return 'FICHEROS-TARJETAS';
+
+  // 👇 NUEVO: detectar Ficheros (Alquileres Vehículos)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(alquileres.*veh[íi]culos|alquiler.*veh[íi]culos)/.test(pantallaSafe)
+  ) return 'FICHEROS-ALQUILERES VEHÍCULOS';
 
   return 'Datos';
 }
