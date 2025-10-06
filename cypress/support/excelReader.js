@@ -38,6 +38,7 @@ const SHEET_GIDS = {
   'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      // 👈 NUEVO: Categorías de Conductores
   'FICHEROS-MULTAS': '523458683',      // 👈 NUEVO: Multas (GID REAL)
   'FICHEROS-SINIESTROS': '1011892651',      // 👈 NUEVO: Siniestros (GID REAL)
+  'FICHEROS-TARJETAS': '1774716711',      // 👈 NUEVO: Tarjetas (GID REAL)
   'Datos': '0'
 };
 
@@ -119,6 +120,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(siniestros|siniestro)/.test(pantallaSafe)
   ) return 'FICHEROS-SINIESTROS';
+
+  // 👇 NUEVO: detectar Ficheros (Tarjetas)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(tarjetas|tarjeta)/.test(pantallaSafe)
+  ) return 'FICHEROS-TARJETAS';
 
   return 'Datos';
 }
