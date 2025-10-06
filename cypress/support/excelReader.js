@@ -37,6 +37,7 @@ const SHEET_GIDS = {
   'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      // 👈 GID REAL de la pestaña
   'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      // 👈 NUEVO: Categorías de Conductores
   'FICHEROS-MULTAS': '523458683',      // 👈 NUEVO: Multas (GID REAL)
+  'FICHEROS-SINIESTROS': '1011892651',      // 👈 NUEVO: Siniestros (GID REAL)
   'Datos': '0'
 };
 
@@ -112,6 +113,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(multas|multa)/.test(pantallaSafe)
   ) return 'FICHEROS-MULTAS';
+
+  // 👇 NUEVO: detectar Ficheros (Siniestros)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(siniestros|siniestro)/.test(pantallaSafe)
+  ) return 'FICHEROS-SINIESTROS';
 
   return 'Datos';
 }
