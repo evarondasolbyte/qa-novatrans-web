@@ -40,6 +40,7 @@ const SHEET_GIDS = {
   'FICHEROS-SINIESTROS': '1011892651',    
   'FICHEROS-TARJETAS': '1774716711',   
   'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',     
+  'FICHEROS-FORMAS DE PAGO': '756254621',     
   'Datos': '0'
 };
 
@@ -133,6 +134,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(alquileres.*veh[íi]culos|alquiler.*veh[íi]culos)/.test(pantallaSafe)
   ) return 'FICHEROS-ALQUILERES VEHÍCULOS';
+
+  // 👇 NUEVO: detectar Ficheros (Formas de Pago)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(formas.*pago|formas.*payment|pago|payment)/.test(pantallaSafe)
+  ) return 'FICHEROS-FORMAS DE PAGO';
 
   return 'Datos';
 }
