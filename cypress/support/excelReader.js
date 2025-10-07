@@ -41,6 +41,7 @@ const SHEET_GIDS = {
   'FICHEROS-TARJETAS': '1774716711',   
   'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',     
   'FICHEROS-FORMAS DE PAGO': '756254621',     
+  'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES': '96321178',
   'Datos': '0'
 };
 
@@ -140,6 +141,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(formas.*pago|formas.*payment|pago|payment)/.test(pantallaSafe)
   ) return 'FICHEROS-FORMAS DE PAGO';
+
+  // 👇 NUEVO: detectar Almacen (Familias, Subfamilias y Almacenes)
+  if (
+    /almacen/.test(pantallaSafe) &&
+    /(familias|subfamilias|almacenes)/.test(pantallaSafe)
+  ) return 'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES';
 
   return 'Datos';
 }
