@@ -1,11 +1,11 @@
 // ficheros_formas_pago.cy.js
 describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte a Excel', () => {
-    const archivo = 'reportes_pruebas_novatrans.xlsx';
+  const archivo = 'reportes_pruebas_novatrans.xlsx';
 
-    after(() => {
-        cy.log('Procesando resultados finales para Ficheros (Formas de Pago)');
-        cy.procesarResultadosPantalla('Ficheros (Formas de Pago)');
-    });
+  after(() => {
+    cy.log('Procesando resultados finales para Ficheros (Formas de Pago)');
+    cy.procesarResultadosPantalla('Ficheros (Formas de Pago)');
+  });
 
     it('Ejecutar todos los casos de prueba desde Excel', () => {
         cy.obtenerDatosExcel('Ficheros (Formas de Pago)').then((casos) => {
@@ -25,8 +25,8 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
                 cy.log(`────────────────────────────────────────────────────────`);
                 cy.log(`▶️ Ejecutando caso ${index + 1}/${casosFormasPago.length}: ${caso.caso} - ${nombre} [${prioridad}]`);
 
-            cy.resetearFlagsTest();
-            cy.login();
+      cy.resetearFlagsTest();
+      cy.login();
                 cy.wait(400);
 
                 let funcion;
@@ -57,30 +57,30 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
                 }
 
                 funcion().then(() => {
-                cy.estaRegistrado().then((ya) => {
-                    if (!ya) {
-                            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                        cy.registrarResultados({
-                            numero,
-                            nombre,
-                            esperado: 'Comportamiento correcto',
-                            obtenido: 'Comportamiento correcto',
-                            resultado: 'OK',
-                            archivo,
-                                pantalla: 'Ficheros (Formas de Pago)',
-                        });
-                    }
-                    });
-                });
+        cy.estaRegistrado().then((ya) => {
+          if (!ya) {
+            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+            cy.registrarResultados({
+              numero,
+              nombre,
+              esperado: 'Comportamiento correcto',
+              obtenido: 'Comportamiento correcto',
+              resultado: 'OK',
+              archivo,
+              pantalla: 'Ficheros (Formas de Pago)',
             });
+          }
+                    });
         });
+      });
     });
+  });
 
     // ====== OBJETO UI ======
     const UI = {
         abrirPantalla() {
-            cy.navegarAMenu('Ficheros', 'Formas de Pago');
-            cy.url().should('include', '/dashboard/payment-methods');
+    cy.navegarAMenu('Ficheros', 'Formas de Pago');
+    cy.url().should('include', '/dashboard/payment-methods');
             return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         },
 
@@ -132,57 +132,57 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
         return UI.filasVisibles().should('have.length.greaterThan', 0);
     }
 
-    function ejecutarFiltroIndividual(numeroCaso) {
+  function ejecutarFiltroIndividual(numeroCaso) {
         UI.abrirPantalla();
-        cy.get('.MuiDataGrid-root').should('be.visible');
+    cy.get('.MuiDataGrid-root').should('be.visible');
 
         return cy.obtenerDatosExcel('Ficheros (Formas de Pago)').then((datosFiltros) => {
-            const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
-            cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
-
-            const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
-
-            if (!filtroEspecifico) {
-                cy.log(`No se encontró TC${numeroCasoFormateado}`);
-                cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
-                    esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
-                    obtenido: 'Caso no encontrado en los datos del Excel',
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Formas de Pago)'
-                });
+      const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
+      cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
+      
+      const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
+      
+      if (!filtroEspecifico) {
+        cy.log(`No se encontró TC${numeroCasoFormateado}`);
+        cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
+        cy.registrarResultados({
+          numero: numeroCaso,
+          nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
+          esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
+          obtenido: 'Caso no encontrado en los datos del Excel',
+          resultado: 'ERROR',
+          archivo,
+          pantalla: 'Ficheros (Formas de Pago)'
+        });
                 return cy.wrap(true);
-            }
+      }
 
-            cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
-            cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
+      cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
+      cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
 
             // Verificar si es un caso de búsqueda con columna
             if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'column') {
                 // Selección de columna
-                cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                    const options = [...$select[0].options].map(opt => opt.text.trim());
+        cy.get('select[name="column"], select#column').should('be.visible').then($select => {
+          const options = [...$select[0].options].map(opt => opt.text.trim());
                     cy.log(`Opciones dropdown: ${options.join(', ')}`);
-                    let columnaEncontrada = null;
-                    
+          let columnaEncontrada = null;
+          
                     switch (filtroEspecifico.dato_1) {
                         case 'Referencia': columnaEncontrada = options.find(o => /Referencia|Reference/i.test(o)); break;
                         case 'Descripción': columnaEncontrada = options.find(o => /Descripción|Description/i.test(o)); break;
                         case 'Días para pago': columnaEncontrada = options.find(o => /Días.*pago|Days.*payment/i.test(o)); break;
                         case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                        default:
-                            columnaEncontrada = options.find(opt => 
-                                opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-                                filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-                            );
-                    }
-
-                    if (columnaEncontrada) {
+            default:
+              columnaEncontrada = options.find(opt => 
+                opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
+                filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
+              );
+          }
+          
+          if (columnaEncontrada) {
                         cy.wrap($select).select(columnaEncontrada);
-                    } else {
+          } else {
                         cy.wrap($select).select(1);
                     }
                 });
@@ -202,63 +202,63 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
                     return cy.wrap(true);
                 }
 
-                if (!filtroEspecifico.dato_2 || filtroEspecifico.dato_2.trim() === '') {
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar formas de pago por ${filtroEspecifico.dato_1}`,
+        if (!filtroEspecifico.dato_2 || filtroEspecifico.dato_2.trim() === '') {
+          cy.registrarResultados({
+            numero: numeroCaso,
+            nombre: `TC${numeroCasoFormateado} - Filtrar formas de pago por ${filtroEspecifico.dato_1}`,
                         esperado: `Filtro por "${filtroEspecifico.dato_1}" con valor "${filtroEspecifico.dato_2}"`,
                         obtenido: 'Valor de búsqueda vacío en Excel',
-                        resultado: 'ERROR',
-                        archivo,
-                        pantalla: 'Ficheros (Formas de Pago)'
-                    });
-                    return cy.wrap(true);
-                }
-
+            resultado: 'ERROR',
+            archivo,
+            pantalla: 'Ficheros (Formas de Pago)'
+          });
+          return cy.wrap(true);
+        }
+        
                 cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
                     .should('exist')
-                    .clear({ force: true })
-                    .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+          .clear({ force: true })
+          .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
 
                 cy.wait(1500);
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    const totalFilas = $body.find('.MuiDataGrid-row').length;
+        cy.get('body').then($body => {
+          const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+          const totalFilas = $body.find('.MuiDataGrid-row').length;
                     const tieneNoRows = $body.text().includes('No rows');
 
                     // Todos los casos de formas de pago son OK por ahora
-                    let resultado = 'OK';
-                    let obtenido = `Se muestran ${filasVisibles} resultados`;
-                    
+          let resultado = 'OK';
+          let obtenido = `Se muestran ${filasVisibles} resultados`;
+          
                     if (filasVisibles === 0 || tieneNoRows) {
                         resultado = 'OK';
                         obtenido = 'No se muestran resultados (comportamiento esperado)';
-                    } else {
-                        resultado = 'OK';
-                        obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
-                    }
-
-                        cy.registrarResultados({
-                            numero: numeroCaso,
+          } else {
+            resultado = 'OK';
+            obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
+          }
+          
+          cy.registrarResultados({
+            numero: numeroCaso,
                         nombre: `TC${numeroCasoFormateado} - Filtrar por ${filtroEspecifico.dato_1}`,
                         esperado: `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`,
                         obtenido,
                         resultado,
-                            archivo,
-                            pantalla: 'Ficheros (Formas de Pago)'
-                        });
-                });
+            archivo,
+            pantalla: 'Ficheros (Formas de Pago)'
+          });
+        });
             } else if (filtroEspecifico.etiqueta_2 === 'placeholder' && filtroEspecifico.valor_etiqueta_2 === 'Buscar') {
                 // Búsqueda directa sin selección de columna
                 cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
                     .should('exist')
-                    .clear({ force: true })
+          .clear({ force: true })
                     .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
 
                 cy.wait(1500);
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    const totalFilas = $body.find('.MuiDataGrid-row').length;
+        cy.get('body').then($body => {
+          const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+          const totalFilas = $body.find('.MuiDataGrid-row').length;
                     const tieneNoRows = $body.text().includes('No rows');
 
                     // Todos los casos de formas de pago son OK por ahora
@@ -272,32 +272,32 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
                         resultado = 'OK';
                         obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
                     }
-
-                    cy.registrarResultados({
-                        numero: numeroCaso,
+            
+            cy.registrarResultados({
+              numero: numeroCaso,
                         nombre: `TC${numeroCasoFormateado} - Buscar "${filtroEspecifico.dato_2}"`,
                         esperado: `Búsqueda "${filtroEspecifico.dato_2}"`,
                         obtenido,
                         resultado,
-                        archivo,
-                        pantalla: 'Ficheros (Formas de Pago)'
-                    });
-                });
-            } else {
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Tipo de filtro no reconocido`,
+              archivo,
+              pantalla: 'Ficheros (Formas de Pago)'
+            });
+        });
+      } else {
+        cy.registrarResultados({
+          numero: numeroCaso,
+          nombre: `TC${numeroCasoFormateado} - Tipo de filtro no reconocido`,
                     esperado: `Tipo de filtro válido (columna o búsqueda directa)`,
                     obtenido: `Etiquetas: ${filtroEspecifico.etiqueta_1}=${filtroEspecifico.valor_etiqueta_1}, ${filtroEspecifico.etiqueta_2}=${filtroEspecifico.valor_etiqueta_2}`,
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Formas de Pago)'
-                });
-            }
-
-            return cy.wrap(true);
+          resultado: 'ERROR',
+          archivo,
+          pantalla: 'Ficheros (Formas de Pago)'
         });
-    }
+      }
+      
+      return cy.wrap(true);
+    });
+  }
 
     function ejecutarMultifiltro(numeroCaso) {
         UI.abrirPantalla();
@@ -398,25 +398,25 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
         UI.abrirPantalla();
         cy.get('div[role="columnheader"][data-field="descripcion"]').click({ force: true });
         return cy.wait(500);
-    }
+  }
 
-    function ordenarReferencia() {
+  function ordenarReferencia() {
         UI.abrirPantalla();
         cy.get('div[role="columnheader"][data-field="referencia"]').click({ force: true });
         return cy.wait(500);
-    }
+  }
 
-    function seleccionarFila() {
+  function seleccionarFila() {
         UI.abrirPantalla();
         return cy.get('.MuiDataGrid-row').first().click({ force: true });
-    }
+  }
 
-    function editarFormaPago() {
+  function editarFormaPago() {
         UI.abrirPantalla();
         return cy.get('.MuiDataGrid-row').first().dblclick({ force: true });
-    }
+  }
 
-    function eliminarFormaPago() {
+  function eliminarFormaPago() {
         UI.abrirPantalla();
         // Seleccionar la primera fila
         cy.get('.MuiDataGrid-row').first().click({ force: true });
@@ -425,8 +425,8 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
         
         // Hacer clic en el botón Eliminar
         cy.get('button').contains(/Eliminar/i).should('be.visible').click({ force: true });
-        cy.wait(1000);
-        
+    cy.wait(1000);
+
         // Verificar el resultado: OK si se elimina o si aparece el mensaje de error
         cy.get('body').then($body => {
             const tieneMensajeError = $body.text().includes('No se puede eliminar el método de pago porque tiene referencias en otros módulos');
@@ -439,7 +439,7 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
                 // Caso 1: Aparece el mensaje de error (comportamiento esperado)
                 resultado = 'OK';
                 obtenido = 'Aparece mensaje: "No se puede eliminar el método de pago porque tiene referencias en otros módulos"';
-            } else {
+      } else {
                 // Caso 2: Se elimina la fila correctamente
                 resultado = 'OK';
                 obtenido = 'Fila eliminada correctamente';
@@ -457,9 +457,9 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
         });
         
         return cy.wait(1000);
-    }
+  }
 
-    function editarSinSeleccion() {
+  function editarSinSeleccion() {
         UI.abrirPantalla();
         UI.filasVisibles().should('have.length.greaterThan', 0);
         cy.get('button').then($buttons => {
@@ -468,9 +468,9 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
             }
         });
         return cy.wrap(true);
-    }
+  }
 
-    function eliminarSinSeleccion() {
+  function eliminarSinSeleccion() {
         UI.abrirPantalla();
         UI.filasVisibles().should('have.length.greaterThan', 0);
         cy.get('button').then($buttons => {
@@ -479,23 +479,23 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
             }
         });
         return cy.wrap(true);
-    }
+  }
 
-    function abrirFormularioAlta() {
+  function abrirFormularioAlta() {
         UI.abrirPantalla();
         return cy.get('button[aria-label="Nuevo"], button:contains("Nuevo")').first().click({ force: true });
-    }
+  }
 
-    function ocultarColumna() {
+  function ocultarColumna() {
         UI.abrirPantalla();
         cy.get('div[role="columnheader"][data-field="referencia"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
         cy.contains('li', /Hide column/i).click({ force: true });
         return cy.wait(1000);
-    }
+  }
 
-    function gestionarColumnas() {
+  function gestionarColumnas() {
         UI.abrirPantalla();
         cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         cy.get('div[role="columnheader"]').contains('Descripción').should('exist');
@@ -535,15 +535,15 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
         cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
             cy.contains(/Referencia/i)
                 .parent()
-                .find('input[type="checkbox"]')
+      .find('input[type="checkbox"]')
                 .first()
-                .check({ force: true });
-        });
+      .check({ force: true });
+      });
         cy.get('body').click(0, 0);
         return cy.wait(500);
-    }
+  }
 
-    function scrollVertical() {
+  function scrollVertical() {
         UI.abrirPantalla();
         return cy.get('.MuiDataGrid-virtualScroller').scrollTo('bottom', { duration: 1000 });
     }
@@ -615,7 +615,7 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
 
                 // Primero limpiar los filtros actuales
                 cy.contains('button', /^Limpiar$/i).click({ force: true });
-                cy.wait(500);
+    cy.wait(500);
 
                 // Pulsar en el desplegable "Guardados" y seleccionar el filtro guardado
                 cy.contains('button, [role="button"]', /Guardados/i).click({ force: true });
@@ -624,6 +624,6 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
                 cy.contains('li, [role="option"]', /filtro referencia/i).click({ force: true });
 
                 return UI.filasVisibles().should('have.length.greaterThan', 0);
-            });
-    }
+    });
+  }
 });

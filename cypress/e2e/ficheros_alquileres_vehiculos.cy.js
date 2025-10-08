@@ -238,16 +238,16 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
                             obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
                         }
                     }
-                        
-                        cy.registrarResultados({
-                            numero: numeroCaso,
+                    
+                    cy.registrarResultados({
+                        numero: numeroCaso,
                         nombre: `TC${numeroCasoFormateado} - Filtrar por ${filtroEspecifico.dato_1}`,
                         esperado: `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`,
                         obtenido,
                         resultado,
                             archivo,
-                            pantalla: 'Ficheros (Alquileres Vehículos)'
-                        });
+                        pantalla: 'Ficheros (Alquileres Vehículos)'
+                    });
                 });
             } else if (filtroEspecifico.etiqueta_2 === 'placeholder' && filtroEspecifico.valor_etiqueta_2 === 'Buscar') {
                 // Búsqueda directa sin selección de columna
@@ -302,15 +302,15 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
                         }
                     }
 
-                    cy.registrarResultados({
-                        numero: numeroCaso,
+                        cy.registrarResultados({
+                            numero: numeroCaso,
                         nombre: `TC${numeroCasoFormateado} - Buscar "${filtroEspecifico.dato_2}"`,
                         esperado: `Búsqueda "${filtroEspecifico.dato_2}"`,
                         obtenido,
                         resultado,
                         archivo,
-                        pantalla: 'Ficheros (Alquileres Vehículos)'
-                    });
+                            pantalla: 'Ficheros (Alquileres Vehículos)'
+                        });
                 });
             } else {
                 cy.registrarResultados({

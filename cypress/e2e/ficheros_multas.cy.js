@@ -544,7 +544,7 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
             const codigoExists = $headers.filter(':contains("Código")').length > 0;
             if (!codigoExists) {
                 cy.log('TC022: Columna Código se ocultó correctamente');
-            } else {
+                } else {
                 cy.log('TC022: Columna Código no se ocultó, pero el test continúa');
             }
         });
@@ -559,7 +559,7 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
             cy.contains(/Código/i)
                 .parent()
                 .find('input[type="checkbox"]')
-                .first()
+            .first()
                 .check({ force: true });
         });
         cy.get('body').click(0, 0);
