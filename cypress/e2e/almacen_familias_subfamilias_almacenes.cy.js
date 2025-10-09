@@ -961,8 +961,8 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
         return cy.get('@panel')
           .find('button')
           .eq(2) // Tercer botón (papelera)
-          .click();
-    }
+      .click();
+  }
 
   function editarAlmacenSinSeleccion() {
         UI.abrirPantalla();

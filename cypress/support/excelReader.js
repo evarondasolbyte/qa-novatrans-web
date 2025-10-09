@@ -43,6 +43,7 @@ const SHEET_GIDS = {
   'FICHEROS-FORMAS DE PAGO': '756254621',     
   'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES': '96321178',
   'ALMACEN-ARTICULOS': '934160481',
+  'ALMACEN-PEDIDOS': '1704715399', 
   'Datos': '0'
 };
 
@@ -154,6 +155,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /almacen/.test(pantallaSafe) &&
     /(articulos|artículos)/.test(pantallaSafe)
   ) return 'ALMACEN-ARTICULOS';
+
+  // 👇 NUEVO: detectar Almacen (Pedidos)
+  if (
+    /almacen/.test(pantallaSafe) &&
+    /(pedidos|pedido)/.test(pantallaSafe)
+  ) return 'ALMACEN-PEDIDOS';
 
   return 'Datos';
 }
