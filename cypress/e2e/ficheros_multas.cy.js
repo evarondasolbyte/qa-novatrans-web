@@ -33,8 +33,8 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
                 let funcion;
                 // Mapeo dinámico basado en los casos disponibles en Excel
                 if (numero === 1) funcion = cargarPantallaMultas;
-                else if (numero >= 2 && numero <= 7) funcion = () => ejecutarFiltroIndividual(numero);
-                else if (numero >= 8 && numero <= 12) funcion = () => ejecutarFiltroIndividual(numero);
+                else if (numero >= 2 && numero <= 7) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Multas)', 'Ficheros (Multas)', 'Ficheros', 'Multas');
+                else if (numero >= 8 && numero <= 12) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Multas)', 'Ficheros (Multas)', 'Ficheros', 'Multas');
                 else if (numero === 13) funcion = ordenarFecha;
                 else if (numero === 14) funcion = ordenarCodigo;
                 else if (numero === 15) funcion = seleccionarFila;
@@ -46,13 +46,13 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
                 else if (numero === 21) funcion = ocultarColumna;
                 else if (numero === 22) funcion = gestionarColumnas;
                 else if (numero === 23) funcion = scrollHorizontalVertical;
-                else if (numero >= 24 && numero <= 27) funcion = () => ejecutarFiltroIndividual(numero);
+                else if (numero >= 24 && numero <= 27) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Multas)', 'Ficheros (Multas)', 'Ficheros', 'Multas');
                 else if (numero === 28) funcion = recargarPagina;
                 else if (numero === 29) funcion = filtrarPorValue;
                 else if (numero === 30) funcion = guardarFiltro;
                 else if (numero === 31) funcion = limpiarFiltro;
                 else if (numero === 32) funcion = seleccionarFiltroGuardado;
-                else if (numero >= 33 && numero <= 38) funcion = () => ejecutarMultifiltro(numero);
+                else if (numero >= 33 && numero <= 38) funcion = () => cy.ejecutarMultifiltro(numero, 'Ficheros (Multas)', 'Ficheros (Multas)', 'Ficheros', 'Multas');
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
                     return cy.wrap(true);
@@ -142,251 +142,9 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
         return UI.filasVisibles().should('have.length.greaterThan', 0);
     }
 
-    function ejecutarFiltroIndividual(numeroCaso) {
-        UI.abrirPantalla();
-        cy.get('.MuiDataGrid-root').should('be.visible');
+    
 
-        return cy.obtenerDatosExcel('Ficheros (Multas)').then((datosFiltros) => {
-            const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
-            cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
-            
-            const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
-            
-            if (!filtroEspecifico) {
-                cy.log(`No se encontró TC${numeroCasoFormateado}`);
-                cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
-                    esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
-                    obtenido: 'Caso no encontrado en los datos del Excel',
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Multas)'
-                });
-                return cy.wrap(true);
-            }
-
-            cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
-            cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
-
-            // Verificar si es un caso de búsqueda con columna
-            if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'column') {
-                // Selección de columna
-                cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                    const options = [...$select[0].options].map(opt => opt.text.trim());
-                    cy.log(`Opciones dropdown: ${options.join(', ')}`);
-                    let columnaEncontrada = null;
-                    
-                    switch (filtroEspecifico.dato_1) {
-                        case 'Código': columnaEncontrada = options.find(o => /Código|Code/i.test(o)); break;
-                        case 'Fecha': columnaEncontrada = options.find(o => /Fecha|Date/i.test(o)); break;
-                        case 'Conductor': columnaEncontrada = options.find(o => /Conductor|Driver/i.test(o)); break;
-                        case 'Boletín': columnaEncontrada = options.find(o => /Boletín|Bulletin/i.test(o)); break;
-                        case 'Estado': columnaEncontrada = options.find(o => /Estado|Status/i.test(o)); break;
-                        case 'Pagado': columnaEncontrada = options.find(o => /Pagado|Paid/i.test(o)); break;
-                        case 'Expediente': columnaEncontrada = options.find(o => /Expediente|File/i.test(o)); break;
-                        case 'Imp. Final': columnaEncontrada = options.find(o => /Imp\.? Final|Final Amount/i.test(o)); break;
-                        case 'Imp. Inicial': columnaEncontrada = options.find(o => /Imp\.? Inicial|Initial Amount/i.test(o)); break;
-                        case 'Finalizada': columnaEncontrada = options.find(o => /Finalizada|Finished/i.test(o)); break;
-                        default:
-                            columnaEncontrada = options.find(opt => 
-                                opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-                                filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-                            );
-                    }
-                    
-                    if (columnaEncontrada) {
-                        cy.wrap($select).select(columnaEncontrada);
-                        cy.log(`Seleccionada columna: ${columnaEncontrada}`);
-                    } else {
-                        cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada, usando primera opción`);
-                        cy.wrap($select).select(1);
-                    }
-                });
-                
-                if (!filtroEspecifico.dato_2 || filtroEspecifico.dato_2.trim() === '') {
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar multas por ${filtroEspecifico.dato_1}`,
-                        esperado: `Filtro por "${filtroEspecifico.dato_1}" con valor "${filtroEspecifico.dato_2}"`,
-                        obtenido: 'Valor de búsqueda vacío en Excel',
-                        resultado: 'ERROR',
-                        archivo,
-                        pantalla: 'Ficheros (Multas)'
-                    });
-                    return cy.wrap(true);
-                }
-                
-                cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
-                    .should('exist')
-                    .clear({ force: true })
-                    .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
-
-                cy.wait(1500);
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    const totalFilas = $body.find('.MuiDataGrid-row').length;
-                    const tieneNoRows = $body.text().includes('No rows');
-
-                    // Casos específicos que están marcados como KO en Excel
-                    const casosKO = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 24, 25, 26, 27];
-                    const debeSerPermisivo = casosKO.includes(numeroCaso);
-                    
-                    let resultado = 'OK';
-                    let obtenido = `Se muestran ${filasVisibles} resultados`;
-                    
-                        if (debeSerPermisivo) {
-                        // Estos casos están marcados como KO en Excel, pero si funcionan, los registramos como OK
-                        if (filasVisibles > 0) {
-                            resultado = 'OK';
-                            obtenido = `Filtro ${filtroEspecifico.dato_1} funciona correctamente (${filasVisibles} resultados)`;
-                        } else {
-                            resultado = 'ERROR';
-                            obtenido = 'No se muestra nada';
-                        }
-                    } else {
-                        // Para otros casos, validar que el filtro se aplicó
-                        if (filasVisibles === 0 || tieneNoRows) {
-                            resultado = 'ERROR';
-                            obtenido = 'No se muestran resultados';
-                    } else if (filasVisibles === totalFilas && totalFilas > 0) {
-                            resultado = 'ERROR';
-                            obtenido = `Filtro no se aplicó (${filasVisibles}/${totalFilas})`;
-                        } else {
-                            resultado = 'OK';
-                            obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
-                        }
-                    }
-                    
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar por ${filtroEspecifico.dato_1}`,
-                        esperado: `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`,
-                        obtenido,
-                        resultado,
-                        archivo,
-                        pantalla: 'Ficheros (Multas)'
-                    });
-                });
-            } else if (filtroEspecifico.etiqueta_2 === 'placeholder' && filtroEspecifico.valor_etiqueta_2 === 'Buscar') {
-                // Búsqueda directa sin selección de columna
-                cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
-                    .should('exist')
-                    .clear({ force: true })
-                    .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
-            } else {
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Tipo de filtro no reconocido`,
-                    esperado: `Tipo de filtro válido (columna o búsqueda directa)`,
-                    obtenido: `Etiquetas: ${filtroEspecifico.etiqueta_1}=${filtroEspecifico.valor_etiqueta_1}, ${filtroEspecifico.etiqueta_2}=${filtroEspecifico.valor_etiqueta_2}`,
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Multas)'
-                });
-            }
-            
-            return cy.wrap(true);
-        });
-    }
-
-    function ejecutarMultifiltro(numeroCaso) {
-        UI.abrirPantalla();
-        cy.get('.MuiDataGrid-root').should('be.visible');
-
-        return cy.obtenerDatosExcel('Ficheros (Multas)').then((datosFiltros) => {
-            const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
-            cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
-
-            const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
-
-            if (!filtroEspecifico) {
-                cy.log(`No se encontró TC${numeroCasoFormateado}`);
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
-                    esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
-                    obtenido: 'Caso no encontrado en los datos del Excel',
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Multas)'
-                });
-                return cy.wrap(true);
-            }
-
-            cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.dato_1} - ${filtroEspecifico.dato_2}`);
-
-            // Verificar si es un caso de multifiltro con operador
-            if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'operator') {
-                // Seleccionar operador del multifiltro
-                cy.get('select[name="operator"], select#operator').should('be.visible').then($select => {
-                    const options = [...$select[0].options].map(opt => opt.text.trim());
-                    cy.log(`Opciones operador: ${options.join(', ')}`);
-                    const operadorEncontrado = options.find(opt =>
-                        opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-                        filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-                    );
-                    if (operadorEncontrado) {
-                        cy.wrap($select).select(operadorEncontrado);
-                        cy.log(`Seleccionado operador: ${operadorEncontrado}`);
-                    } else {
-                        cy.log(`Operador "${filtroEspecifico.dato_1}" no encontrado, usando primera opción`);
-                        cy.wrap($select).select(1);
-                    }
-                });
-            } else {
-                cy.log(`No es un caso de multifiltro válido: etiqueta_1=${filtroEspecifico.etiqueta_1}, valor_etiqueta_1=${filtroEspecifico.valor_etiqueta_1}`);
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Multifiltro no válido`,
-                    esperado: `Multifiltro con operador`,
-                    obtenido: `No es un multifiltro válido`,
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Multas)'
-                });
-                return cy.wrap(true);
-            }
-
-            // Aplicar búsqueda
-            cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
-                .should('exist')
-                .clear({ force: true })
-                .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
-
-            cy.wait(1500);
-            cy.get('body').then($body => {
-                const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                const totalFilas = $body.find('.MuiDataGrid-row').length;
-
-                let resultado = 'OK';
-                let obtenido = `Se muestran ${filasVisibles} resultados`;
-
-                // Los multifiltros en multas están marcados como OK en Excel
-                if (filasVisibles === 0) {
-                    resultado = 'OK';
-                    obtenido = 'No se muestran resultados';
-                } else {
-                    resultado = 'OK';
-                    obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
-                }
-
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Multifiltro ${filtroEspecifico.dato_1}`,
-                    esperado: 'Multifiltro correcto',
-                    obtenido,
-                    resultado,
-                    archivo,
-                    pantalla: 'Ficheros (Multas)'
-                });
-            });
-
-            return cy.wrap(true);
-        });
-    }
-
+    
     // ====== FUNCIONES ESPECÍFICAS ======
 
     function ordenarFecha() {

@@ -20,6 +20,7 @@ echo   - ficheros_alquileres_vehiculos
 echo   - ficheros_formas_pago
 echo   - almacen_familias_subfamilias_almacenes
 echo   - almacen_articulos
+echo   - almacen_pedidos
 echo ========================================
 echo.
 
@@ -32,7 +33,8 @@ set "SPECS=%SPECS%cypress/e2e/ficheros_tarjetas.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/ficheros_alquileres_vehiculos.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/ficheros_formas_pago.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/almacen_familias_subfamilias_almacenes.cy.js,"
-set "SPECS=%SPECS%cypress/e2e/almacen_articulos.cy.js"
+set "SPECS=%SPECS%cypress/e2e/almacen_articulos.cy.js,"
+set "SPECS=%SPECS%cypress/e2e/almacen_pedidos.cy.js"
 
 REM Ejecuta las pruebas con Cypress
 npx cypress run --spec "%SPECS%"
