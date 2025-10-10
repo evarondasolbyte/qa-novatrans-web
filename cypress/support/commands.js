@@ -569,11 +569,14 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
   }
   
   return cy.obtenerDatosExcel(nombreHojaExcel).then((datosFiltros) => {
+    cy.log(`📊 Total de casos encontrados en Excel: ${datosFiltros.length}`);
+    cy.log(`📋 Primeros 5 casos: ${datosFiltros.slice(0, 5).map(f => f.caso).join(', ')}`);
+    
     const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
     
     if (!filtroEspecifico) {
-      cy.log(`No se encontró TC${numeroCasoFormateado}`);
-      cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
+      cy.log(`❌ No se encontró TC${numeroCasoFormateado}`);
+      cy.log(`📋 Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
       cy.registrarResultados({
         numero: numeroCaso,
         nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
@@ -586,8 +589,11 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       return cy.wrap(true);
     }
 
-    cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
-    cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
+    cy.log(`✅ Caso encontrado: TC${numeroCasoFormateado}`);
+    cy.log(`📊 Datos completos del caso:`, JSON.stringify(filtroEspecifico, null, 2));
+    cy.log(`🎯 Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
+    cy.log(`🔍 Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
+    cy.log(`🏷️ Etiquetas: etiqueta_1="${filtroEspecifico.etiqueta_1}", valor_etiqueta_1="${filtroEspecifico.valor_etiqueta_1}"`);
 
     // Verificar si es un caso de búsqueda con columna
     if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'column') {
@@ -600,6 +606,11 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         switch (filtroEspecifico.dato_1) {
           case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
           case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
+          case 'Número': columnaEncontrada = options.find(o => /Número|Number/i.test(o)); break;
+          case 'Modelo': columnaEncontrada = options.find(o => /Modelo|Model/i.test(o)); break;
+          case 'Poseedor': columnaEncontrada = options.find(o => /Poseedor|Holder/i.test(o)); break;
+          case 'Activo': columnaEncontrada = options.find(o => /Activo|Active/i.test(o)); break;
+          case 'Extensión': columnaEncontrada = options.find(o => /Extensión|Extension/i.test(o)); break;
           default:
             columnaEncontrada = options.find(opt =>
               opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
@@ -647,12 +658,21 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
     cy.get('body').then($body => {
       const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
       const totalFilas = $body.find('.MuiDataGrid-row').length;
+      const tieneNoRows = $body.text().includes('No rows');
+
+      cy.log(`📊 Resultados del filtro TC${numeroCasoFormateado}:`);
+      cy.log(`   - Filas visibles: ${filasVisibles}`);
+      cy.log(`   - Total filas: ${totalFilas}`);
+      cy.log(`   - Tiene "No rows": ${tieneNoRows}`);
 
       let resultado = 'OK';
       let obtenido = `Se muestran ${filasVisibles} resultados`;
 
       // Casos específicos que pueden estar marcados como KO en Excel
       const casosKO = [26, 27, 28, 29, 30];
+      // Casos específicos de teléfonos que deben dar ERROR si no hay resultados
+      const casosTelefonosKO = [10, 11, 12, 13, 14];
+      
       if (casosKO.includes(numeroCaso)) {
         if (filasVisibles > 0) {
           resultado = 'OK';
@@ -661,16 +681,67 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           resultado = 'ERROR';
           obtenido = 'No se muestran resultados para este filtro';
         }
+      } else if (casosTelefonosKO.includes(numeroCaso)) {
+        // Para casos de teléfonos específicos, ERROR si no hay resultados
+        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de teléfonos KO - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        if (filasVisibles === 0 || tieneNoRows) {
+          resultado = 'ERROR';
+          obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (deberían existir datos)';
+        } else {
+          resultado = 'OK';
+          obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
+        }
       } else if (filasVisibles === 0) {
         resultado = 'OK';
         obtenido = 'No se muestran resultados';
       }
 
+      // Nombres específicos para casos de teléfonos
+      let nombreCaso = `TC${numeroCasoFormateado} - ${filtroEspecifico.valor_etiqueta_1}`;
+      let esperadoCaso = `Filtro ${filtroEspecifico.dato_1} debe mostrar resultados apropiados`;
+      let obtenidoCaso = obtenido;
+      
+      if (nombrePantalla && nombrePantalla.toLowerCase().includes('teléfonos')) {
+        switch (numeroCaso) {
+          case 10: 
+            nombreCaso = 'TC010 - Filtrar por "Número"'; 
+            break;
+          case 11: 
+            nombreCaso = 'TC011 - Filtrar por "Modelo"'; 
+            break;
+          case 12: 
+            nombreCaso = 'TC012 - Filtrar por "Poseedor"'; 
+            break;
+          case 13: 
+            nombreCaso = 'TC013 - Filtrar por "Activo"'; 
+            break;
+          case 14: 
+            nombreCaso = 'TC014 - Filtrar por "Extensión" exacta'; 
+            break;
+          case 15:
+            nombreCaso = 'TC015 - Filtrar un Modelo por campo "Value"';
+            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
+            break;
+          case 16:
+            nombreCaso = 'TC016 - Buscar texto en mayúsculas/minúsculas alternadas';
+            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
+            break;
+          case 17:
+            nombreCaso = 'TC017 - Buscar caracteres especiales';
+            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
+            break;
+          case 18:
+            nombreCaso = 'TC018 - Buscar texto sin coincidencias';
+            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
+            break;
+        }
+      }
+
       cy.registrarResultados({
         numero: numeroCaso,
-        nombre: `TC${numeroCasoFormateado} - ${filtroEspecifico.valor_etiqueta_1}`,
-        esperado: `Filtro ${filtroEspecifico.dato_1} debe mostrar resultados apropiados`,
-        obtenido: obtenido,
+        nombre: nombreCaso,
+        esperado: esperadoCaso,
+        obtenido: obtenidoCaso,
         resultado: resultado,
         archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla

@@ -39,6 +39,7 @@ const SHEET_GIDS = {
   'FICHEROS-MULTAS': '523458683',      
   'FICHEROS-SINIESTROS': '1011892651',    
   'FICHEROS-TARJETAS': '1774716711',   
+  'FICHEROS-TELEFONOS': '77961009',
   'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',     
   'FICHEROS-FORMAS DE PAGO': '756254621',     
   'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES': '96321178',
@@ -131,6 +132,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(tarjetas|tarjeta)/.test(pantallaSafe)
   ) return 'FICHEROS-TARJETAS';
+
+  // 👇 NUEVO: detectar Ficheros (Teléfonos)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(tel[eé]fonos|tel[eé]fono)/.test(pantallaSafe)
+  ) return 'FICHEROS-TELEFONOS';
 
   // 👇 NUEVO: detectar Ficheros (Alquileres Vehículos)
   if (
