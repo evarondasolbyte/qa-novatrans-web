@@ -676,5 +676,5 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             return cy.wrap(true);
         }
     }
-
+});
     
