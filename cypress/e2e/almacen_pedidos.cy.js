@@ -32,21 +32,21 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 const numero = parseInt((caso.caso || '').replace('TC', ''), 10);
                 const nombre = caso.nombre;
 
-                // Reset de flags por test (muy importante)
-                cy.resetearFlagsTest();
+            // Reset de flags por test (muy importante)
+            cy.resetearFlagsTest();
 
                 // Captura de errores y registro mejorado
-                cy.on('fail', (err) => {
+            cy.on('fail', (err) => {
                     cy.log(`⚠️ Error en caso ${numero}: ${err.message}`);
                     cy.registrarResultados({
-                        numero,
+                    numero,
                         nombre: `TC${String(numero).padStart(3, '0')} - Error`,
                         esperado: 'Ejecución sin errores',
                         obtenido: `Error: ${err.message}`,
                         resultado: 'ERROR',
-                        archivo,
-                        pantalla: 'Almacen (Pedidos)'
-                    });
+                    archivo,
+                    pantalla: 'Almacen (Pedidos)'
+                });
                     // Continuamos con el siguiente caso
                     return cy.wrap(true);
                 });
@@ -96,21 +96,21 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                     .then(() => funcionAEjecutar && funcionAEjecutar())
                     .then(() => cy.estaRegistrado())
                     .then((ya) => {
-                        if (!ya) {
+                    if (!ya) {
                             cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                            cy.registrarResultados({
-                                numero,
-                                nombre,
-                                esperado: 'Comportamiento correcto',
+                        cy.registrarResultados({
+                            numero,
+                            nombre,
+                            esperado: 'Comportamiento correcto',
                                 obtenido: 'Comportamiento correcto',
                                 resultado: 'OK',
-                                archivo,
-                                pantalla: 'Almacen (Pedidos)'
-                            });
-                        }
+                            archivo,
+                            pantalla: 'Almacen (Pedidos)'
+                        });
+                    }
                         // Continuar con el siguiente caso
                         return ejecutarCaso(index + 1);
-                    });
+                });
             }
 
             // Iniciar ejecución del primer caso
@@ -121,8 +121,8 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
     // ===== OBJETO UI REUTILIZABLE =====
     const UI = {
         abrirPantalla() {
-            cy.navegarAMenu('Almacen', 'Pedidos');
-            cy.url().should('include', '/dashboard/orders');
+        cy.navegarAMenu('Almacen', 'Pedidos');
+        cy.url().should('include', '/dashboard/orders');
             return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         },
 
@@ -151,136 +151,136 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
     function ordenarPorCodigo() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Código column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Código column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Código column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Código column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorFecha() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Fecha column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Fecha column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Fecha column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Fecha column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorReferencia() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Referencia column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Referencia column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorArticulo() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Artículo')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Artículo')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Artículo column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Artículo column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Artículo column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Artículo column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorCantidad() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Cantidad')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Cantidad')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Cantidad column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Cantidad column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Cantidad column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Cantidad column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorPrecioU() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Precio/U.')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Precio/U.')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Precio/U. column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Precio/U. column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Precio/U. column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Precio/U. column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorPorcentajeDto() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', '% dto.')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', '% dto.')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="% dto. column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="% dto. column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="% dto. column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="% dto. column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function ordenarPorDto() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Dto.')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Dto.')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Dto. column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Dto. column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Dto. column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Dto. column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
@@ -290,17 +290,17 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
                 cy.wait(500);
 
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Importe')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Importe column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Importe column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Importe column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Importe column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
@@ -310,37 +310,37 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
                 cy.wait(500);
 
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Proveedor')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Proveedor')
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
-                cy.get('[aria-label="Proveedor column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('[aria-label="Proveedor column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by ASC').click({ force: true });
 
-                cy.get('[aria-label="Proveedor column menu"]').click({ force: true });
-                cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('[aria-label="Proveedor column menu"]').click({ force: true });
+        cy.get('li').contains('Sort by DESC').click({ force: true });
 
-                return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
     }
 
     function filtrarColumnaValueFecha() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha')
-                    .closest('[role="columnheader"]')
-                    .as('colFecha')
-                    .trigger('mouseover');
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fecha')
+            .closest('[role="columnheader"]')
+            .as('colFecha')
+            .trigger('mouseover');
 
-                cy.get('@colFecha').find('button[aria-label*="column menu"]').click({ force: true });
-                cy.get('ul[role="menu"]').should('be.visible');
-                cy.contains('li', /^Filter$/i).click({ force: true });
+        cy.get('@colFecha').find('button[aria-label*="column menu"]').click({ force: true });
+        cy.get('ul[role="menu"]').should('be.visible');
+        cy.contains('li', /^Filter$/i).click({ force: true });
 
-                cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
-                    cy.contains('label', /^Value$/i)
-                        .parent()
-                        .find('input')
-                        .clear({ force: true })
+        cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
+            cy.contains('label', /^Value$/i)
+                .parent()
+                .find('input')
+                .clear({ force: true })
                         .type('2024-01-01{enter}', { force: true });
                 });
 
@@ -369,7 +369,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 });
 
                 return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-            });
+        });
     }
 
     function filtrarColumnaValueArticulo() {
@@ -393,14 +393,14 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 });
 
                 return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-            });
+        });
     }
 
     function filtrarColumnaValueProveedor() {
         return UI.abrirPantalla()
             .then(() => {
                 cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
-                cy.wait(500);
+        cy.wait(500);
 
                 cy.contains('.MuiDataGrid-columnHeaderTitle', 'Proveedor')
                     .closest('[role="columnheader"]')
@@ -420,25 +420,25 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 });
 
                 return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-            });
+        });
     }
 
     function ocultarColumna() {
         return UI.abrirPantalla()
             .then(() => {
                 cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
-                    .closest('[role="columnheader"]')
+            .closest('[role="columnheader"]')
                     .as('colReferencia');
 
                 cy.get('@colReferencia').trigger('mouseover');
                 cy.get('@colReferencia')
-                    .find('button[aria-label*="column menu"]')
-                    .click({ force: true });
+            .find('button[aria-label*="column menu"]')
+            .click({ force: true });
 
-                cy.get('ul[role="menu"]').should('be.visible');
-                cy.contains('li', /^Hide column$/i).click({ force: true });
+        cy.get('ul[role="menu"]').should('be.visible');
+        cy.contains('li', /^Hide column$/i).click({ force: true });
 
-                return cy.get('.MuiDataGrid-columnHeaders')
+        return cy.get('.MuiDataGrid-columnHeaders')
                     .should('not.contain.text', 'Referencia');
             });
     }
@@ -447,15 +447,15 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
         return UI.abrirPantalla()
             .then(() => {
                 cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
-                    .parents('[role="columnheader"]')
-                    .trigger('mouseover');
+            .parents('[role="columnheader"]')
+            .trigger('mouseover');
 
                 cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-                cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains('Manage columns').click({ force: true });
 
                 // Verificar si todos los checkboxes ya están marcados
-                cy.get('.MuiDataGrid-panel')
-                    .should('be.visible')
+        cy.get('.MuiDataGrid-panel')
+            .should('be.visible')
                     .then($panel => {
                         const checkboxes = $panel.find('input[type="checkbox"]');
                         const totalCheckboxes = checkboxes.length;
@@ -478,15 +478,15 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                         } else {
                             // Marcar el checkbox de "Artículo" si no está marcado
                             cy.get('.MuiDataGrid-panel')
-                                .find('label')
+            .find('label')
                                 .contains('Artículo')
-                                .parents('label')
-                                .find('input[type="checkbox"]')
-                                .check({ force: true });
+            .parents('label')
+            .find('input[type="checkbox"]')
+            .check({ force: true });
 
                             cy.get('.MuiDataGrid-columnHeaders')
-                                .should('be.visible')
-                                .within(() => {
+            .should('be.visible')
+            .within(() => {
                                     cy.contains('Artículo').should('exist');
                                 });
                         }
@@ -514,22 +514,22 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                             archivo,
                             pantalla: 'Almacen (Pedidos)'
                         });
-                    } else {
+            } else {
                         cy.get('form, .MuiDialog-root').should('be.visible');
-                    }
-                });
-
-                return cy.wrap(true);
+            }
+        });
+        
+        return cy.wrap(true);
             });
     }
 
     function editarConFilaSeleccionada() {
         return UI.abrirPantalla()
             .then(() => {
-                cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
                 cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
                 cy.get('button:contains("Editar")').click({ force: true });
-                return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/orders\/form\/\d+$/);
+        return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/orders\/form\/\d+$/);
             });
     }
 
@@ -566,19 +566,19 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                     .clear({ force: true })
                     .type('pedido{enter}', { force: true });
 
-                cy.reload();
+        cy.reload();
 
-                return cy.get('body').then(($body) => {
-                    const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
-                    cy.log(`Después de recargar: ${hayFilas ? 'hay filas visibles' : 'no hay filas visibles'}`);
+        return cy.get('body').then(($body) => {
+            const hayFilas = $body.find('.MuiDataGrid-row:visible').length > 0;
+            cy.log(`Después de recargar: ${hayFilas ? 'hay filas visibles' : 'no hay filas visibles'}`);
 
                     cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
                         .should('be.visible')
                         .first()
                         .should('have.value', '');
 
-                    return cy.wrap(true);
-                });
+            return cy.wrap(true);
+        });
             });
     }
 

@@ -82,33 +82,33 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
     // ====== OBJETO UI ======
     const UI = {
         abrirPantalla() {
-            cy.navegarAMenu('Ficheros', 'Alquileres Vehículos');
-            cy.url().should('include', '/dashboard/vehicle-rentals');
+        cy.navegarAMenu('Ficheros', 'Alquileres Vehículos');
+        cy.url().should('include', '/dashboard/vehicle-rentals');
             return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         },
 
         setColumna(nombreColumna) {
             return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
+                    const options = [...$select[0].options].map(opt => opt.text.trim());
                 cy.log(`Opciones columna: ${options.join(', ')}`);
-                let columnaEncontrada = null;
-
+                    let columnaEncontrada = null;
+                    
                 switch (nombreColumna) {
                     case 'F. Alta': columnaEncontrada = options.find(o => /F\.? Alta|Start Date/i.test(o)); break;
                     case 'F. Baja': columnaEncontrada = options.find(o => /F\.? Baja|End Date/i.test(o)); break;
                     case 'Empresa': columnaEncontrada = options.find(o => /Empresa|Company/i.test(o)); break;
                     case 'Vehículo': columnaEncontrada = options.find(o => /Vehículo|Vehicle/i.test(o)); break;
                     case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                    default:
-                        columnaEncontrada = options.find(opt =>
+                        default:
+                            columnaEncontrada = options.find(opt => 
                             opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
                             nombreColumna.toLowerCase().includes(opt.toLowerCase())
-                        );
-                }
-
-                if (columnaEncontrada) {
+                            );
+                    }
+                    
+                    if (columnaEncontrada) {
                     cy.wrap($select).select(columnaEncontrada);
-                } else {
+                    } else {
                     cy.wrap($select).select(1);
                 }
             });
@@ -117,7 +117,7 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
         buscar(texto) {
             return cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
                 .should('exist')
-                .clear({ force: true })
+                    .clear({ force: true })
                 .type(`${texto}{enter}`, { force: true })
                 .wait(1000);
         },

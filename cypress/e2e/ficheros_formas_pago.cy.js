@@ -1,13 +1,13 @@
 // ficheros_formas_pago.cy.js
 describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte a Excel', () => {
-    const archivo = 'reportes_pruebas_novatrans.xlsx';
+  const archivo = 'reportes_pruebas_novatrans.xlsx';
 
     beforeEach(() => {
         cy.resetearFlagsTest();
         cy.configurarViewportZoom();
     });
 
-    after(() => {
+  after(() => {
     cy.log('Procesando resultados finales para Ficheros (Formas de Pago)');
     cy.procesarResultadosPantalla('Ficheros (Formas de Pago)');
   });
@@ -91,26 +91,26 @@ describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte
 
         setColumna(nombreColumna) {
             return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
+          const options = [...$select[0].options].map(opt => opt.text.trim());
                 cy.log(`Opciones columna: ${options.join(', ')}`);
-                let columnaEncontrada = null;
-
+          let columnaEncontrada = null;
+          
                 switch (nombreColumna) {
                     case 'Referencia': columnaEncontrada = options.find(o => /Referencia|Reference/i.test(o)); break;
                     case 'Descripción': columnaEncontrada = options.find(o => /Descripción|Description/i.test(o)); break;
                     case 'Días para pago': columnaEncontrada = options.find(o => /Días.*pago|Days.*payment/i.test(o)); break;
                     case 'Código': columnaEncontrada = options.find(o => /Código|Code/i.test(o)); break;
                     case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                    default:
-                        columnaEncontrada = options.find(opt =>
+            default:
+              columnaEncontrada = options.find(opt => 
                             opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
                             nombreColumna.toLowerCase().includes(opt.toLowerCase())
-                        );
-                }
-
-                if (columnaEncontrada) {
+              );
+          }
+          
+          if (columnaEncontrada) {
                     cy.wrap($select).select(columnaEncontrada);
-                } else {
+          } else {
                     cy.wrap($select).select(1);
                 }
             });

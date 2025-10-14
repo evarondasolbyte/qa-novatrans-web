@@ -92,24 +92,24 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
 
         setColumna(nombreColumna) {
             return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
+                    const options = [...$select[0].options].map(opt => opt.text.trim());
                 cy.log(`Opciones columna: ${options.join(', ')}`);
-                let columnaEncontrada = null;
-
+                    let columnaEncontrada = null;
+                    
                 switch (nombreColumna) {
                     case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
                     case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                    default:
-                        columnaEncontrada = options.find(opt =>
+                        default:
+                            columnaEncontrada = options.find(opt => 
                             opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
                             nombreColumna.toLowerCase().includes(opt.toLowerCase())
-                        );
-                }
-
-                if (columnaEncontrada) {
+                            );
+                    }
+                    
+                    if (columnaEncontrada) {
                     cy.wrap($select).select(columnaEncontrada);
-                    cy.log(`Seleccionada columna: ${columnaEncontrada}`);
-                } else {
+                        cy.log(`Seleccionada columna: ${columnaEncontrada}`);
+                    } else {
                     cy.log(`Columna "${nombreColumna}" no encontrada, usando primera opción`);
                     cy.wrap($select).select(1);
                 }
@@ -119,7 +119,7 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
         buscar(texto) {
             return cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
                 .should('exist')
-                .clear({ force: true })
+                    .clear({ force: true })
                 .type(`${texto}{enter}`, { force: true })
                 .wait(1000);
         },

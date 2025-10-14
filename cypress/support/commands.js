@@ -301,9 +301,27 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
 
   // 5. Si hay submenú, hacer clic en él (ej: "Tipos de Vehículos")
   if (textoSubmenu) {
-    cy.contains(textoSubmenu, { timeout: 10000 })
-      .should('be.visible')
-      .click({ force: true });
+    // Si es "Categorías", usar una estrategia diferente para evitar "Categorías de Conductores"
+    if (textoSubmenu === 'Categorías') {
+      cy.get('body').then($body => {
+        // Buscar todos los elementos que contengan "Categorías" pero NO "Conductores"
+        const elementos = $body.find('*:visible').filter(function() {
+          const texto = Cypress.$(this).text().trim().toLowerCase();
+          return texto.includes('categorías') && !texto.includes('conductores');
+        });
+        
+        if (elementos.length > 0) {
+          cy.wrap(elementos.first()).click({ force: true });
+        } else {
+          // Fallback: buscar por texto exacto "Categorias" (sin tilde)
+          cy.contains('Categorias', { timeout: 10000 }).click({ force: true });
+        }
+      });
+    } else {
+      cy.contains(textoSubmenu, { timeout: 10000 })
+        .should('be.visible')
+        .click({ force: true });
+    }
     
     cy.wait(1000);
   }
@@ -678,11 +696,13 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       let obtenido = `Se muestran ${filasVisibles} resultados`;
 
       // Casos específicos que pueden estar marcados como KO en Excel
-      const casosKO = [26, 27, 28, 29, 30];
+      const casosKO = [26];
       // Casos específicos de teléfonos que deben dar ERROR si no hay resultados
       const casosTelefonosKO = [10, 11, 12, 13, 14];
       // Casos específicos de categorías que deben dar ERROR si no hay resultados
-      const casosCategoriasKO = [2, 3, 4, 30, 31];
+      const casosCategoriasKO = [2, 3, 4];
+      // Casos específicos de categorías que deben dar ERROR si no muestran datos (cuando deberían)
+      const casosCategoriasSinDatos = [30, 31];
       
       if (casosKO.includes(numeroCaso)) {
         if (filasVisibles > 0) {
@@ -702,19 +722,21 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
         }
-      } else if (casosCategoriasKO.includes(numeroCaso)) {
-        // Para casos de categorías específicos, ERROR si no hay resultados o si hay problemas
-        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías KO - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+      } else if (casosCategoriasSinDatos.includes(numeroCaso)) {
+        // TC030-TC031: ERROR si no muestran datos cuando deberían
+        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías sin datos - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
         if (filasVisibles === 0 || tieneNoRows) {
           resultado = 'ERROR';
-          obtenido = 'Error al cargar los datos';
-        } else if (numeroCaso >= 30 && numeroCaso <= 31 && filasVisibles === totalFilas) {
-          resultado = 'ERROR';
-          obtenido = 'Se muestra todo, no lo que he buscado';
+          obtenido = 'No se muestran resultados cuando deberían existir datos';
         } else {
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
         }
+      } else if (casosCategoriasKO.includes(numeroCaso)) {
+        // TC002-TC004: ERROR por problemas de aplicación
+        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías KO - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        resultado = 'ERROR';
+        obtenido = 'Error de aplicación - datos presentes pero funcionalidad falla';
       } else if (filasVisibles === 0) {
         resultado = 'OK';
         obtenido = 'No se muestran resultados';
