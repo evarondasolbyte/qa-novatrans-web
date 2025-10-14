@@ -2,6 +2,11 @@
 describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
+    beforeEach(() => {
+        cy.resetearFlagsTest();
+        cy.configurarViewportZoom();
+    });
+
     after(() => {
         cy.log('Procesando resultados finales para Ficheros (Siniestros)');
         cy.procesarResultadosPantalla('Ficheros (Siniestros)');
@@ -86,7 +91,7 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
 
         setColumna(nombreColumna) {
             return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
+                    const options = [...$select[0].options].map(opt => opt.text.trim());
                 cy.log(`Opciones columna: ${options.join(', ')}`);
                 let columnaEncontrada = null;
 
@@ -110,7 +115,7 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
 
                 if (columnaEncontrada) {
                     cy.wrap($select).select(columnaEncontrada);
-                } else {
+                    } else {
                     cy.wrap($select).select(1);
                 }
             });
@@ -119,7 +124,7 @@ describe('FICHEROS - SINIESTROS - Validación completa con errores y reporte a E
         buscar(texto) {
             return cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
                 .should('exist')
-                .clear({ force: true })
+                    .clear({ force: true })
                 .type(`${texto}{enter}`, { force: true })
                 .wait(1000);
         },

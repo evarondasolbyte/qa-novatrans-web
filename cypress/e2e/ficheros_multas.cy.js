@@ -2,6 +2,11 @@
 describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
+    beforeEach(() => {
+        cy.resetearFlagsTest();
+        cy.configurarViewportZoom();
+    });
+
     after(() => {
         cy.log('Procesando resultados finales para Ficheros (Multas)');
         cy.procesarResultadosPantalla('Ficheros (Multas)');
@@ -81,17 +86,17 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
     // ====== OBJETO UI ======
     const UI = {
         abrirPantalla() {
-            cy.navegarAMenu('Ficheros', 'Multas');
-            cy.url().should('include', '/dashboard/fines');
+        cy.navegarAMenu('Ficheros', 'Multas');
+        cy.url().should('include', '/dashboard/fines');
             return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
         },
 
         setColumna(nombreColumna) {
             return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
+                    const options = [...$select[0].options].map(opt => opt.text.trim());
                 cy.log(`Opciones columna: ${options.join(', ')}`);
-                let columnaEncontrada = null;
-
+                    let columnaEncontrada = null;
+                    
                 switch (nombreColumna) {
                     case 'Código': columnaEncontrada = options.find(o => /Código|Code/i.test(o)); break;
                     case 'Fecha': columnaEncontrada = options.find(o => /Fecha|Date/i.test(o)); break;
@@ -104,17 +109,17 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
                     case 'Imp. Inicial': columnaEncontrada = options.find(o => /Imp\.? Inicial|Initial Amount/i.test(o)); break;
                     case 'Finalizada': columnaEncontrada = options.find(o => /Finalizada|Finished/i.test(o)); break;
                     case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                    default:
-                        columnaEncontrada = options.find(opt =>
+                        default:
+                            columnaEncontrada = options.find(opt => 
                             opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
                             nombreColumna.toLowerCase().includes(opt.toLowerCase())
-                        );
-                }
-
-                if (columnaEncontrada) {
+                            );
+                    }
+                    
+                    if (columnaEncontrada) {
                     cy.wrap($select).select(columnaEncontrada);
-                    cy.log(`Seleccionada columna: ${columnaEncontrada}`);
-                } else {
+                        cy.log(`Seleccionada columna: ${columnaEncontrada}`);
+                    } else {
                     cy.log(`Columna "${nombreColumna}" no encontrada, usando primera opción`);
                     cy.wrap($select).select(1);
                 }
@@ -183,22 +188,22 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
                         esperado: 'Formulario de edición se abre correctamente',
                         obtenido: 'Error de aplicación al abrir formulario',
                         resultado: 'WARNING',
-                        archivo,
-                        pantalla: 'Ficheros (Multas)'
-                    });
-                } else {
+                            archivo,
+                            pantalla: 'Ficheros (Multas)'
+                        });
+                    } else {
                     // Si funciona correctamente, registrar OK
-                    cy.registrarResultados({
+                        cy.registrarResultados({
                         numero: 16,
                         nombre: 'TC016 - Editar multa',
                         esperado: 'Formulario de edición se abre correctamente',
                         obtenido: 'Formulario de edición se abre correctamente',
-                        resultado: 'OK',
-                        archivo,
-                        pantalla: 'Ficheros (Multas)'
-                    });
-                }
-            });
+                            resultado: 'OK',
+                            archivo,
+                            pantalla: 'Ficheros (Multas)'
+                        });
+                    }
+                });
         });
     }
 

@@ -2,6 +2,11 @@
 describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
+    beforeEach(() => {
+        cy.resetearFlagsTest();
+        cy.configurarViewportZoom();
+    });
+
     after(() => {
         cy.log('Procesando resultados finales para Ficheros (Tipos de Vehículo)');
         cy.procesarResultadosPantalla('Ficheros (Tipos de Vehículo)');

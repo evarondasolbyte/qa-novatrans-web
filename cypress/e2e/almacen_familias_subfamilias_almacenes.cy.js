@@ -2,6 +2,11 @@
 describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con errores y reporte a Excel', () => {
   const archivo = 'reportes_pruebas_novatrans.xlsx';
 
+  beforeEach(() => {
+    cy.resetearFlagsTest();
+    cy.configurarViewportZoom();
+  });
+
   after(() => {
         cy.log('Procesando resultados finales para Almacen (Familias, Subfamilias y Almacenes)');
     cy.procesarResultadosPantalla('Almacen (Familias, Subfamilias y Almacenes)');

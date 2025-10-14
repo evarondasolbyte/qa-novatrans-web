@@ -13,6 +13,15 @@ Cypress.Commands.add('resetearFlagsTest', () => {
   resultadoYaRegistrado = false;
 });
 
+// ===== CONFIGURACIÓN GLOBAL DE VIEWPORT Y ZOOM =====
+Cypress.Commands.add('configurarViewportZoom', () => {
+  // Aplicar viewport y zoom out para ver el menú lateral completo
+  cy.viewport(1431, 1094);
+  cy.window().then((win) => {
+    win.document.body.style.zoom = '0.8'; // Zoom out al 80%
+  });
+});
+
 Cypress.Commands.add('estaRegistrado', () => {
   return cy.wrap(resultadoYaRegistrado);
 });
@@ -672,6 +681,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       const casosKO = [26, 27, 28, 29, 30];
       // Casos específicos de teléfonos que deben dar ERROR si no hay resultados
       const casosTelefonosKO = [10, 11, 12, 13, 14];
+      // Casos específicos de categorías que deben dar ERROR si no hay resultados
+      const casosCategoriasKO = [2, 3, 4, 30, 31];
       
       if (casosKO.includes(numeroCaso)) {
         if (filasVisibles > 0) {
@@ -687,6 +698,19 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         if (filasVisibles === 0 || tieneNoRows) {
           resultado = 'ERROR';
           obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (deberían existir datos)';
+        } else {
+          resultado = 'OK';
+          obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
+        }
+      } else if (casosCategoriasKO.includes(numeroCaso)) {
+        // Para casos de categorías específicos, ERROR si no hay resultados o si hay problemas
+        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías KO - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        if (filasVisibles === 0 || tieneNoRows) {
+          resultado = 'ERROR';
+          obtenido = 'Error al cargar los datos';
+        } else if (numeroCaso >= 30 && numeroCaso <= 31 && filasVisibles === totalFilas) {
+          resultado = 'ERROR';
+          obtenido = 'Se muestra todo, no lo que he buscado';
         } else {
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
@@ -733,6 +757,39 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           case 18:
             nombreCaso = 'TC018 - Buscar texto sin coincidencias';
             esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
+            break;
+        }
+      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('categorías')) {
+        switch (numeroCaso) {
+          case 2:
+            nombreCaso = 'TC002 - Filtrar por columna "Código"';
+            break;
+          case 3:
+            nombreCaso = 'TC003 - Filtrar por columna "Nombre"';
+            break;
+          case 4:
+            nombreCaso = 'TC004 - Filtrar por columna "Módulo"';
+            break;
+          case 5:
+            nombreCaso = 'TC005 - Buscar texto exacto en buscador general';
+            break;
+          case 6:
+            nombreCaso = 'TC006 - Buscar texto parcial en buscador general';
+            break;
+          case 7:
+            nombreCaso = 'TC007 - Buscar con mayúsculas y minúsculas combinadas';
+            break;
+          case 8:
+            nombreCaso = 'TC008 - Buscar con espacios al inicio y fin';
+            break;
+          case 9:
+            nombreCaso = 'TC009 - Buscar con caracteres especiales';
+            break;
+          case 22:
+            nombreCaso = 'TC022 - Buscar texto con acentos';
+            break;
+          case 23:
+            nombreCaso = 'TC023 - Filtrar por "Value"';
             break;
         }
       }

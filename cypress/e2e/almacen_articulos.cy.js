@@ -1,6 +1,11 @@
 describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
+    beforeEach(() => {
+        cy.resetearFlagsTest();
+        cy.configurarViewportZoom();
+    });
+
     // Hook para procesar los resultados agregados después de que terminen todas las pruebas
     after(() => {
         cy.procesarResultadosPantalla('Almacen (Artículos)');

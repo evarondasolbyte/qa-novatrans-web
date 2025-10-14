@@ -1,8 +1,13 @@
 // ficheros_formas_pago.cy.js
 describe('FICHEROS - FORMAS DE PAGO - Validación completa con errores y reporte a Excel', () => {
-  const archivo = 'reportes_pruebas_novatrans.xlsx';
+    const archivo = 'reportes_pruebas_novatrans.xlsx';
 
-  after(() => {
+    beforeEach(() => {
+        cy.resetearFlagsTest();
+        cy.configurarViewportZoom();
+    });
+
+    after(() => {
     cy.log('Procesando resultados finales para Ficheros (Formas de Pago)');
     cy.procesarResultadosPantalla('Ficheros (Formas de Pago)');
   });

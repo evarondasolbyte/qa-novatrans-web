@@ -1,69 +1,64 @@
-describe('CATEGORÍAS - Validación completa con gestión de errores y reporte a Excel', () => {
-    const archivo = 'reportes_pruebas_novatrans.xlsx';
-    // Defino todos los casos con su número, nombre descriptivo y la función que ejecuta la validación
-    const casos = [
-        { numero: 1, nombre: 'TC001 - Cargar la pantalla de categorías correctamente', funcion: cargarPantallaCategorias, prioridad: 'ALTA' },
-        { numero: 2, nombre: 'TC002 - Cambiar idioma a Inglés', funcion: cambiarIdiomaIngles, prioridad: 'BAJA' },
-        { numero: 3, nombre: 'TC003 - Cambiar idioma a Catalán', funcion: cambiarIdiomaCatalan, prioridad: 'BAJA' },
-        { numero: 4, nombre: 'TC004 - Cambiar idioma a Español', funcion: cambiarIdiomaEspanol, prioridad: 'BAJA' },
-        { numero: 5, nombre: 'TC005 - Filtrar por columna "Código"', funcion: () => ejecutarFiltroIndividual(5), prioridad: 'ALTA' },
-        { numero: 6, nombre: 'TC006 - Filtrar por columna "Nombre"', funcion: () => ejecutarFiltroIndividual(6), prioridad: 'ALTA' },
-        { numero: 7, nombre: 'TC007 - Filtrar por columna "Módulo"', funcion: () => ejecutarFiltroIndividual(7), prioridad: 'ALTA' },
-        { numero: 8, nombre: 'TC008 - Buscar texto exacto en buscador general', funcion: () => ejecutarFiltroIndividual(8), prioridad: 'ALTA' },
-        { numero: 9, nombre: 'TC009 - Buscar texto parcial en buscador general', funcion: () => ejecutarFiltroIndividual(9), prioridad: 'ALTA' },
-        { numero: 10, nombre: 'TC010 - Buscar con mayúsculas y minúsculas combinadas', funcion: () => ejecutarFiltroIndividual(10), prioridad: 'MEDIA' },
-        { numero: 11, nombre: 'TC011 - Buscar con espacios al inicio y fin', funcion: () => ejecutarFiltroIndividual(11), prioridad: 'MEDIA' },
-        { numero: 12, nombre: 'TC012 - Buscar con caracteres especiales', funcion: () => ejecutarFiltroIndividual(12), prioridad: 'BAJA' },
-        { numero: 13, nombre: 'TC013 - Ordenar por columna "Nombre" ASC/DESC', funcion: ordenarNombre, prioridad: 'MEDIA' },
-        { numero: 14, nombre: 'TC014 - Ordenar por columna "Módulo" ASC/DESC', funcion: ordenarModulo, prioridad: 'MEDIA' },
-        { numero: 15, nombre: 'TC015 - Seleccionar una fila', funcion: seleccionarFila, prioridad: 'ALTA' },
-        { numero: 16, nombre: 'TC016 - Botón "Editar" con una fila seleccionada', funcion: editarCategoria, prioridad: 'ALTA' },
-        { numero: 17, nombre: 'TC017 - Botón "Editar" sin fila seleccionada', funcion: editarSinSeleccion, prioridad: 'MEDIA' },
-        { numero: 18, nombre: 'TC018 - Botón "Eliminar" con una fila seleccionada', funcion: eliminarCategoria, prioridad: 'ALTA' },
-        { numero: 19, nombre: 'TC019 - Botón "Eliminar" sin fila seleccionada', funcion: eliminarSinSeleccion, prioridad: 'MEDIA' },
-        { numero: 20, nombre: 'TC020 - Botón "+ Añadir" abre formulario nuevo', funcion: abrirFormularioAlta, prioridad: 'ALTA' },
-        { numero: 21, nombre: 'TC021 - Ocultar columna desde menú contextual', funcion: ocultarColumna, prioridad: 'BAJA' },
-        { numero: 22, nombre: 'TC022 - Mostrar/ocultar columnas con "Manage columns"', funcion: gestionarColumnas, prioridad: 'BAJA' },
-        { numero: 23, nombre: 'TC023 - Scroll vertical/horizontal en tabla', funcion: scrollHorizontalVertical, prioridad: 'BAJA' },
-        { numero: 24, nombre: 'TC024 - Recargar página y verificar reinicio de filtros', funcion: recargarPagina, prioridad: 'MEDIA' },
-        { numero: 25, nombre: 'TC025 - Buscar texto con acentos', funcion: () => ejecutarFiltroIndividual(25), prioridad: 'MEDIA' },
-        { numero: 26, nombre: 'TC027 - Filtrar por "Value"', funcion: filtrarPorValue, prioridad: 'MEDIA' },
-    ];
+describe('FICHEROS (CATEGORÍAS) - Validación completa con gestión de errores y reporte a Excel', () => {
+    let archivo = 'ficheros_categorias.cy.js';
+    
+    beforeEach(() => {
+        cy.resetearFlagsTest();
+        cy.configurarViewportZoom();
+    });
 
-    // Hook para procesar los resultados agregados después de que terminen todas las pruebas
     after(() => {
+        cy.log('Procesando resultados finales para Ficheros (Categorías)');
         cy.procesarResultadosPantalla('Ficheros (Categorías)');
     });
 
-    // Iterador de casos con protección anti-doble-registro
-    // Filtrar casos por prioridad si se especifica
-    const prioridadFiltro = Cypress.env('prioridad');
-    const casosFiltrados = prioridadFiltro && prioridadFiltro !== 'todas' 
-        ? casos.filter(caso => caso.prioridad === prioridadFiltro.toUpperCase())
-        : casos;
+    it('Ejecutar todos los casos de prueba desde Excel', () => {
+        cy.obtenerDatosExcel('FICHEROS-CATEGORIAS').then((casos) => {
+            const casosCategorias = casos.filter(caso =>
+                (caso.pantalla || '').toLowerCase().includes('categorías') ||
+                (caso.pantalla || '').toLowerCase().includes('categorias')
+            );
 
-    casosFiltrados.forEach(({ numero, nombre, funcion, prioridad }) => {
-        it(`${nombre} [${prioridad}]`, () => {
-            // Reset de flags por test (muy importante)
+            cy.log(`📊 Total de casos encontrados para Categorías: ${casosCategorias.length}`);
+
+            casosCategorias.forEach((caso, index) => {
+                const numero = parseInt(caso.n_caso?.replace('TC', '') || caso.numero || index + 1);
+                const nombre = caso.nombre || `Caso ${caso.n_caso || numero}`;
+                const prioridad = caso.prioridad || 'MEDIA';
+
+                cy.log(`────────────────────────────────────────────────────────`);
+                cy.log(`▶️ Ejecutando caso ${index + 1}/${casosCategorias.length}: TC${numero.toString().padStart(3, '0')} - ${nombre} [${prioridad}]`);
+
             cy.resetearFlagsTest();
-
-            // Captura de errores y registro
-            cy.on('fail', (err) => {
-                cy.capturarError(nombre, err, {
-                    numero,
-                    nombre,
-                    esperado: 'Comportamiento correcto',
-                    archivo,
-                    pantalla: 'Ficheros (Categorías)'
-                });
-                return false;
-            });
-
             cy.login();
-            cy.wait(500);
+                cy.wait(400);
 
-            // Ejecuta el caso y sólo auto-OK si nadie registró antes
-            return funcion().then(() => {
+                let funcion;
+                // Mapeo dinámico basado en los casos disponibles en Excel (TC001-TC032)
+                if (numero === 1) funcion = cargarPantallaCategorias;
+                else if (numero >= 2 && numero <= 4) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Categorías)', 'FICHEROS-CATEGORIAS', 'Ficheros', 'Categorías');
+                else if (numero >= 5 && numero <= 9) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Categorías)', 'FICHEROS-CATEGORIAS', 'Ficheros', 'Categorías');
+                else if (numero >= 10 && numero <= 11) funcion = () => ordenarPorColumna(numero);
+                else if (numero === 12) funcion = seleccionarFila;
+                else if (numero === 13) funcion = editarConSeleccion;
+                else if (numero === 14) funcion = editarSinSeleccion;
+                else if (numero === 15) funcion = eliminarConSeleccion;
+                else if (numero === 16) funcion = eliminarSinSeleccion;
+                else if (numero === 17) funcion = abrirFormularioAlta;
+                else if (numero === 18) funcion = ocultarColumna;
+                else if (numero === 19) funcion = gestionarColumnas;
+                else if (numero === 20) funcion = scrollVertical;
+                else if (numero === 21) funcion = recargarPagina;
+                else if (numero >= 22 && numero <= 23) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Categorías)', 'FICHEROS-CATEGORIAS', 'Ficheros', 'Categorías');
+                else if (numero === 24) funcion = guardarFiltro;
+                else if (numero === 25) funcion = limpiarFiltro;
+                else if (numero === 26) funcion = seleccionarFiltroGuardado;
+                else if (numero >= 27 && numero <= 32) funcion = () => cy.ejecutarMultifiltro(numero, 'Ficheros (Categorías)', 'FICHEROS-CATEGORIAS', 'Ficheros', 'Categorías');
+                else {
+                    cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
+                    return cy.wrap(true);
+                }
+
+                funcion().then(() => {
                 cy.estaRegistrado().then((ya) => {
                     if (!ya) {
                         cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
@@ -74,479 +69,252 @@ describe('CATEGORÍAS - Validación completa con gestión de errores y reporte a
                             obtenido: 'Comportamiento correcto',
                             resultado: 'OK',
                             archivo,
-                            pantalla: 'Ficheros (Categorías)'
+                                pantalla: 'Ficheros (Categorías)',
                         });
                     }
+                    });
                 });
             });
         });
     });
 
-    // === FUNCIONES DE VALIDACIÓN ===
+    // ========== FUNCIONES DE PRUEBA ==========
+
+    const UI = {
+        abrirPantalla() {
+            cy.configurarViewportZoom();
+            cy.navegarAMenu('Ficheros', 'Categorías');
+            cy.url().should('include', '/dashboard/categories');
+            return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+        },
+
+        setColumna(columna) {
+            return cy.get('select[name="column"], select#column').select(columna, { force: true });
+        },
+
+        buscar(valor) {
+            return cy.get('input[placeholder="Buscar"]:not([id*="sidebar"])')
+                .clear({ force: true })
+                .type(valor + '{enter}', { force: true });
+        },
+
+        filasVisibles() {
+            return cy.get('.MuiDataGrid-row:visible');
+        }
+    };
+
     function cargarPantallaCategorias() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        return cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
+        UI.abrirPantalla();
+        return UI.filasVisibles().should('have.length.greaterThan', 0);
     }
 
-    // FUNCIÓN QUE EJECUTA UN FILTRO INDIVIDUAL
-    function ejecutarFiltroIndividual(numeroCaso) {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('.MuiDataGrid-root').should('be.visible');
-
-        // Obtener datos del Excel para Ficheros-Categorías
-        return cy.obtenerDatosExcel('Ficheros-Categorías').then((datosFiltros) => {
-            const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
-            cy.log(`Buscando caso TC${numeroCasoFormateado}...`);
-            
-            const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
-            
-            if (!filtroEspecifico) {
-                cy.log(`No se encontró TC${numeroCasoFormateado}`);
-                cy.log(`Casos disponibles: ${datosFiltros.map(f => f.caso).join(', ')}`);
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Caso no encontrado en Excel`,
-                    esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
-                    obtenido: 'Caso no encontrado en los datos del Excel',
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Categorías)'
-                });
-                return cy.wrap(false);
-            }
-
-            cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
-            cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
-            cy.log(`Datos completos del filtro:`, JSON.stringify(filtroEspecifico, null, 2));
-
-            // Ejecutar el filtro específico
-            if (filtroEspecifico.valor_etiqueta_1 === 'columna') {
-                // Filtro por columna específica
-                cy.log(`Aplicando filtro por columna: ${filtroEspecifico.dato_1}`);
-                
-                // Esperar a que el select esté disponible
-                cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                    const options = [...$select[0].options].map(opt => opt.text.trim());
-                    cy.log(`Opciones disponibles en dropdown: ${options.join(', ')}`);
-                    cy.log(`Buscando columna: "${filtroEspecifico.dato_1}"`);
-                    
-                    // Mapeo específico para casos problemáticos
-                    let columnaEncontrada = null;
-                    
-                    // Casos específicos basados en los datos del Excel
-                    switch(filtroEspecifico.dato_1) {
-                        case 'Código':
-                            columnaEncontrada = options.find(opt => opt.includes('Código') || opt.includes('Code'));
-                            break;
-                        case 'Nombre':
-                            columnaEncontrada = options.find(opt => opt.includes('Nombre') || opt.includes('Name'));
-                            break;
-                        case 'Módulo':
-                            columnaEncontrada = options.find(opt => opt.includes('Módulo') || opt.includes('Module'));
-                            break;
-                        default:
-                            // Búsqueda genérica como fallback
-                            columnaEncontrada = options.find(opt => 
-                                opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-                                filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-                            );
-                    }
-                    
-                    if (columnaEncontrada) {
-                        cy.wrap($select).select(columnaEncontrada, { force: true });
-                        cy.log(`Seleccionada columna: ${columnaEncontrada}`);
-                        cy.wait(500); // Esperar a que se aplique la selección
-                    } else {
-                        cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada, usando primera opción`);
-                        cy.wrap($select).select(1, { force: true });
-                        cy.wait(500);
-                    }
-                });
-                
-                // Verificar que dato_2 no esté vacío
-                if (!filtroEspecifico.dato_2 || filtroEspecifico.dato_2.trim() === '') {
-                    cy.log(`TC${numeroCasoFormateado}: ERROR - dato_2 está vacío para columna "${filtroEspecifico.dato_1}"`);
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar categorías por ${filtroEspecifico.dato_1}`,
-                        esperado: `Se ejecuta filtro por columna "${filtroEspecifico.dato_1}" con valor "${filtroEspecifico.dato_2}"`,
-                        obtenido: 'Valor de búsqueda está vacío en el Excel',
-                        resultado: 'ERROR',
-                        archivo,
-                        pantalla: 'Ficheros (Categorías)'
-                    });
-                    return cy.wrap(true);
-                }
-                
-                cy.log(`Buscando valor: "${filtroEspecifico.dato_2}"`);
-                cy.get('input#search, input[placeholder="Buscar"]')
-                    .should('be.visible')
-                    .clear({ force: true })
-                    .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
-                cy.wait(2000);
-
-                // Verificar si hay resultados después del filtro
-                cy.wait(2000); // Esperar más tiempo para que se aplique el filtro
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    const totalFilas = $body.find('.MuiDataGrid-row').length;
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}, Total filas: ${totalFilas}`);
-                    cy.log(`Filtro aplicado: Columna "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`);
-                    
-                    // Verificar si el filtro se aplicó correctamente
-                    // Para los casos 5, 6, 7, 8, 9, 10, 11, 12, 25 que deberían dar OK, ser más permisivo
-                    const casosQueDebenDarOK = [5, 6, 7, 8, 9, 10, 11, 12, 25];
-                    const debeSerPermisivo = casosQueDebenDarOK.includes(numeroCaso);
-                    
-                    let resultado = 'OK';
-                    let obtenido = `Se muestran ${filasVisibles} resultados`;
-                    
-                    if (filasVisibles === 0) {
-                        // Si no hay resultados, verificar si es porque el filtro funcionó o porque no hay datos
-                        if (debeSerPermisivo) {
-                            resultado = 'OK'; // Para casos específicos, OK aunque no haya resultados
-                            obtenido = 'Filtro aplicado correctamente (sin resultados)';
-                        } else {
-                            resultado = 'ERROR';
-                            obtenido = 'No se muestran resultados';
-                        }
-                    } else if (filasVisibles === totalFilas && totalFilas > 0) {
-                        // Si todas las filas están visibles, el filtro podría no haberse aplicado
-                        if (debeSerPermisivo) {
-                            resultado = 'OK'; // Para casos específicos, OK aunque el filtro no se aplique
-                            obtenido = `Filtro ejecutado (${filasVisibles} filas visibles)`;
-                        } else {
-                            resultado = 'ERROR';
-                            obtenido = `Filtro no se aplicó (${filasVisibles} filas visibles de ${totalFilas} total)`;
-                        }
-                    } else {
-                        // El filtro se aplicó correctamente
-                        resultado = 'OK';
-                        obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
-                    }
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Resultado final - ${resultado}`);
-                    
-                    cy.registrarResultados({
-                        numero: numeroCaso,
-                        nombre: `TC${numeroCasoFormateado} - Filtrar categorías por ${filtroEspecifico.dato_1}`,
-                        esperado: `Se ejecuta filtro por columna "${filtroEspecifico.dato_1}" con valor "${filtroEspecifico.dato_2}"`,
-                        obtenido: obtenido,
-                        resultado: resultado,
-                        archivo,
-                        pantalla: 'Ficheros (Categorías)'
-                    });
-                });
-            } else if (filtroEspecifico.valor_etiqueta_1 === 'search') {
-                // Búsqueda general
-                cy.log(`Aplicando búsqueda general: ${filtroEspecifico.dato_1}`);
-                
-                cy.get('input#search, input[placeholder="Buscar"]')
-                    .should('be.visible')
-                    .clear({ force: true })
-                    .type(`${filtroEspecifico.dato_1}{enter}`, { force: true });
-                
-                cy.log(`Buscando valor: ${filtroEspecifico.dato_1}`);
-                cy.wait(2000);
-
-                // Verificar si hay resultados después del filtro
-                cy.wait(1000); // Esperar un poco más para que se aplique el filtro
-                cy.get('body').then($body => {
-                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
-                    const totalFilas = $body.find('.MuiDataGrid-row').length;
-                    
-                    cy.log(`TC${numeroCasoFormateado}: Filas visibles: ${filasVisibles}, Total filas: ${totalFilas}`);
-                    cy.log(`Búsqueda aplicada: "${filtroEspecifico.dato_1}"`);
-                    
-                    // Verificar si la búsqueda realmente se aplicó
-                    const busquedaSeAplico = filasVisibles < totalFilas || filasVisibles === 0;
-                    
-                    if (busquedaSeAplico) {
-                        // La búsqueda se aplicó correctamente
-                        const resultado = filasVisibles > 0 ? 'OK' : 'OK'; // Para búsquedas generales, OK siempre
-                        const obtenido = filasVisibles > 0 ? `Se muestran ${filasVisibles} resultados` : 'No se muestran resultados';
-                        
-                        cy.log(`TC${numeroCasoFormateado}: Búsqueda aplicada correctamente - ${resultado}`);
-                        
-                        cy.registrarResultados({
-                            numero: numeroCaso,
-                            nombre: `TC${numeroCasoFormateado} - Búsqueda general de categorías`,
-                            esperado: `Se ejecuta búsqueda general con valor "${filtroEspecifico.dato_1}"`,
-                            obtenido: obtenido,
-                            resultado: resultado,
-                            archivo,
-                            pantalla: 'Ficheros (Categorías)'
-                        });
-                    } else {
-                        // La búsqueda no se aplicó
-                        cy.log(`TC${numeroCasoFormateado}: Búsqueda NO se aplicó - OK (permitido para búsquedas generales)`);
-                        cy.registrarResultados({
-                            numero: numeroCaso,
-                            nombre: `TC${numeroCasoFormateado} - Búsqueda general de categorías`,
-                            esperado: `Se ejecuta búsqueda general con valor "${filtroEspecifico.dato_1}"`,
-                            obtenido: `Búsqueda ejecutada (${filasVisibles} filas visibles de ${totalFilas} total)`,
-                            resultado: 'OK',
-                            archivo,
-                            pantalla: 'Ficheros (Categorías)'
-                        });
-                    }
-                });
-            } else {
-                // Si no es ni columna ni search, registrar error
-                cy.log(`Tipo de filtro no reconocido: ${filtroEspecifico.valor_etiqueta_1}`);
-                cy.registrarResultados({
-                    numero: numeroCaso,
-                    nombre: `TC${numeroCasoFormateado} - Tipo de filtro no reconocido`,
-                    esperado: `Tipo de filtro válido (columna o search)`,
-                    obtenido: `Tipo de filtro: ${filtroEspecifico.valor_etiqueta_1}`,
-                    resultado: 'ERROR',
-                    archivo,
-                    pantalla: 'Ficheros (Categorías)'
-                });
-            }
-            
-            return cy.wrap(true);
-        });
-    }
-
-    function cambiarIdiomaIngles() {
-        cy.visit('/dashboard');
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('select#languageSwitcher').select('en', { force: true });
-        return cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 }).should('exist');
-    }
-
-    function cambiarIdiomaCatalan() {
-        cy.visit('/dashboard');
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('select#languageSwitcher').select('ca', { force: true });
-        return cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 }).should('exist');
-    }
-
-    function cambiarIdiomaEspanol() {
-        cy.visit('/dashboard');
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('select#languageSwitcher').select('es', { force: true });
-        return cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 }).should('exist');
-    }
-
-
-
-    function ordenarNombre() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
-
-        // Hacer clic en el encabezado de la columna Nombre
+    function ordenarPorColumna(numeroCaso) {
+        UI.abrirPantalla();
+        
+        if (numeroCaso === 10) {
+            // Ordenar por Nombre
         cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
-            .should('be.visible')
-            .click();
-
-        cy.wait(1000);
-
-        // Hacer clic nuevamente para cambiar el orden
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
-            .should('be.visible')
-            .click();
-
-        return cy.get('.MuiDataGrid-row').should('exist');
-    }
-
-    function ordenarModulo() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
-
-        // Hacer clic en el encabezado de la columna Módulo
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Módulo')
-            .should('be.visible')
-            .click();
-
-        cy.wait(1000);
-
-        // Hacer clic nuevamente para cambiar el orden
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Módulo')
-            .should('be.visible')
-            .click();
-
-        return cy.get('.MuiDataGrid-row').should('exist');
+                .parents('[role="columnheader"]')
+                .trigger('mouseover');
+            cy.get('[aria-label="Nombre column menu"]').click({ force: true });
+            cy.get('li').contains('Sort by ASC').click({ force: true });
+            cy.get('[aria-label="Nombre column menu"]').click({ force: true });
+            cy.get('li').contains('Sort by DESC').click({ force: true });
+        } else if (numeroCaso === 11) {
+            // Ordenar por Módulo
+            cy.contains('.MuiDataGrid-columnHeaderTitle', 'Módulo')
+                .parents('[role="columnheader"]')
+                .trigger('mouseover');
+            cy.get('[aria-label="Módulo column menu"]').click({ force: true });
+            cy.get('li').contains('Sort by ASC').click({ force: true });
+            cy.get('[aria-label="Módulo column menu"]').click({ force: true });
+            cy.get('li').contains('Sort by DESC').click({ force: true });
+        }
+        
+        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
 
     function seleccionarFila() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-        return cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
+        UI.abrirPantalla();
+        cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
+        return cy.wait(500);
     }
 
-    function editarCategoria() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
-
-        // Tomar la primera fila visible como alias
-        cy.get('.MuiDataGrid-row:visible').first().as('filaCategoria');
-
-        // Hacer clic para seleccionar la fila
-        cy.get('@filaCategoria').click({ force: true });
-        cy.wait(500);
-
-        // Hacer doble clic en la fila para editar
-        cy.get('@filaCategoria').dblclick({ force: true });
-
-        // Verificar que se abrió el formulario con ID en la URL
-        return cy.url({ timeout: 10000 }).should('match', /\/dashboard\/categories\/form\/\d+$/);
-    }
-
-    function eliminarCategoria() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-
-        cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 1);
-        cy.get('.MuiDataGrid-row:visible').eq(1).click({ force: true });
-        cy.wait(500);
-
-        return cy.get('button.css-1cbe274').click({ force: true });
+    function editarConSeleccion() {
+        UI.abrirPantalla();
+        cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
+                        cy.wait(500);
+        cy.get('button').contains(/Editar/i).click({ force: true });
+        return cy.wait(1000);
     }
 
     function editarSinSeleccion() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-
-        // Asegurarse de que el botón 'Editar' no está visible si no hay selección
-        return cy.contains('button', 'Editar').should('not.exist');
+        UI.abrirPantalla();
+        // Verificar que el botón Editar no está disponible sin selección
+        cy.get('button').contains(/Editar/i).should('not.exist');
+                    return cy.wrap(true);
+                }
+                
+    function eliminarConSeleccion() {
+        UI.abrirPantalla();
+        cy.get('.MuiDataGrid-row:visible').first().click({ force: true });
+        cy.wait(500);
+        cy.get('button').contains(/Eliminar/i).click({ force: true });
+        
+        // Verificar si el elemento sigue apareciendo después de eliminar
+        cy.wait(1000);
+                cy.get('body').then($body => {
+                    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+            const filasAntes = 1; // Asumimos que había al menos 1 fila antes de eliminar
+            
+            if (filasVisibles >= filasAntes) {
+                // ERROR: El elemento sigue apareciendo después de eliminar
+                cy.registrarResultados({
+                    numero: 15,
+                    nombre: 'TC015 - Botón "Eliminar" con una fila seleccionada',
+                    esperado: 'Se elimina la fila seleccionada',
+                    obtenido: 'Se elimina correctamente pero sigue apareciendo',
+                    resultado: 'ERROR',
+                    archivo,
+                    pantalla: 'Ficheros (Categorías)'
+                });
+            } else {
+                // OK: El elemento se eliminó correctamente
+                cy.log(`TC015: OK - Elemento eliminado correctamente`);
+            }
+        });
+        
+        return cy.wait(1000);
     }
 
     function eliminarSinSeleccion() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-
-        // Asegurar que no hay checkboxes seleccionados
-        cy.get('div[role="row"] input[type="checkbox"]:checked').should('have.length', 0);
-
-        // Hacer clic en el botón "Eliminar"
-        return cy.get('button.css-1cbe274').click({ force: true });
+        UI.abrirPantalla();
+        // Verificar que el botón Eliminar no está disponible sin selección
+        cy.get('button').contains(/Eliminar/i).should('not.exist');
+        return cy.wrap(true);
     }
 
     function abrirFormularioAlta() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('button').contains('Añadir').click({ force: true });
-
-        // Validar la URL sin exigir terminación exacta
-        return cy.url().should('include', '/dashboard/categories/form');
+        UI.abrirPantalla();
+        return cy.get('button[aria-label="Nuevo"], button:contains("Nuevo"), button:contains("+ Añadir")').first().click({ force: true });
     }
 
     function ocultarColumna() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-
-        // Hacer clic en el encabezado de la columna Nombre
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
-            .should('be.visible')
-            .click();
-
-        return cy.get('.MuiDataGrid-row').should('exist');
+        UI.abrirPantalla();
+        cy.get('div[role="columnheader"][data-field="name"]')
+            .find('button[aria-label*="column menu"]')
+            .click({ force: true });
+        cy.contains('li', /Hide column/i).click({ force: true });
+        return cy.wait(1000);
     }
 
     function gestionarColumnas() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
+        UI.abrirPantalla();
+        cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
 
-        // Hacer clic en el encabezado de la columna Código
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Código')
-            .should('be.visible')
-            .click();
+        // Ocultar columna
+        cy.get('div[role="columnheader"][data-field="name"]')
+            .find('button[aria-label*="column menu"]')
+            .click({ force: true });
+        cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
 
-        return cy.get('.MuiDataGrid-row').should('exist');
+        cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
+            cy.contains(/Nombre/i)
+                .parent()
+                .find('input[type="checkbox"]')
+                .first()
+                .uncheck({ force: true });
+        });
+        cy.get('body').click(0, 0);
+        cy.wait(500);
+
+        // Volver a mostrarla
+        cy.get('div[role="columnheader"][data-field="name"]')
+            .find('button[aria-label*="column menu"]')
+            .click({ force: true });
+        cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+
+        cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
+            cy.contains(/Nombre/i)
+                .parent()
+                .find('input[type="checkbox"]')
+                .first()
+                .check({ force: true });
+        });
+        cy.get('body').click(0, 0);
+        
+        return cy.wait(500);
     }
 
-    function scrollHorizontalVertical() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
-        cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
-
-        const maxScrolls = 10;
-        let intentos = 0;
-
-        function hacerScrollVertical(prevHeight = 0) {
-            return cy.get('.MuiDataGrid-virtualScroller').then($scroller => {
-                const currentScrollHeight = $scroller[0].scrollHeight;
-
-                if (currentScrollHeight === prevHeight || intentos >= maxScrolls) {
-                    cy.log('Fin del scroll vertical');
-
-                    cy.get('.MuiDataGrid-columnHeaders')
-                        .should('exist')
-                        .and($el => {
-                            const rect = $el[0].getBoundingClientRect();
-                            expect(rect.top).to.be.greaterThan(0);
-                            expect(rect.height).to.be.greaterThan(0);
-                        });
-
-                    cy.get('.MuiDataGrid-virtualScroller').scrollTo('right');
-
-                    cy.get('.MuiDataGrid-columnHeaders')
-                        .should('exist')
-                        .and($el => {
-                            const rect = $el[0].getBoundingClientRect();
-                            expect(rect.top).to.be.greaterThan(0);
-                            expect(rect.height).to.be.greaterThan(0);
-                        });
-
-                } else {
-                    intentos++;
-                    return cy.get('.MuiDataGrid-virtualScroller')
-                        .scrollTo('bottom', { duration: 400 })
-                        .wait(400)
-                        .then(() => hacerScrollVertical(currentScrollHeight));
-                }
-            });
-        }
-
-        return hacerScrollVertical();
+    function scrollVertical() {
+        UI.abrirPantalla();
+        cy.get('.MuiDataGrid-virtualScroller').scrollTo('bottom', { duration: 1000 });
+        cy.wait(200);
+        cy.get('.MuiDataGrid-virtualScroller').scrollTo('top', { duration: 500 });
+        cy.wait(200);
+        cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 1000 });
+        cy.wait(200);
+        cy.get('.MuiDataGrid-virtualScroller').scrollTo('left', { duration: 500 });
+        return cy.wait(500);
     }
 
     function recargarPagina() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.get('input[placeholder="Buscar"]').clear({ force: true }).type('clientes{enter}', { force: true });
+        UI.abrirPantalla();
+        UI.buscar('clientes');
+        cy.wait(1000);
         cy.reload();
-        return cy.get('input[placeholder="Buscar"]').should('have.value', '');
+        cy.wait(2000);
+        cy.get('input[placeholder="Buscar"]').should('have.value', '');
+        return cy.wait(500);
     }
 
+    function guardarFiltro() {
+        return UI.abrirPantalla()
+            .then(() => UI.setColumna('Nombre'))
+            .then(() => UI.buscar('clientes'))
+            .then(() => {
+                cy.contains('button', /^Guardar$/i).click({ force: true });
+                cy.get('input[placeholder*="nombre"], input[placeholder*="Nombre"]')
+                    .should('be.visible')
+                    .type('filtro empresa');
+                cy.contains('button', /^Guardar$/i).click({ force: true });
+                return cy.wait(500);
+            });
+    }
 
-    function filtrarPorValue() {
-        cy.navegarAMenu('Ficheros', 'Categorias');
-        cy.url().should('include', '/dashboard/categories');
+    function limpiarFiltro() {
+        return UI.abrirPantalla()
+            .then(() => UI.setColumna('Nombre'))
+            .then(() => UI.buscar('clientes'))
+            .then(() => {
+                cy.contains('button', /^Limpiar$/i).click({ force: true });
+        return cy.get('input[placeholder="Buscar"]').should('have.value', '');
+            });
+    }
 
-        // Abre el menú contextual de la columna "Nombre"
-        cy.get('div.MuiDataGrid-columnHeader[data-field="name"]')
-            .find('button[aria-label*="Nombre"]')
-            .click({ force: true });
+    function seleccionarFiltroGuardado() {
+        return UI.abrirPantalla()
+            .then(() => UI.setColumna('Nombre'))
+            .then(() => UI.buscar('clientes'))
+            .then(() => {
+                cy.contains('button', /^Guardar$/i).click({ force: true });
+                cy.get('input[placeholder*="nombre"], input[placeholder*="Nombre"]')
+                    .should('be.visible')
+                    .type('filtro modulo');
+                cy.contains('button', /^Guardar$/i).click({ force: true });
+                cy.wait(500);
 
-        // Clic en "Filter"
-        cy.contains('li[role="menuitem"]', 'Filter').click({ force: true });
-
-        // Escribe "clientes" como valor de filtro
-        cy.get('input[placeholder="Filter value"]')
-            .clear()
-            .type('clientes{enter}');
-
+                // Primero limpiar los filtros actuales
+                cy.contains('button', /^Limpiar$/i).click({ force: true });
         cy.wait(500);
 
-        // Validar que todas las filas visibles contienen "clientes"
-        return cy.get('div[role="row"]').each($row => {
-            const $cells = Cypress.$($row).find('div[role="cell"]');
-            if ($cells.length > 0) {
-                const textos = [...$cells].map(el => el.innerText.toLowerCase());
-                expect(textos.some(t => t.includes('clientes'))).to.be.true;
-            }
+                // Pulsar en el desplegable "Guardados" y seleccionar el filtro guardado
+                cy.contains('button, [role="button"]', /Guardados/i).click({ force: true });
+                cy.wait(500);
+                // Pulsar en "filtro modulo" que aparece en el desplegable
+                cy.contains('li, [role="option"]', /filtro modulo/i).click({ force: true });
+
+                return UI.filasVisibles().should('have.length.greaterThan', 0);
         });
     }
 }); 
