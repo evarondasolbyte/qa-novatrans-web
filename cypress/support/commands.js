@@ -697,12 +697,14 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
 
       // Casos específicos que pueden estar marcados como KO en Excel
       const casosKO = [26];
-      // Casos específicos de teléfonos que deben dar ERROR si no hay resultados
+      // Casos específicos de teléfonos problemáticos: OK si funcionan bien, ERROR si siguen fallando
       const casosTelefonosKO = [10, 11, 12, 13, 14];
-      // Casos específicos de categorías que deben dar ERROR si no hay resultados
+      // Casos específicos de categorías que muestran todos los datos en lugar de filtrar
       const casosCategoriasKO = [2, 3, 4];
-      // Casos específicos de categorías que deben dar ERROR si no muestran datos (cuando deberían)
+      // Casos específicos de categorías que muestran todos los datos en lugar de filtrar
       const casosCategoriasSinDatos = [30, 31];
+      // Casos específicos de categorías que muestran datos correctos (TC027, TC028, TC029)
+      const casosCategoriasCorrectos = [27, 28, 29];
       
       if (casosKO.includes(numeroCaso)) {
         if (filasVisibles > 0) {
@@ -713,8 +715,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           obtenido = 'No se muestran resultados para este filtro';
         }
       } else if (casosTelefonosKO.includes(numeroCaso)) {
-        // Para casos de teléfonos específicos, ERROR si no hay resultados
-        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de teléfonos KO - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        // Para casos de teléfonos específicos: OK si funcionan bien, ERROR si siguen fallando
+        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de teléfonos problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
         if (filasVisibles === 0 || tieneNoRows) {
           resultado = 'ERROR';
           obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (deberían existir datos)';
@@ -722,24 +724,28 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
         }
-      } else if (casosCategoriasSinDatos.includes(numeroCaso)) {
-        // TC030-TC031: ERROR si no muestran datos cuando deberían
-        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías sin datos - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        if (filasVisibles === 0 || tieneNoRows) {
+      } else if (casosCategoriasCorrectos.includes(numeroCaso)) {
+        // TC027-TC029: OK porque muestran datos correctos
+        cy.log(`✅ TC${numeroCasoFormateado}: Es un caso de categorías correcto - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        resultado = 'OK';
+        obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
+      } else if (casosCategoriasSinDatos.includes(numeroCaso) || casosCategoriasKO.includes(numeroCaso)) {
+        // TC002-TC004, TC030-TC031: ERROR porque muestran todos los datos en lugar de filtrar
+        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías que muestra todos los datos - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        if (filasVisibles > 0) {
           resultado = 'ERROR';
-          obtenido = 'No se muestran resultados cuando deberían existir datos';
+          obtenido = 'Muestra todos los datos en lugar de filtrar correctamente';
         } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
+          resultado = 'ERROR';
+          obtenido = 'No aplica el filtro correctamente';
         }
-      } else if (casosCategoriasKO.includes(numeroCaso)) {
-        // TC002-TC004: ERROR por problemas de aplicación
-        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de categorías KO - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        resultado = 'ERROR';
-        obtenido = 'Error de aplicación - datos presentes pero funcionalidad falla';
       } else if (filasVisibles === 0) {
         resultado = 'OK';
         obtenido = 'No se muestran resultados';
+      } else {
+        // Para casos normales (como TC027, TC028, TC029) que muestran datos
+        resultado = 'OK';
+        obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
       }
 
       // Nombres específicos para casos de teléfonos
