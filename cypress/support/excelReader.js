@@ -33,6 +33,7 @@ const SHEET_GIDS = {
   'CONFIGURACIÓN-PERFILES': '1896958952',
   'FICHEROS-CLIENTES': '520599147',
   'PROCESOS-PRESUPUESTOS': '1905879024',
+  'PROCESOS-PLANIFICACION': '357769061',
   'TALLER Y GASTOS-REPOSTAJES': '431734268',      
   'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      
   'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      
@@ -96,6 +97,7 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
   if (/(configuración|configuracion).*\(perfiles\)/.test(pantallaSafe) || pantallaSafe === 'configuración-perfiles') return 'CONFIGURACIÓN-PERFILES';
   if (pantallaSafe.includes('ficheros') && (pantallaSafe.includes('clientes') || pantallaSafe === 'ficheros-clientes')) return 'FICHEROS-CLIENTES';
   if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('presupuestos') || pantallaSafe === 'procesos-presupuestos')) return 'PROCESOS-PRESUPUESTOS';
+  if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('planificación') || pantallaSafe.includes('planificacion') || pantallaSafe === 'procesos-planificacion')) return 'PROCESOS-PLANIFICACION';
 
   // 👇 NUEVO: detectar Taller y Gastos (Repostajes)
   if (
