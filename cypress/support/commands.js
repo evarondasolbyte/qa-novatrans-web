@@ -624,45 +624,113 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
 
     // Verificar si es un caso de búsqueda con columna
     if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'column') {
-      // Selección de columna
-      cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-        const options = [...$select[0].options].map(opt => opt.text.trim());
-        cy.log(`Opciones dropdown: ${options.join(', ')}`);
-        let columnaEncontrada = null;
+      // Selección de columna - intentar primero con select nativo, luego con Material-UI
+      cy.get('body').then($body => {
+        if ($body.find('select[name="column"], select#column').length > 0) {
+          // Select nativo
+          cy.get('select[name="column"], select#column').should('be.visible').then($select => {
+            const options = [...$select[0].options].map(opt => opt.text.trim());
+            cy.log(`Opciones dropdown: ${options.join(', ')}`);
+            let columnaEncontrada = null;
 
-        switch (filtroEspecifico.dato_1) {
-          case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
-          case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-          case 'Número': columnaEncontrada = options.find(o => /Número|Number/i.test(o)); break;
-          case 'Modelo': columnaEncontrada = options.find(o => /Modelo|Model/i.test(o)); break;
-          case 'Poseedor': columnaEncontrada = options.find(o => /Poseedor|Holder/i.test(o)); break;
-          case 'Activo': columnaEncontrada = options.find(o => /Activo|Active/i.test(o)); break;
-          case 'Extensión': columnaEncontrada = options.find(o => /Extensión|Extension/i.test(o)); break;
-          default:
-            columnaEncontrada = options.find(opt =>
-              opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-              filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-            );
-        }
+            switch (filtroEspecifico.dato_1) {
+              case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
+              case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
+              case 'Número': columnaEncontrada = options.find(o => /Número|Number/i.test(o)); break;
+              case 'Modelo': columnaEncontrada = options.find(o => /Modelo|Model/i.test(o)); break;
+              case 'Poseedor': columnaEncontrada = options.find(o => /Poseedor|Holder/i.test(o)); break;
+              case 'Activo': columnaEncontrada = options.find(o => /Activo|Active/i.test(o)); break;
+              case 'Extensión': columnaEncontrada = options.find(o => /Extensión|Extension/i.test(o)); break;
+              case 'Código': columnaEncontrada = options.find(o => /Código|Code/i.test(o)); break;
+              case 'Refrigerado': columnaEncontrada = options.find(o => /Refrigerado|Refrigerated/i.test(o)); break;
+              case 'Remolque': columnaEncontrada = options.find(o => /Remolque|Trailer/i.test(o)); break;
+              case 'Rígido': columnaEncontrada = options.find(o => /Rígido|Rigid/i.test(o)); break;
+              default:
+                columnaEncontrada = options.find(opt =>
+                  opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
+                  filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
+                );
+            }
 
-        if (columnaEncontrada) {
-          cy.wrap($select).select(columnaEncontrada);
-          cy.log(`Columna seleccionada: ${columnaEncontrada}`);
-          
-          // Esperar a que se actualice la interfaz
-          cy.wait(1000);
-          
-          // Introducir el valor de búsqueda - excluir el del sidebar
-          cy.get('input[placeholder="Buscar"]:not(#sidebar-search)').should('be.visible')
-            .clear({ force: true })
-            .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+            if (columnaEncontrada) {
+              cy.wrap($select).select(columnaEncontrada);
+              cy.log(`Columna seleccionada: ${columnaEncontrada}`);
+            } else {
+              cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada, usando primera opción`);
+              cy.wrap($select).select(1);
+            }
+          });
         } else {
-          cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada, usando primera opción`);
-          cy.wrap($select).select(1);
-          cy.get('input[placeholder="Buscar"]:not(#sidebar-search)').should('be.visible')
-            .clear({ force: true })
-            .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+          // Material-UI dropdown (botón con menú)
+          cy.log('No se encontró select nativo, intentando con Material-UI dropdown');
+          
+          // Buscar el botón que abre el menú de columna (puede tener diferentes textos)
+          cy.get('body').then($body => {
+            // Intentar encontrar el botón del dropdown de columna
+            // Puede ser un botón que contiene el texto actual o un botón genérico
+            const selectors = [
+              'button:contains("Multifiltro")',
+              'button:contains("Nombre")',
+              'button:contains("Código")',
+              '[role="button"]:contains("Multifiltro")',
+              '[role="button"]:contains("Nombre")',
+              'div[role="button"]',
+              'button.MuiButton-root',
+            ];
+            
+            let selectorEncontrado = null;
+            for (const selector of selectors) {
+              if ($body.find(selector).length > 0 && !selectorEncontrado) {
+                selectorEncontrado = selector;
+                break;
+              }
+            }
+            
+            if (selectorEncontrado) {
+              cy.get(selectorEncontrado).first().click({ force: true });
+              cy.wait(500);
+              
+              // Buscar el elemento del menú con el nombre de la columna
+              cy.get('li[role="menuitem"], [role="option"]').then($items => {
+                const items = Array.from($items).map(item => item.textContent.trim());
+                cy.log(`Opciones del menú: ${items.join(', ')}`);
+                
+                let columnaEncontrada = null;
+                switch (filtroEspecifico.dato_1) {
+                  case 'Nombre': columnaEncontrada = items.find(o => /Nombre|Name/i.test(o)); break;
+                  case 'Código': columnaEncontrada = items.find(o => /Código|Code/i.test(o)); break;
+                  case 'Refrigerado': columnaEncontrada = items.find(o => /Refrigerado|Refrigerated/i.test(o)); break;
+                  case 'Remolque': columnaEncontrada = items.find(o => /Remolque|Trailer/i.test(o)); break;
+                  case 'Rígido': columnaEncontrada = items.find(o => /Rígido|Rigid/i.test(o)); break;
+                  case 'Todos': columnaEncontrada = items.find(o => /Todos|All/i.test(o)); break;
+                  default:
+                    columnaEncontrada = items.find(opt =>
+                      opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
+                      filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
+                    );
+                }
+                
+                if (columnaEncontrada) {
+                  cy.get('li[role="menuitem"], [role="option"]').contains(columnaEncontrada).click({ force: true });
+                  cy.log(`Columna seleccionada: ${columnaEncontrada}`);
+                } else {
+                  cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada en el menú`);
+                  cy.get('body').click(0, 0); // Cerrar el menú
+                }
+              });
+            } else {
+              cy.log('No se encontró el botón del dropdown de columna');
+            }
+          });
         }
+        
+        // Esperar a que se actualice la interfaz
+        cy.wait(1000);
+        
+        // Introducir el valor de búsqueda - excluir el del sidebar
+        cy.get('input[placeholder="Buscar"]:not(#sidebar-search), input[placeholder*="Buscar"]:not([id*="sidebar"])').should('be.visible')
+          .clear({ force: true })
+          .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
       });
     } else if (filtroEspecifico.etiqueta_1 === 'search' && (filtroEspecifico.valor_etiqueta_1 === 'text' || filtroEspecifico.valor_etiqueta_1 === 'texto exacto' || filtroEspecifico.valor_etiqueta_1 === 'texto parcial')) {
       // Búsqueda libre, texto exacto o texto parcial
@@ -700,7 +768,7 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       // Casos específicos de teléfonos problemáticos: OK si funcionan bien, ERROR si siguen fallando
       const casosTelefonosKO = [10, 11, 12, 13, 14];
       // Casos específicos de categorías que muestran todos los datos en lugar de filtrar
-      const casosCategoriasKO = [2, 3, 4];
+      const casosCategoriasKO = [];
       // Casos específicos de categorías que muestran todos los datos en lugar de filtrar
       const casosCategoriasSinDatos = [30, 31];
       // Casos específicos de categorías que muestran datos correctos (TC027, TC028, TC029)
@@ -748,8 +816,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
       }
 
-      // Nombres específicos para casos de teléfonos
-      let nombreCaso = `TC${numeroCasoFormateado} - ${filtroEspecifico.valor_etiqueta_1}`;
+      // Usar el nombre del Excel si está disponible, sino usar el genérico
+      let nombreCaso = filtroEspecifico.nombre || `TC${numeroCasoFormateado} - ${filtroEspecifico.valor_etiqueta_1}`;
       let esperadoCaso = `Filtro ${filtroEspecifico.dato_1} debe mostrar resultados apropiados`;
       let obtenidoCaso = obtenido;
       
@@ -871,20 +939,92 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
 
     // Verificar si es un caso de multifiltro con operador
     if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'operator') {
-      // Seleccionar operador del multifiltro
-      cy.get('select[name="operator"], select#operator').should('be.visible').then($select => {
-        const options = [...$select[0].options].map(opt => opt.text.trim());
-        cy.log(`Opciones operador: ${options.join(', ')}`);
-        const operadorEncontrado = options.find(opt =>
-          opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-          filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-        );
-        if (operadorEncontrado) {
-          cy.wrap($select).select(operadorEncontrado);
-          cy.log(`Seleccionado operador: ${operadorEncontrado}`);
+      // Seleccionar operador del multifiltro - intentar primero con select nativo, luego con Material-UI
+      cy.get('body').then($body => {
+        if ($body.find('select[name="operator"], select#operator').length > 0) {
+          // Select nativo
+          cy.get('select[name="operator"], select#operator').should('be.visible').then($select => {
+            const options = [...$select[0].options].map(opt => opt.text.trim());
+            cy.log(`Opciones operador: ${options.join(', ')}`);
+            const operadorEncontrado = options.find(opt =>
+              opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
+              filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
+            );
+            if (operadorEncontrado) {
+              cy.wrap($select).select(operadorEncontrado);
+              cy.log(`Seleccionado operador: ${operadorEncontrado}`);
+            } else {
+              cy.log(`Operador "${filtroEspecifico.dato_1}" no encontrado, usando primera opción`);
+              cy.wrap($select).select(1);
+            }
+          });
         } else {
-          cy.log(`Operador "${filtroEspecifico.dato_1}" no encontrado, usando primera opción`);
-          cy.wrap($select).select(1);
+          // Material-UI dropdown (botón con menú)
+          cy.log('No se encontró select nativo, intentando con Material-UI dropdown para operador');
+          
+          // Buscar el botón que abre el menú de operador (puede ser "Contiene", "Igual a", etc.)
+          const selectors = [
+            'button:contains("Contiene")',
+            'button:contains("Igual a")',
+            'button:contains("Empieza con")',
+            'button:contains("Distinto a")',
+            '[role="button"]:contains("Contiene")',
+            '[role="button"]:contains("Igual a")',
+            'div[role="button"]',
+          ];
+          
+          let selectorEncontrado = null;
+          for (const selector of selectors) {
+            if ($body.find(selector).length > 0 && !selectorEncontrado) {
+              selectorEncontrado = selector;
+              break;
+            }
+          }
+          
+          if (selectorEncontrado) {
+            cy.get(selectorEncontrado).first().click({ force: true });
+            cy.wait(500);
+            
+            // Buscar el elemento del menú con el operador
+            cy.get('li[role="menuitem"], [role="option"]').then($items => {
+              const items = Array.from($items).map(item => item.textContent.trim());
+              cy.log(`Opciones del menú operador: ${items.join(', ')}`);
+              
+              // Mapeo de operadores comunes
+              let operadorEncontrado = null;
+              const operadorBuscado = filtroEspecifico.dato_1.toLowerCase();
+              
+              if (operadorBuscado.includes('contiene') || operadorBuscado.includes('contains')) {
+                operadorEncontrado = items.find(o => /Contiene|Contains/i.test(o));
+              } else if (operadorBuscado.includes('igual') || operadorBuscado.includes('equal')) {
+                operadorEncontrado = items.find(o => /Igual a|Equal to/i.test(o));
+              } else if (operadorBuscado.includes('empieza') || operadorBuscado.includes('starts')) {
+                operadorEncontrado = items.find(o => /Empieza con|Starts with/i.test(o));
+              } else if (operadorBuscado.includes('distinto') || operadorBuscado.includes('different')) {
+                operadorEncontrado = items.find(o => /Distinto a|Different from/i.test(o));
+              } else if (operadorBuscado.includes('mayor') || operadorBuscado.includes('greater')) {
+                operadorEncontrado = items.find(o => /Mayor|Greater/i.test(o));
+              } else if (operadorBuscado.includes('menor') || operadorBuscado.includes('less')) {
+                operadorEncontrado = items.find(o => /Menor|Less/i.test(o));
+              } else {
+                // Búsqueda genérica
+                operadorEncontrado = items.find(opt =>
+                  opt.toLowerCase().includes(operadorBuscado) ||
+                  operadorBuscado.includes(opt.toLowerCase())
+                );
+              }
+              
+              if (operadorEncontrado) {
+                cy.get('li[role="menuitem"], [role="option"]').contains(operadorEncontrado).click({ force: true });
+                cy.log(`Operador seleccionado: ${operadorEncontrado}`);
+              } else {
+                cy.log(`Operador "${filtroEspecifico.dato_1}" no encontrado en el menú`);
+                cy.get('body').click(0, 0); // Cerrar el menú
+              }
+            });
+          } else {
+            cy.log('No se encontró el botón del dropdown de operador');
+          }
         }
       });
     } else {

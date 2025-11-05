@@ -23,6 +23,9 @@ echo   - almacen_familias_subfamilias_almacenes
 echo   - almacen_articulos
 echo   - almacen_pedidos
 echo   - procesos_planificacion
+echo   - procesos_planificaciones2
+echo   - procesos_planificaciones3
+echo   - procesos_planificaciones4
 echo ========================================
 echo.
 
@@ -38,7 +41,10 @@ set "SPECS=%SPECS%cypress/e2e/ficheros_formas_pago.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/almacen_familias_subfamilias_almacenes.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/almacen_articulos.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/almacen_pedidos.cy.js,"
-set "SPECS=%SPECS%cypress/e2e/procesos_planificacion.cy.js"
+set "SPECS=%SPECS%cypress/e2e/procesos_planificacion.cy.js,"
+set "SPECS=%SPECS%cypress/e2e/procesos_planificaciones2.cy.js,"
+set "SPECS=%SPECS%cypress/e2e/procesos_planificaciones3.cy.js,"
+set "SPECS=%SPECS%cypress/e2e/procesos_planificaciones4.cy.js"
 
 REM Ejecuta las pruebas con Cypress
 npx cypress run --spec "%SPECS%"

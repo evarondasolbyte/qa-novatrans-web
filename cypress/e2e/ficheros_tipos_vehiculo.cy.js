@@ -38,6 +38,10 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                 let funcion;
                 // Mapeo dinámico basado en los casos disponibles en Excel
                 if (numero === 1) funcion = TC001;
+                // Detectar casos de cambio de idioma
+                else if (nombre.toLowerCase().includes('idioma') || nombre.toLowerCase().includes('language')) {
+                    funcion = () => cambiarIdioma(caso);
+                }
                 else if (numero >= 2 && numero <= 6) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Tipos de Vehículo)', 'Ficheros (Tipos de Vehículo)', 'Ficheros', 'Tipos de Vehículo');
                 else if (numero === 7) funcion = TC007;
                 else if (numero === 8) funcion = TC008;
@@ -56,6 +60,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                 else if (numero === 22) funcion = TC022;
                 else if (numero === 23) funcion = TC023;
                 else if (numero >= 24 && numero <= 29) funcion = () => cy.ejecutarMultifiltro(numero, 'Ficheros (Tipos de Vehículo)', 'Ficheros (Tipos de Vehículo)', 'Ficheros', 'Tipos de Vehículo');
+                else if (numero === 30) funcion = () => cambiarIdioma(caso);
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
                     return cy.wrap(true);
@@ -90,45 +95,183 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         },
 
         setOperador(nombreOperador) {
-            return cy.get('select[name="operator"], select#operator').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
-                cy.log(`Opciones operador: ${options.join(', ')}`);
-                const operadorEncontrado = options.find(opt =>
-                    opt.toLowerCase().includes(nombreOperador.toLowerCase()) ||
-                    nombreOperador.toLowerCase().includes(opt.toLowerCase())
-                );
-                if (operadorEncontrado) {
-                    cy.wrap($select).select(operadorEncontrado);
-                    cy.log(`Seleccionado operador: ${operadorEncontrado}`);
+            return cy.get('body').then($body => {
+                if ($body.find('select[name="operator"], select#operator').length > 0) {
+                    // Select nativo
+                    return cy.get('select[name="operator"], select#operator').should('be.visible').then($select => {
+                        const options = [...$select[0].options].map(opt => opt.text.trim());
+                        cy.log(`Opciones operador: ${options.join(', ')}`);
+                        const operadorEncontrado = options.find(opt =>
+                            opt.toLowerCase().includes(nombreOperador.toLowerCase()) ||
+                            nombreOperador.toLowerCase().includes(opt.toLowerCase())
+                        );
+                        if (operadorEncontrado) {
+                            cy.wrap($select).select(operadorEncontrado);
+                            cy.log(`Seleccionado operador: ${operadorEncontrado}`);
+                        } else {
+                            cy.log(`Operador "${nombreOperador}" no encontrado, usando primera opción`);
+                            cy.wrap($select).select(1);
+                        }
+                    });
                 } else {
-                    cy.log(`Operador "${nombreOperador}" no encontrado, usando primera opción`);
-                    cy.wrap($select).select(1);
+                    // Material-UI dropdown (botón con menú)
+                    cy.log('No se encontró select nativo, intentando con Material-UI dropdown para operador');
+                    
+                    // Buscar el botón que abre el menú de operador
+                    const selectors = [
+                        'button:contains("Contiene")',
+                        'button:contains("Igual a")',
+                        'button:contains("Empieza con")',
+                        'button:contains("Distinto a")',
+                        '[role="button"]:contains("Contiene")',
+                        '[role="button"]:contains("Igual a")',
+                        'div[role="button"]',
+                    ];
+                    
+                    let selectorEncontrado = null;
+                    for (const selector of selectors) {
+                        if ($body.find(selector).length > 0 && !selectorEncontrado) {
+                            selectorEncontrado = selector;
+                            break;
+                        }
+                    }
+                    
+                    if (selectorEncontrado) {
+                        cy.get(selectorEncontrado).first().click({ force: true });
+                        cy.wait(500);
+                        
+                        // Buscar el elemento del menú con el operador
+                        cy.get('li[role="menuitem"], [role="option"]').then($items => {
+                            const items = Array.from($items).map(item => item.textContent.trim());
+                            cy.log(`Opciones del menú operador: ${items.join(', ')}`);
+                            
+                            // Mapeo de operadores comunes
+                            let operadorEncontrado = null;
+                            const operadorBuscado = nombreOperador.toLowerCase();
+                            
+                            if (operadorBuscado.includes('contiene') || operadorBuscado.includes('contains')) {
+                                operadorEncontrado = items.find(o => /Contiene|Contains/i.test(o));
+                            } else if (operadorBuscado.includes('igual') || operadorBuscado.includes('equal')) {
+                                operadorEncontrado = items.find(o => /Igual a|Equal to/i.test(o));
+                            } else if (operadorBuscado.includes('empieza') || operadorBuscado.includes('starts')) {
+                                operadorEncontrado = items.find(o => /Empieza con|Starts with/i.test(o));
+                            } else if (operadorBuscado.includes('distinto') || operadorBuscado.includes('different')) {
+                                operadorEncontrado = items.find(o => /Distinto a|Different from/i.test(o));
+                            } else if (operadorBuscado.includes('mayor') || operadorBuscado.includes('greater')) {
+                                operadorEncontrado = items.find(o => /Mayor|Greater/i.test(o));
+                            } else if (operadorBuscado.includes('menor') || operadorBuscado.includes('less')) {
+                                operadorEncontrado = items.find(o => /Menor|Less/i.test(o));
+                            } else {
+                                // Búsqueda genérica
+                                operadorEncontrado = items.find(opt =>
+                                    opt.toLowerCase().includes(operadorBuscado) ||
+                                    operadorBuscado.includes(opt.toLowerCase())
+                                );
+                            }
+                            
+                            if (operadorEncontrado) {
+                                cy.get('li[role="menuitem"], [role="option"]').contains(operadorEncontrado).click({ force: true });
+                                cy.log(`Operador seleccionado: ${operadorEncontrado}`);
+                            } else {
+                                cy.log(`Operador "${nombreOperador}" no encontrado en el menú`);
+                                cy.get('body').click(0, 0); // Cerrar el menú
+                            }
+                        });
+                    } else {
+                        cy.log('No se encontró el botón del dropdown de operador');
+                    }
                 }
             });
         },
 
         setColumna(nombreColumna) {
-            return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                const options = [...$select[0].options].map(opt => opt.text.trim());
-                cy.log(`Opciones columna: ${options.join(', ')}`);
-                let columnaEncontrada = null;
+            return cy.get('body').then($body => {
+                if ($body.find('select[name="column"], select#column').length > 0) {
+                    // Select nativo
+                    return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
+                        const options = [...$select[0].options].map(opt => opt.text.trim());
+                        cy.log(`Opciones columna: ${options.join(', ')}`);
+                        let columnaEncontrada = null;
 
-                switch (nombreColumna) {
-                    case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
-                    case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                    default:
-                        columnaEncontrada = options.find(opt =>
-                            opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
-                            nombreColumna.toLowerCase().includes(opt.toLowerCase())
-                        );
-                }
+                        switch (nombreColumna) {
+                            case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
+                            case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
+                            case 'Código': columnaEncontrada = options.find(o => /Código|Code/i.test(o)); break;
+                            case 'Refrigerado': columnaEncontrada = options.find(o => /Refrigerado|Refrigerated/i.test(o)); break;
+                            case 'Remolque': columnaEncontrada = options.find(o => /Remolque|Trailer/i.test(o)); break;
+                            case 'Rígido': columnaEncontrada = options.find(o => /Rígido|Rigid/i.test(o)); break;
+                            default:
+                                columnaEncontrada = options.find(opt =>
+                                    opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
+                                    nombreColumna.toLowerCase().includes(opt.toLowerCase())
+                                );
+                        }
 
-                if (columnaEncontrada) {
-                    cy.wrap($select).select(columnaEncontrada);
-                    cy.log(`Seleccionada columna: ${columnaEncontrada}`);
+                        if (columnaEncontrada) {
+                            cy.wrap($select).select(columnaEncontrada);
+                            cy.log(`Seleccionada columna: ${columnaEncontrada}`);
+                        } else {
+                            cy.log(`Columna "${nombreColumna}" no encontrada, usando primera opción`);
+                            cy.wrap($select).select(1);
+                        }
+                    });
                 } else {
-                    cy.log(`Columna "${nombreColumna}" no encontrada, usando primera opción`);
-                    cy.wrap($select).select(1);
+                    // Material-UI dropdown (botón con menú)
+                    cy.log('No se encontró select nativo, intentando con Material-UI dropdown');
+                    
+                    // Buscar el botón que abre el menú de columna
+                    const selectors = [
+                        'button:contains("Multifiltro")',
+                        'button:contains("Nombre")',
+                        'button:contains("Código")',
+                        '[role="button"]:contains("Multifiltro")',
+                        '[role="button"]:contains("Nombre")',
+                        'div[role="button"]',
+                    ];
+                    
+                    let selectorEncontrado = null;
+                    for (const selector of selectors) {
+                        if ($body.find(selector).length > 0 && !selectorEncontrado) {
+                            selectorEncontrado = selector;
+                            break;
+                        }
+                    }
+                    
+                    if (selectorEncontrado) {
+                        cy.get(selectorEncontrado).first().click({ force: true });
+                        cy.wait(500);
+                        
+                        // Buscar el elemento del menú con el nombre de la columna
+                        cy.get('li[role="menuitem"], [role="option"]').then($items => {
+                            const items = Array.from($items).map(item => item.textContent.trim());
+                            cy.log(`Opciones del menú: ${items.join(', ')}`);
+                            
+                            let columnaEncontrada = null;
+                            switch (nombreColumna) {
+                                case 'Nombre': columnaEncontrada = items.find(o => /Nombre|Name/i.test(o)); break;
+                                case 'Código': columnaEncontrada = items.find(o => /Código|Code/i.test(o)); break;
+                                case 'Refrigerado': columnaEncontrada = items.find(o => /Refrigerado|Refrigerated/i.test(o)); break;
+                                case 'Remolque': columnaEncontrada = items.find(o => /Remolque|Trailer/i.test(o)); break;
+                                case 'Rígido': columnaEncontrada = items.find(o => /Rígido|Rigid/i.test(o)); break;
+                                case 'Todos': columnaEncontrada = items.find(o => /Todos|All/i.test(o)); break;
+                                default:
+                                    columnaEncontrada = items.find(opt =>
+                                        opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
+                                        nombreColumna.toLowerCase().includes(opt.toLowerCase())
+                                    );
+                            }
+                            
+                            if (columnaEncontrada) {
+                                cy.get('li[role="menuitem"], [role="option"]').contains(columnaEncontrada).click({ force: true });
+                                cy.log(`Columna seleccionada: ${columnaEncontrada}`);
+                            } else {
+                                cy.log(`Columna "${nombreColumna}" no encontrada en el menú`);
+                                cy.get('body').click(0, 0); // Cerrar el menú
+                            }
+                        });
+                    } else {
+                        cy.log('No se encontró el botón del dropdown de columna');
+                    }
                 }
             });
         },
@@ -154,7 +297,51 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         return UI.filasVisibles().should('have.length.greaterThan', 0);
     }
 
+    // ====== FUNCIONES CAMBIO DE IDIOMA ======
 
+    function cambiarIdioma(caso) {
+        UI.abrirPantalla();
+        
+        // Mapeo de códigos de idioma a textos esperados - probar los tres idiomas
+        const idiomas = [
+            { codigo: 'es', texto: 'Tipos de Vehículo', nombre: 'Español' },
+            { codigo: 'ca', texto: 'Tipus de Vehicles', nombre: 'Catalán' },
+            { codigo: 'en', texto: 'Vehicle Types', nombre: 'Inglés' }
+        ];
+        
+        // Probar los tres idiomas secuencialmente
+        return cy.wrap(idiomas).each((config) => {
+            cy.log(`Cambiando idioma a: ${config.nombre} (${config.codigo})`);
+            
+            // Intentar con select primero
+            cy.get('body').then($body => {
+                if ($body.find('select#languageSwitcher').length > 0) {
+                    cy.get('select#languageSwitcher').select(config.codigo, { force: true });
+                } else if ($body.find('button:contains("Spanish"), button:contains("Español"), button:contains("English"), button:contains("Inglés"), button:contains("Catalan"), button:contains("Catalán")').length > 0) {
+                    // Si es un botón con menú dropdown (Material-UI)
+                    cy.get('button:contains("Spanish"), button:contains("Español"), button:contains("English"), button:contains("Inglés"), button:contains("Catalan"), button:contains("Catalán")').first().click({ force: true });
+                    cy.wait(500);
+                    
+                    // Seleccionar el idioma del menú según el código
+                    if (config.codigo === 'en') {
+                        cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/English|Inglés/i).click({ force: true });
+                    } else if (config.codigo === 'ca') {
+                        cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Catalan|Catalán/i).click({ force: true });
+                    } else {
+                        cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Spanish|Español/i).click({ force: true });
+                    }
+                } else {
+                    // Intentar con select genérico
+                    cy.get('select[name="language"], select[data-testid="language-switcher"]').select(config.codigo, { force: true });
+                }
+            });
+            
+            cy.wait(1500);
+            // Verificar que el cambio de idioma se aplicó correctamente
+            cy.get('body').should('contain.text', config.texto);
+            cy.log(`Idioma cambiado exitosamente a ${config.nombre}`);
+        });
+    }
     
     // ====== FUNCIONES ESPECÍFICAS ======
 
