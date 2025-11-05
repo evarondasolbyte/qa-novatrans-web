@@ -38,10 +38,6 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                 let funcion;
                 // Mapeo dinámico basado en los casos disponibles en Excel
                 if (numero === 1) funcion = TC001;
-                // Detectar casos de cambio de idioma
-                else if (nombre.toLowerCase().includes('idioma') || nombre.toLowerCase().includes('language')) {
-                    funcion = () => cambiarIdioma(caso);
-                }
                 else if (numero >= 2 && numero <= 6) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Tipos de Vehículo)', 'Ficheros (Tipos de Vehículo)', 'Ficheros', 'Tipos de Vehículo');
                 else if (numero === 7) funcion = TC007;
                 else if (numero === 8) funcion = TC008;
@@ -60,7 +56,13 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                 else if (numero === 22) funcion = TC022;
                 else if (numero === 23) funcion = TC023;
                 else if (numero >= 24 && numero <= 29) funcion = () => cy.ejecutarMultifiltro(numero, 'Ficheros (Tipos de Vehículo)', 'Ficheros (Tipos de Vehículo)', 'Ficheros', 'Tipos de Vehículo');
-                else if (numero === 30) funcion = () => cambiarIdioma(caso);
+                // Detectar casos de cambio de idioma
+                else if (nombre.toLowerCase().includes('idioma') || nombre.toLowerCase().includes('language') || numero === 30) {
+                    funcion = () => {
+                        UI.abrirPantalla();
+                        return cy.cambiarIdiomaCompleto('Ficheros (Tipos de Vehículo)', 'Tipos de Vehículo', 'Tipus de Vehicles', 'Vehicle Types', numero);
+                    };
+                }
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
                     return cy.wrap(true);
@@ -297,52 +299,6 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         return UI.filasVisibles().should('have.length.greaterThan', 0);
     }
 
-    // ====== FUNCIONES CAMBIO DE IDIOMA ======
-
-    function cambiarIdioma(caso) {
-        UI.abrirPantalla();
-        
-        // Mapeo de códigos de idioma a textos esperados - probar los tres idiomas
-        const idiomas = [
-            { codigo: 'es', texto: 'Tipos de Vehículo', nombre: 'Español' },
-            { codigo: 'ca', texto: 'Tipus de Vehicles', nombre: 'Catalán' },
-            { codigo: 'en', texto: 'Vehicle Types', nombre: 'Inglés' }
-        ];
-        
-        // Probar los tres idiomas secuencialmente
-        return cy.wrap(idiomas).each((config) => {
-            cy.log(`Cambiando idioma a: ${config.nombre} (${config.codigo})`);
-            
-            // Intentar con select primero
-            cy.get('body').then($body => {
-                if ($body.find('select#languageSwitcher').length > 0) {
-                    cy.get('select#languageSwitcher').select(config.codigo, { force: true });
-                } else if ($body.find('button:contains("Spanish"), button:contains("Español"), button:contains("English"), button:contains("Inglés"), button:contains("Catalan"), button:contains("Catalán")').length > 0) {
-                    // Si es un botón con menú dropdown (Material-UI)
-                    cy.get('button:contains("Spanish"), button:contains("Español"), button:contains("English"), button:contains("Inglés"), button:contains("Catalan"), button:contains("Catalán")').first().click({ force: true });
-                    cy.wait(500);
-                    
-                    // Seleccionar el idioma del menú según el código
-                    if (config.codigo === 'en') {
-                        cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/English|Inglés/i).click({ force: true });
-                    } else if (config.codigo === 'ca') {
-                        cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Catalan|Catalán/i).click({ force: true });
-                    } else {
-                        cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Spanish|Español/i).click({ force: true });
-                    }
-                } else {
-                    // Intentar con select genérico
-                    cy.get('select[name="language"], select[data-testid="language-switcher"]').select(config.codigo, { force: true });
-                }
-            });
-            
-            cy.wait(1500);
-            // Verificar que el cambio de idioma se aplicó correctamente
-            cy.get('body').should('contain.text', config.texto);
-            cy.log(`Idioma cambiado exitosamente a ${config.nombre}`);
-        });
-    }
-    
     // ====== FUNCIONES ESPECÍFICAS ======
 
     function TC007() {

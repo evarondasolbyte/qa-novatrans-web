@@ -57,6 +57,13 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
                 else if (numero === 23) funcion = limpiarFiltro;
                 else if (numero === 24) funcion = seleccionarFiltroGuardado;
                 else if (numero >= 25 && numero <= 30) funcion = () => cy.ejecutarMultifiltro(numero, 'Ficheros (Categorías de Conductores)', 'Ficheros (Categorías de Conductores)', 'Ficheros', 'Categorías de Conductores');
+                // Detectar casos de cambio de idioma
+                else if (nombre.toLowerCase().includes('idioma') || nombre.toLowerCase().includes('language') || numero === 31) {
+                    funcion = () => {
+                        UI.abrirPantalla();
+                        return cy.cambiarIdiomaCompleto('Ficheros (Categorías de Conductores)', 'Categorías de Conductores', 'Categories de Conductors', 'Driver Categories', numero);
+                    };
+                }
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
                     return cy.wrap(true);
@@ -91,27 +98,87 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
         },
 
         setColumna(nombreColumna) {
-            return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
-                    const options = [...$select[0].options].map(opt => opt.text.trim());
-                cy.log(`Opciones columna: ${options.join(', ')}`);
-                    let columnaEncontrada = null;
+            return cy.get('body').then($body => {
+                if ($body.find('select[name="column"], select#column').length > 0) {
+                    // Select nativo
+                    return cy.get('select[name="column"], select#column').should('be.visible').then($select => {
+                        const options = [...$select[0].options].map(opt => opt.text.trim());
+                        cy.log(`Opciones columna: ${options.join(', ')}`);
+                        let columnaEncontrada = null;
+                        
+                        switch (nombreColumna) {
+                            case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
+                            case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
+                            case 'Código': columnaEncontrada = options.find(o => /Código|Code/i.test(o)); break;
+                            default:
+                                columnaEncontrada = options.find(opt => 
+                                    opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
+                                    nombreColumna.toLowerCase().includes(opt.toLowerCase())
+                                );
+                        }
+                        
+                        if (columnaEncontrada) {
+                            cy.wrap($select).select(columnaEncontrada);
+                            cy.log(`Seleccionada columna: ${columnaEncontrada}`);
+                        } else {
+                            cy.log(`Columna "${nombreColumna}" no encontrada, usando primera opción`);
+                            cy.wrap($select).select(1);
+                        }
+                    });
+                } else {
+                    // Material-UI dropdown (botón con menú)
+                    cy.log('No se encontró select nativo, intentando con Material-UI dropdown');
                     
-                switch (nombreColumna) {
-                    case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
-                    case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
-                        default:
-                            columnaEncontrada = options.find(opt => 
-                            opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
-                            nombreColumna.toLowerCase().includes(opt.toLowerCase())
-                            );
+                    // Buscar el botón que abre el menú de columna
+                    const selectors = [
+                        'button:contains("Multifiltro")',
+                        'button:contains("Nombre")',
+                        'button:contains("Código")',
+                        '[role="button"]:contains("Multifiltro")',
+                        '[role="button"]:contains("Nombre")',
+                        'div[role="button"]',
+                    ];
+                    
+                    let selectorEncontrado = null;
+                    for (const selector of selectors) {
+                        if ($body.find(selector).length > 0 && !selectorEncontrado) {
+                            selectorEncontrado = selector;
+                            break;
+                        }
                     }
                     
-                    if (columnaEncontrada) {
-                    cy.wrap($select).select(columnaEncontrada);
-                        cy.log(`Seleccionada columna: ${columnaEncontrada}`);
+                    if (selectorEncontrado) {
+                        cy.get(selectorEncontrado).first().click({ force: true });
+                        cy.wait(500);
+                        
+                        // Buscar el elemento del menú con el nombre de la columna
+                        cy.get('li[role="menuitem"], [role="option"]').then($items => {
+                            const items = Array.from($items).map(item => item.textContent.trim());
+                            cy.log(`Opciones del menú: ${items.join(', ')}`);
+                            
+                            let columnaEncontrada = null;
+                            switch (nombreColumna) {
+                                case 'Nombre': columnaEncontrada = items.find(o => /Nombre|Name/i.test(o)); break;
+                                case 'Código': columnaEncontrada = items.find(o => /Código|Code/i.test(o)); break;
+                                case 'Todos': columnaEncontrada = items.find(o => /Todos|All/i.test(o)); break;
+                                default:
+                                    columnaEncontrada = items.find(opt =>
+                                        opt.toLowerCase().includes(nombreColumna.toLowerCase()) ||
+                                        nombreColumna.toLowerCase().includes(opt.toLowerCase())
+                                    );
+                            }
+                            
+                            if (columnaEncontrada) {
+                                cy.get('li[role="menuitem"], [role="option"]').contains(columnaEncontrada).click({ force: true });
+                                cy.log(`Columna seleccionada: ${columnaEncontrada}`);
+                            } else {
+                                cy.log(`Columna "${nombreColumna}" no encontrada en el menú`);
+                                cy.get('body').click(0, 0); // Cerrar el menú
+                            }
+                        });
                     } else {
-                    cy.log(`Columna "${nombreColumna}" no encontrada, usando primera opción`);
-                    cy.wrap($select).select(1);
+                        cy.log('No se encontró el botón del dropdown de columna');
+                    }
                 }
             });
         },
@@ -137,9 +204,6 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
         return UI.filasVisibles().should('have.length.greaterThan', 0);
     }
 
-    
-
-    
     // ====== FUNCIONES ESPECÍFICAS ======
 
     function ordenarCodigo() {
