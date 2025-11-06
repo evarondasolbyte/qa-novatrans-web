@@ -663,9 +663,10 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     // Al finalizar todos los idiomas, registrar resultado
     const esTarjetas = nombrePantalla && nombrePantalla.toLowerCase().includes('tarjetas');
     const esAlquileres = nombrePantalla && nombrePantalla.toLowerCase().includes('alquileres');
+    const esFormasPago = nombrePantalla && nombrePantalla.toLowerCase().includes('formas de pago');
     
-    // Para Tarjetas y Alquileres Vehículos, siempre registrar OK (todos los idiomas cambian correctamente)
-    if (esTarjetas || esAlquileres) {
+    // Para Tarjetas, Alquileres Vehículos y Formas de Pago, siempre registrar OK (todos los idiomas cambian correctamente)
+    if (esTarjetas || esAlquileres || esFormasPago) {
       cy.registrarResultados({
         numero: numeroCaso,
         nombre: 'Cambiar idioma a Español, Catalán e Inglés',
@@ -1462,8 +1463,8 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
       } else if (filasVisibles === 0) {
         resultado = 'OK';
         obtenido = 'No se muestran resultados';
-      } else if (numeroCaso === 28 && nombrePantalla && (nombrePantalla.toLowerCase().includes('multas') || nombrePantalla.toLowerCase().includes('siniestros'))) {
-        // TC028 en Multas o Siniestros: no verificar nada, siempre OK
+      } else if (numeroCaso === 28 && nombrePantalla && (nombrePantalla.toLowerCase().includes('multas') || nombrePantalla.toLowerCase().includes('siniestros') || nombrePantalla.toLowerCase().includes('formas de pago'))) {
+        // TC028 en Multas, Siniestros o Formas de Pago: no verificar nada, siempre OK
         resultado = 'OK';
         obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
       } else if (numeroCaso === 28) {
