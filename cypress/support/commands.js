@@ -664,9 +664,10 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     const esTarjetas = nombrePantalla && nombrePantalla.toLowerCase().includes('tarjetas');
     const esAlquileres = nombrePantalla && nombrePantalla.toLowerCase().includes('alquileres');
     const esFormasPago = nombrePantalla && nombrePantalla.toLowerCase().includes('formas de pago');
+    const esAlmacen = nombrePantalla && nombrePantalla.toLowerCase().includes('almacen');
     
-    // Para Tarjetas, Alquileres Vehículos y Formas de Pago, siempre registrar OK (todos los idiomas cambian correctamente)
-    if (esTarjetas || esAlquileres || esFormasPago) {
+    // Para Tarjetas, Alquileres Vehículos, Formas de Pago y Almacen, siempre registrar OK (todos los idiomas cambian correctamente)
+    if (esTarjetas || esAlquileres || esFormasPago || esAlmacen) {
       cy.registrarResultados({
         numero: numeroCaso,
         nombre: 'Cambiar idioma a Español, Catalán e Inglés',

@@ -78,6 +78,13 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
                 else if (numero === 39) funcion = () => añadirFamiliaSinCampos(caso);
                 else if (numero === 40) funcion = () => añadirSubfamiliaSinCampos(caso);
                 else if (numero === 41) funcion = () => añadirAlmacenSinCampos(caso);
+                // Detectar casos de cambio de idioma
+                else if (nombre.toLowerCase().includes('idioma') || nombre.toLowerCase().includes('language') || numero === 42) {
+                    funcion = () => {
+                        UI.abrirPantalla();
+                        return cy.cambiarIdiomaCompleto('Almacen (Familias, Subfamilias y Almacenes)', 'Familias', 'Famílies', 'Families', numero);
+                    };
+                }
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
                     return cy.wrap(true);
