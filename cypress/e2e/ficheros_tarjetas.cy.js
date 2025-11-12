@@ -35,10 +35,19 @@ describe('FICHEROS - TARJETAS - Validación completa con errores y reporte a Exc
 
                 cy.log(`────────────────────────────────────────────────────────`);
                 cy.log(`▶️ Ejecutando caso ${index + 1}/${casosTarjetas.length}: ${caso.caso} - ${nombre} [${prioridad}]`);
-
                 cy.resetearFlagsTest();
                 cy.login();
                 cy.wait(400);
+                cy.on('fail', (err) => {
+                    cy.capturarError(nombre, err, {
+                        numero,
+                        nombre,
+                        esperado: 'Comportamiento correcto',
+                        archivo,
+                        pantalla: 'Ficheros (Tarjetas)'
+                    });
+                    return false;
+                });
 
                 let funcion;
                 // Mapeo dinámico basado en los casos disponibles en Excel (TC001-TC035)
@@ -76,16 +85,29 @@ describe('FICHEROS - TARJETAS - Validación completa con errores y reporte a Exc
                 return funcion().then(() => {
                     return cy.estaRegistrado().then((ya) => {
                         if (!ya) {
-                            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                            cy.registrarResultados({
-                                numero,
-                                nombre,
-                                esperado: 'Comportamiento correcto',
-                                obtenido: 'Comportamiento correcto',
-                                resultado: 'OK',
-                                archivo,
-                                pantalla: 'Ficheros (Tarjetas)',
-                            });
+                            if (numero === 36) {
+                                cy.log(`Registrando WARNING para test ${numero}: ${nombre} (faltan traducciones Catalán/Inglés)`);
+                                cy.registrarResultados({
+                                    numero,
+                                    nombre,
+                                    esperado: 'Textos traducidos correctamente en todos los idiomas',
+                                    obtenido: 'Catalán/Inglés presentan textos sin traducir',
+                                    resultado: 'WARNING',
+                                    archivo,
+                                    pantalla: 'Ficheros (Tarjetas)',
+                                });
+                            } else {
+                                cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                                cy.registrarResultados({
+                                    numero,
+                                    nombre,
+                                    esperado: 'Comportamiento correcto',
+                                    obtenido: 'Comportamiento correcto',
+                                    resultado: 'OK',
+                                    archivo,
+                                    pantalla: 'Ficheros (Tarjetas)',
+                                });
+                            }
                         }
                     });
                 }).then(() => {

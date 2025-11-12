@@ -77,16 +77,36 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                 return funcion().then(() => {
                     return cy.estaRegistrado().then((ya) => {
                         if (!ya) {
-                            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                            cy.registrarResultados({
-                                numero,
-                                nombre,
-                                esperado: 'Comportamiento correcto',
-                                obtenido: 'Comportamiento correcto',
-                                resultado: 'OK',
-                                archivo,
-                                pantalla: 'Ficheros (Tipos de Vehículo)',
-                            });
+                            // Casos específicos que dan resultados pero incorrectos: TC025, TC027, TC028, TC029
+                            const casosProblematicos = [25, 27, 28, 29];
+                            
+                            // Los casos problemáticos (TC025, TC027, TC028, TC029) ya son manejados
+                            // por ejecutarMultifiltro con validación específica, así que no necesitamos
+                            // registrarlos aquí si ya se registraron
+                            if (numero === 30) {
+                                cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                                cy.registrarResultados({
+                                    numero,
+                                    nombre,
+                                    esperado: 'Comportamiento correcto',
+                                    obtenido: 'Comportamiento correcto',
+                                    resultado: 'OK',
+                                    archivo,
+                                    pantalla: 'Ficheros (Tipos de Vehículo)',
+                                });
+                            } else if (!casosProblematicos.includes(numero)) {
+                                // Para los demás casos, registrar OK automático
+                                cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                                cy.registrarResultados({
+                                    numero,
+                                    nombre,
+                                    esperado: 'Comportamiento correcto',
+                                    obtenido: 'Comportamiento correcto',
+                                    resultado: 'OK',
+                                    archivo,
+                                    pantalla: 'Ficheros (Tipos de Vehículo)',
+                                });
+                            }
                         }
                     });
                 }).then(() => {
