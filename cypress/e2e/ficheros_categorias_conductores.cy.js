@@ -22,7 +22,13 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
             cy.log(`Se encontraron ${casos.length} casos en la hoja`);
             cy.log(`Casos filtrados para Categorías de Conductores: ${casosCategoriasConductores.length}`);
 
-            casosCategoriasConductores.forEach((caso, index) => {
+            // Función recursiva para ejecutar casos secuencialmente
+            const ejecutarCaso = (index) => {
+                if (index >= casosCategoriasConductores.length) {
+                    return cy.wrap(true);
+                }
+
+                const caso = casosCategoriasConductores[index];
                 const numero = parseInt(caso.caso.replace('TC', ''), 10);
                 const nombre = caso.nombre || `Caso ${caso.caso}`;
                 const prioridad = caso.prioridad || 'MEDIA';
@@ -30,9 +36,9 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
                 cy.log(`────────────────────────────────────────────────────────`);
                 cy.log(`▶️ Ejecutando caso ${index + 1}/${casosCategoriasConductores.length}: ${caso.caso} - ${nombre} [${prioridad}]`);
 
-            cy.resetearFlagsTest();
+                cy.resetearFlagsTest();
 
-            cy.login();
+                cy.login();
                 cy.wait(400);
 
                 let funcion;
@@ -66,26 +72,32 @@ describe('FICHEROS - CATEGORÍAS DE CONDUCTORES - Validación completa con error
                 }
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
-                    return cy.wrap(true);
+                    return ejecutarCaso(index + 1);
                 }
 
-                funcion().then(() => {
-                cy.estaRegistrado().then((ya) => {
-                    if (!ya) {
-                        cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                        cy.registrarResultados({
-                            numero,
-                            nombre,
-                            esperado: 'Comportamiento correcto',
-                            obtenido: 'Comportamiento correcto',
-                            resultado: 'OK',
-                            archivo,
+                return funcion().then(() => {
+                    return cy.estaRegistrado().then((ya) => {
+                        if (!ya) {
+                            cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
+                            cy.registrarResultados({
+                                numero,
+                                nombre,
+                                esperado: 'Comportamiento correcto',
+                                obtenido: 'Comportamiento correcto',
+                                resultado: 'OK',
+                                archivo,
                                 pantalla: 'Ficheros (Categorías de Conductores)',
-                        });
-                    }
+                            });
+                        }
                     });
+                }).then(() => {
+                    // Ejecutar el siguiente caso
+                    return ejecutarCaso(index + 1);
                 });
-            });
+            };
+
+            // Iniciar ejecución del primer caso
+            return ejecutarCaso(0);
         });
     });
 

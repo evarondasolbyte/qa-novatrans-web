@@ -22,7 +22,13 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
             cy.log(`Se encontraron ${casos.length} casos en la hoja`);
             cy.log(`Casos filtrados para Alquileres: ${casosAlquileres.length}`);
 
-            casosAlquileres.forEach((caso, index) => {
+            // Función recursiva para ejecutar casos secuencialmente
+            const ejecutarCaso = (index) => {
+                if (index >= casosAlquileres.length) {
+                    return cy.wrap(true);
+                }
+
+                const caso = casosAlquileres[index];
                 const numero = parseInt(caso.caso.replace('TC', ''), 10);
                 const nombre = caso.nombre || `Caso ${caso.caso}`;
                 const prioridad = caso.prioridad || 'MEDIA';
@@ -30,8 +36,8 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
                 cy.log(`────────────────────────────────────────────────────────`);
                 cy.log(`▶️ Ejecutando caso ${index + 1}/${casosAlquileres.length}: ${caso.caso} - ${nombre} [${prioridad}]`);
 
-            cy.resetearFlagsTest();
-            cy.login();
+                cy.resetearFlagsTest();
+                cy.login();
                 cy.wait(400);
 
                 let funcion;
@@ -63,26 +69,32 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
                 }
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
-                    return cy.wrap(true);
+                    return ejecutarCaso(index + 1);
                 }
 
-                funcion().then(() => {
-                cy.estaRegistrado().then((ya) => {
-                    if (!ya) {
+                return funcion().then(() => {
+                    return cy.estaRegistrado().then((ya) => {
+                        if (!ya) {
                             cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
-                        cy.registrarResultados({
-                            numero,
-                            nombre,
-                            esperado: 'Comportamiento correcto',
-                            obtenido: 'Comportamiento correcto',
-                            resultado: 'OK',
-                            archivo,
+                            cy.registrarResultados({
+                                numero,
+                                nombre,
+                                esperado: 'Comportamiento correcto',
+                                obtenido: 'Comportamiento correcto',
+                                resultado: 'OK',
+                                archivo,
                                 pantalla: 'Ficheros (Alquileres Vehículos)',
-                        });
-                    }
+                            });
+                        }
                     });
+                }).then(() => {
+                    // Ejecutar el siguiente caso
+                    return ejecutarCaso(index + 1);
                 });
-            });
+            };
+
+            // Iniciar ejecución del primer caso
+            return ejecutarCaso(0);
         });
     });
 

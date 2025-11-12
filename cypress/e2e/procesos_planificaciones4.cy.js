@@ -29,7 +29,13 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC046-TC061', () => {
       cy.log(`Se encontraron ${casos.length} casos en la hoja`);
       cy.log(`Casos filtrados para Planificación (46-61): ${casosPlanificacion.length}`);
 
-      casosPlanificacion.forEach((caso, index) => {
+      // Función recursiva para ejecutar casos secuencialmente
+      const ejecutarCaso = (index) => {
+        if (index >= casosPlanificacion.length) {
+          return cy.wrap(true);
+        }
+
+        const caso = casosPlanificacion[index];
         const numero = parseInt(caso.caso.replace('TC', ''), 10);
         const nombre = caso.nombre || `Caso ${caso.caso}`;
         const prioridad = caso.prioridad || 'MEDIA';
@@ -57,14 +63,14 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC046-TC061', () => {
         else if (numero >= 56 && numero <= 61) funcion = () => ejecutarMultifiltro(numero);
         else {
           cy.log(`⚠️ Caso ${numero} no está en el rango TC046-TC061 - saltando`);
-          return cy.wrap(true);
+          return ejecutarCaso(index + 1);
         }
 
-        funcion().then(() => {
+        return funcion().then(() => {
           // Caso especial: TC046 se maneja dentro de la función eliminarConSeleccion
           if (numero === 46) {
             cy.log('TC046: Resultado manejado dentro de la función eliminarConSeleccion');
-            return cy.wrap(true);
+            return ejecutarCaso(index + 1);
           }
           
           // Todos los demás: OK automático
@@ -78,8 +84,14 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC046-TC061', () => {
             archivo,
             pantalla: 'Procesos (Planificación)',
           });
+        }).then(() => {
+          // Ejecutar el siguiente caso
+          return ejecutarCaso(index + 1);
         });
-      });
+      };
+
+      // Iniciar ejecución del primer caso
+      return ejecutarCaso(0);
     });
   });
 

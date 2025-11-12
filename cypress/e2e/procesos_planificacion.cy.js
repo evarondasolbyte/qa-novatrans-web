@@ -29,7 +29,31 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
       cy.log(`Se encontraron ${casos.length} casos en la hoja`);
       cy.log(`Casos filtrados para Planificación: ${casosPlanificacion.length}`);
 
-      casosPlanificacion.forEach((caso, index) => {
+      // Nombres específicos para cada caso
+      const nombresCasos = {
+        1: 'Cargar pantalla correctamente',
+        2: 'Buscar por Id',
+        3: 'Buscar por Fecha Salida',
+        4: 'Buscar por Cliente',
+        5: 'Buscar por Ruta',
+        6: 'Buscar por Tipo',
+        7: 'Buscar por Albarán',
+        8: 'Buscar por Cantidad',
+        9: 'Buscar por Cantidad Compra',
+        10: 'Buscar por Cabeza',
+        11: 'Buscar por Kms',
+        12: 'Buscar por Domicilio',
+        13: 'Buscar por Exp',
+        14: 'Buscar por P.Debe'
+      };
+
+      // Función recursiva para ejecutar casos secuencialmente
+      const ejecutarCaso = (index) => {
+        if (index >= casosPlanificacion.length) {
+          return cy.wrap(true);
+        }
+
+        const caso = casosPlanificacion[index];
         const numero = parseInt(caso.caso.replace('TC', ''), 10);
         const nombre = caso.nombre || `Caso ${caso.caso}`;
         const prioridad = caso.prioridad || 'MEDIA';
@@ -48,30 +72,12 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
         else if (numero >= 2 && numero <= 14) funcion = () => ejecutarFiltroIndividual(numero);
         else {
           cy.log(`⚠️ Caso ${numero} no está en el rango TC001-TC014 - saltando`);
-          return cy.wrap(true);
+          return ejecutarCaso(index + 1);
         }
-
-        // Nombres específicos para cada caso
-        const nombresCasos = {
-          1: 'Cargar pantalla correctamente',
-          2: 'Buscar por Id',
-          3: 'Buscar por Fecha Salida',
-          4: 'Buscar por Cliente',
-          5: 'Buscar por Ruta',
-          6: 'Buscar por Tipo',
-          7: 'Buscar por Albarán',
-          8: 'Buscar por Cantidad',
-          9: 'Buscar por Cantidad Compra',
-          10: 'Buscar por Cabeza',
-          11: 'Buscar por Kms',
-          12: 'Buscar por Domicilio',
-          13: 'Buscar por Exp',
-          14: 'Buscar por P.Debe'
-        };
 
         // Ejecutar función si existe
         if (funcion) {
-          funcion().then(() => {
+          return funcion().then(() => {
             // Registrar resultado con nombre específico
             cy.log(`TC${numero}: Registrando OK automático`);
             cy.registrarResultados({
@@ -83,6 +89,9 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
               archivo,
               pantalla: 'Procesos (Planificación)',
             });
+          }).then(() => {
+            // Ejecutar el siguiente caso
+            return ejecutarCaso(index + 1);
           });
         } else {
           // Si no hay función, registrar directamente
@@ -96,8 +105,12 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
             archivo,
             pantalla: 'Procesos (Planificación)',
           });
+          return ejecutarCaso(index + 1);
         }
-      });
+      };
+
+      // Iniciar ejecución del primer caso
+      return ejecutarCaso(0);
     });
   });
 

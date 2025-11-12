@@ -22,7 +22,13 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
             cy.log(`Se encontraron ${casos.length} casos en la hoja`);
             cy.log(`Casos filtrados para Tipos de Vehículo: ${casosTiposVehiculo.length}`);
 
-            casosTiposVehiculo.forEach((caso, index) => {
+            // Función recursiva para ejecutar casos secuencialmente
+            const ejecutarCaso = (index) => {
+                if (index >= casosTiposVehiculo.length) {
+                    return cy.wrap(true);
+                }
+
+                const caso = casosTiposVehiculo[index];
                 const numero = parseInt(caso.caso.replace('TC', ''), 10);
                 const nombre = caso.nombre || `Caso ${caso.caso}`;
                 const prioridad = caso.prioridad || 'MEDIA';
@@ -65,11 +71,11 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                 }
                 else {
                     cy.log(`⚠️ Caso ${numero} no tiene función asignada - saltando`);
-                    return cy.wrap(true);
+                    return ejecutarCaso(index + 1);
                 }
 
-                funcion().then(() => {
-                    cy.estaRegistrado().then((ya) => {
+                return funcion().then(() => {
+                    return cy.estaRegistrado().then((ya) => {
                         if (!ya) {
                             cy.log(`Registrando OK automático para test ${numero}: ${nombre}`);
                             cy.registrarResultados({
@@ -83,8 +89,14 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                             });
                         }
                     });
+                }).then(() => {
+                    // Ejecutar el siguiente caso
+                    return ejecutarCaso(index + 1);
                 });
-            });
+            };
+
+            // Iniciar ejecución del primer caso
+            return ejecutarCaso(0);
         });
     });
 
