@@ -46,8 +46,8 @@ set "SPECS=%SPECS%cypress/e2e/procesos_planificaciones2.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/procesos_planificaciones3.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/procesos_planificaciones4.cy.js"
 
-REM Ejecuta las pruebas con Cypress
-npx cypress run --spec "%SPECS%"
+REM Ejecuta las pruebas con Cypress usando Chrome (no Electron)
+npx cypress run --browser chrome --spec "%SPECS%"
 
 echo.
 echo ========================================
@@ -56,4 +56,3 @@ echo ========================================
 echo.
 
 endlocal
-
