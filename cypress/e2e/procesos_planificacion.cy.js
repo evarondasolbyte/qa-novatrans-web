@@ -1,5 +1,5 @@
 // procesos_planificacion.cy.js
-describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
+describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC030', () => {
   const archivo = 'reportes_pruebas_novatrans.xlsx';
 
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
     cy.obtenerDatosExcel('PROCESOS-PLANIFICACION').then((casos) => {
       const casosPlanificacion = casos.filter(caso => {
         const numero = parseInt(caso.caso.replace('TC', ''), 10);
-        return numero >= 1 && numero <= 14 && (
+        return numero >= 1 && numero <= 30 && (
           (caso.pantalla || '').toLowerCase().includes('planificación') ||
           (caso.pantalla || '').toLowerCase().includes('planificacion')
         );
@@ -44,7 +44,23 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
         11: 'Buscar por Kms',
         12: 'Buscar por Domicilio',
         13: 'Buscar por Exp',
-        14: 'Buscar por P.Debe'
+        14: 'Buscar por P.Debe',
+        15: 'Ordenar por Id (ASC)',
+        16: 'Ordenar por Id (DESC)',
+        17: 'Ordenar por Fecha Salida (ASC)',
+        18: 'Ordenar por Fecha Salida (DESC)',
+        19: 'Ordenar por Cliente (ASC)',
+        20: 'Ordenar por Cliente (DESC)',
+        21: 'Ordenar por Ruta (ASC)',
+        22: 'Ordenar por Ruta (DESC)',
+        23: 'Ordenar por Tipo (ASC)',
+        24: 'Ordenar por Tipo (DESC)',
+        25: 'Ordenar por Albarán (ASC)',
+        26: 'Ordenar por Albarán (DESC)',
+        27: 'Ordenar por Cantidad (ASC)',
+        28: 'Ordenar por Cantidad (DESC)',
+        29: 'Ordenar por Cantidad Compra (ASC)',
+        30: 'Ordenar por Cantidad Compra (DESC)',
       };
 
       // Función recursiva para ejecutar casos secuencialmente
@@ -70,8 +86,9 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
         // Mapeo específico para TC001-TC014
         if (numero === 1) funcion = cargarPantallaPlanificacion;
         else if (numero >= 2 && numero <= 14) funcion = () => ejecutarFiltroIndividual(numero);
+        else if (numero >= 15 && numero <= 30) funcion = () => ejecutarOrdenamiento(numero, caso);
         else {
-          cy.log(`⚠️ Caso ${numero} no está en el rango TC001-TC014 - saltando`);
+          cy.log(`⚠️ Caso ${numero} no está en el rango TC001-TC030 - saltando`);
           return ejecutarCaso(index + 1);
         }
 
@@ -201,5 +218,86 @@ describe('PROCESOS - PLANIFICACIÓN - Casos TC001-TC014', () => {
   // Usar la función de commands.js para filtros individuales
   function ejecutarFiltroIndividual(numeroCaso) {
     return cy.ejecutarFiltroIndividual(numeroCaso, 'Procesos (Planificación)', 'PROCESOS-PLANIFICACION', 'Procesos', 'Planificación');
+  }
+
+  const limpiarTextoColumna = (texto = '') => texto
+    .replace(/ordenar\s+por\s+/gi, '')
+    .replace(/(ascendente|descendente)/gi, '')
+    .trim();
+
+  const simplificar = (texto = '') => texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  const obtenerConfigOrden = (casoExcel) => {
+    const candidatosColumna = [
+      casoExcel?.dato_1,
+      casoExcel?.valor_etiqueta_1,
+      casoExcel?.etiqueta_1,
+      casoExcel?.nombre
+    ].filter(Boolean);
+
+    let columna = 'Id';
+    for (const candidato of candidatosColumna) {
+      const limpio = limpiarTextoColumna(candidato);
+      if (limpio) {
+        columna = limpio;
+        break;
+      }
+    }
+
+    const textoDireccion = simplificar([
+      casoExcel?.dato_2,
+      casoExcel?.valor_etiqueta_2,
+      casoExcel?.etiqueta_2,
+      casoExcel?.nombre
+    ].filter(Boolean).join(' '));
+
+    const direccion = textoDireccion.includes('desc') ? 'desc' : 'asc';
+
+    return { columna, direccion };
+  };
+
+  function ejecutarOrdenamiento(numeroCaso, casoExcel) {
+    const { columna, direccion } = obtenerConfigOrden(casoExcel);
+    cy.log(`⚙️ TC${numeroCaso}: Ordenando columna "${columna}" en dirección "${direccion}"`);
+    return ordenarColumna(columna, direccion);
+  }
+
+  const escapeRegex = (texto = '') => texto.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+  function ordenarColumna(nombreColumna, direccion = 'asc') {
+    UI.abrirPantalla();
+
+    const esperado = direccion.startsWith('desc') ? 'descending' : 'ascending';
+    const maxIntentos = 4;
+    const patron = new RegExp(`^${escapeRegex(nombreColumna)}$`, 'i');
+
+    const intentarOrden = (intento = 0) => {
+      return cy.contains('.MuiDataGrid-columnHeaderTitle', patron)
+        .should('be.visible')
+        .closest('[role="columnheader"]')
+        .then($header => {
+          const actual = $header.attr('aria-sort') || 'none';
+
+          if (actual === esperado) {
+            cy.log(`✅ Columna "${nombreColumna}" quedó en "${direccion}"`);
+            return UI.filasVisibles().should('have.length.greaterThan', 0);
+          }
+
+          if (intento >= maxIntentos) {
+            cy.log(`⚠️ No se logró fijar el orden "${direccion}" para "${nombreColumna}" tras ${maxIntentos} intentos`);
+            return UI.filasVisibles().should('have.length.greaterThan', 0);
+          }
+
+          cy.wrap($header).click({ force: true });
+          cy.wait(400);
+          return intentarOrden(intento + 1);
+        });
+    };
+
+    return intentarOrden();
   }
 });
