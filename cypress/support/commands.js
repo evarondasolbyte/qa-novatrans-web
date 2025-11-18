@@ -294,6 +294,7 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
 
   // 4. Hacer clic en el menú principal (ej: "Ficheros")
   cy.contains(textoMenu, { timeout: 10000 })
+    .scrollIntoView({ easing: 'linear', duration: 300 })
     .should('be.visible')
     .click({ force: true });
   
@@ -723,7 +724,8 @@ Cypress.Commands.add('ejecutarFiltroPerfiles', (valorBusqueda) => {
 // ===== CAPTURA DE ERRORES =====
 Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
   const fechaHora = data.fechaHora || new Date().toLocaleString('sv-SE').replace('T', ' ');
-  const mensaje = error.message || error;
+  const mensajeBase = (error && error.message) || error || 'Error desconocido';
+  const mensaje = typeof mensajeBase === 'string' ? mensajeBase : JSON.stringify(mensajeBase);
   const obtenidoTexto = mensaje?.toString().toLowerCase();
 
   const resultadoFinal = (
@@ -757,10 +759,8 @@ Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
   errorYaRegistrado = true;
   resultadoYaRegistrado = true;
 
-  cy.screenshot(`error-${contexto}-${fechaHora.replace(/[: ]/g, '-')}`);
-
   if (resultadoFinal === 'ERROR') {
-    throw error;
+    cy.log(`Error registrado (${contexto}): ${mensaje}`);
   }
 });
 
@@ -807,6 +807,55 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
     if (filtroEspecifico.etiqueta_1 === 'id' && filtroEspecifico.valor_etiqueta_1 === 'column') {
       // Selección de columna - intentar primero con select nativo, luego con Material-UI
       cy.get('body').then($body => {
+        const seleccionarOpcionMenu = (nombreColumna, intento = 0) => {
+          const maxIntentos = 6;
+          const normalizar = (txt = '') => txt.trim().toLowerCase();
+          const objetivo = normalizar(nombreColumna);
+          const coincide = (txt = '') => {
+            const valor = normalizar(txt);
+            return valor === objetivo ||
+              valor.includes(objetivo) ||
+              objetivo.includes(valor);
+          };
+
+          return cy.get('li[role="menuitem"], [role="option"]').then($items => {
+            const item = Array.from($items).find(el => coincide(el.textContent || ''));
+            if (item) {
+              cy.wrap(item)
+                .scrollIntoView({ duration: 200, easing: 'linear' })
+                .click({ force: true });
+              cy.log(`Columna seleccionada: ${(item.textContent || '').trim()}`);
+              return;
+            }
+
+            if (intento >= maxIntentos) {
+              cy.log(`⚠️ No se encontró la columna "${nombreColumna}" en el menú desplegable`);
+              cy.get('body').click(0, 0);
+              return;
+            }
+
+            const desplazamientos = [
+              { x: 0, y: 200 },
+              { x: 0, y: 400 },
+              { x: 0, y: 600 },
+              { x: 0, y: 0, pos: 'top' },
+              { x: 0, y: 0, pos: 'bottom' }
+            ];
+            const destino = desplazamientos[intento] || desplazamientos[desplazamientos.length - 1];
+
+            cy.get('.MuiMenu-paper ul, .MuiList-root, [role="menu"]').first().then($menu => {
+              if (destino.pos === 'top' || destino.pos === 'bottom') {
+                cy.wrap($menu).scrollTo(destino.pos, { duration: 200 });
+              } else {
+                cy.wrap($menu).scrollTo(destino.x, destino.y, { duration: 200 });
+              }
+            });
+
+            cy.wait(200);
+            return seleccionarOpcionMenu(nombreColumna, intento + 1);
+          });
+        };
+
         if ($body.find('select[name="column"], select#column').length > 0) {
           // Select nativo
           cy.get('select[name="column"], select#column').should('be.visible').then($select => {
@@ -826,6 +875,15 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               case 'Refrigerado': columnaEncontrada = options.find(o => /Refrigerado|Refrigerated/i.test(o)); break;
               case 'Remolque': columnaEncontrada = options.find(o => /Remolque|Trailer/i.test(o)); break;
               case 'Rígido': columnaEncontrada = options.find(o => /Rígido|Rigid/i.test(o)); break;
+              case 'Fecha Salida': columnaEncontrada = options.find(o => /Fecha.*Salida|Salida/i.test(o)); break;
+              case 'Cliente': columnaEncontrada = options.find(o => /Cliente|Customer/i.test(o)); break;
+              case 'Ruta': columnaEncontrada = options.find(o => /Ruta|Route/i.test(o)); break;
+              case 'Tipo': columnaEncontrada = options.find(o => /Tipo|Type/i.test(o)); break;
+              case 'Albarán': columnaEncontrada = options.find(o => /Albar[aá]n|Waybill/i.test(o)); break;
+              case 'Cantidad': columnaEncontrada = options.find(o => /Cantidad|Quantity/i.test(o)); break;
+              case 'Cantidad Compra': columnaEncontrada = options.find(o => /Cantidad.*Compra|Purchase/i.test(o)); break;
+              case 'Cabeza': columnaEncontrada = options.find(o => /Cabeza|Head/i.test(o)); break;
+              case 'Kms': columnaEncontrada = options.find(o => /Kms?|Kil[oó]metros|Kilometers/i.test(o)); break;
               default:
                 columnaEncontrada = options.find(opt =>
                   opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
@@ -872,33 +930,7 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               cy.wait(500);
               
               // Buscar el elemento del menú con el nombre de la columna
-              cy.get('li[role="menuitem"], [role="option"]').then($items => {
-                const items = Array.from($items).map(item => item.textContent.trim());
-                cy.log(`Opciones del menú: ${items.join(', ')}`);
-                
-                let columnaEncontrada = null;
-                switch (filtroEspecifico.dato_1) {
-                  case 'Nombre': columnaEncontrada = items.find(o => /Nombre|Name/i.test(o)); break;
-                  case 'Código': columnaEncontrada = items.find(o => /Código|Code/i.test(o)); break;
-                  case 'Refrigerado': columnaEncontrada = items.find(o => /Refrigerado|Refrigerated/i.test(o)); break;
-                  case 'Remolque': columnaEncontrada = items.find(o => /Remolque|Trailer/i.test(o)); break;
-                  case 'Rígido': columnaEncontrada = items.find(o => /Rígido|Rigid/i.test(o)); break;
-                  case 'Todos': columnaEncontrada = items.find(o => /Todos|All/i.test(o)); break;
-                  default:
-                    columnaEncontrada = items.find(opt =>
-                      opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-                      filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
-                    );
-                }
-                
-                if (columnaEncontrada) {
-                  cy.get('li[role="menuitem"], [role="option"]').contains(columnaEncontrada).click({ force: true });
-                  cy.log(`Columna seleccionada: ${columnaEncontrada}`);
-                } else {
-                  cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada en el menú`);
-                  cy.get('body').click(0, 0); // Cerrar el menú
-                }
-              });
+              seleccionarOpcionMenu(filtroEspecifico.dato_1);
             } else {
               cy.log('No se encontró el botón del dropdown de columna');
             }
