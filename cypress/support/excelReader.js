@@ -47,6 +47,7 @@ const SHEET_GIDS = {
   'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES': '96321178',
   'ALMACEN-ARTICULOS': '934160481',
   'ALMACEN-PEDIDOS': '1704715399', 
+  'PROCESOS-ORDENES DE CARGA': '817274383',
   'Datos': '0'
 };
 
@@ -98,6 +99,10 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
   if (pantallaSafe.includes('ficheros') && (pantallaSafe.includes('clientes') || pantallaSafe === 'ficheros-clientes')) return 'FICHEROS-CLIENTES';
   if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('presupuestos') || pantallaSafe === 'procesos-presupuestos')) return 'PROCESOS-PRESUPUESTOS';
   if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('planificación') || pantallaSafe.includes('planificacion') || pantallaSafe === 'procesos-planificacion')) return 'PROCESOS-PLANIFICACION';
+  if (
+    pantallaSafe.includes('procesos') &&
+    (pantallaSafe.includes('órdenes de carga') || pantallaSafe.includes('ordenes de carga') || pantallaSafe === 'procesos-ordenes de carga')
+  ) return 'PROCESOS-ORDENES DE CARGA';
 
   // 👇 NUEVO: detectar Taller y Gastos (Repostajes)
   if (

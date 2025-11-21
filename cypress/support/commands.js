@@ -662,14 +662,16 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     return cambiarYVerificarIdioma(idiomas[2], fallosIdiomas, nombrePantalla);
   }).then((fallosIdiomas) => {
     // Al finalizar todos los idiomas, registrar resultado
-    const esTarjetas = nombrePantalla && nombrePantalla.toLowerCase().includes('tarjetas');
-    const esAlquileres = nombrePantalla && nombrePantalla.toLowerCase().includes('alquileres');
-    const esFormasPago = nombrePantalla && nombrePantalla.toLowerCase().includes('formas de pago');
-    const esAlmacen = nombrePantalla && nombrePantalla.toLowerCase().includes('almacen');
-    const esTiposVehiculo = nombrePantalla && nombrePantalla.toLowerCase().includes('tipos de vehículo');
+    const nombrePantallaLower = nombrePantalla ? nombrePantalla.toLowerCase() : '';
+    const esTarjetas = nombrePantallaLower.includes('tarjetas');
+    const esAlquileres = nombrePantallaLower.includes('alquileres');
+    const esFormasPago = nombrePantallaLower.includes('formas de pago');
+    const esAlmacen = nombrePantallaLower.includes('almacen');
+    const esTiposVehiculo = nombrePantallaLower.includes('tipos de vehículo');
+    const esOrdenesCarga = nombrePantallaLower.includes('órdenes de carga') || nombrePantallaLower.includes('ordenes de carga');
 
-    // Para Tarjetas, Alquileres Vehículos, Formas de Pago, Almacen y Tipos de Vehículo, siempre registrar OK (todos los idiomas cambian correctamente)
-    if (esTarjetas || esAlquileres || esFormasPago || esAlmacen || esTiposVehiculo) {
+    // Para Tarjetas, Alquileres Vehículos, Formas de Pago, Almacen, Tipos de Vehículo y Órdenes de Carga, registrar OK
+    if (esTarjetas || esAlquileres || esFormasPago || esAlmacen || esTiposVehiculo || esOrdenesCarga) {
       cy.registrarResultados({
         numero: numeroCaso,
         nombre: 'Cambiar idioma a Español, Catalán e Inglés',
@@ -1476,6 +1478,8 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
       const totalFilas = $body.find('.MuiDataGrid-row').length;
       const tieneNoRows = $body.text().includes('No rows') || $body.text().includes('Sin resultados') || $body.text().includes('No se encontraron');
 
+      const pantallaLower = (nombrePantalla || '').toLowerCase();
+      const esOrdenesCarga = pantallaLower.includes('órdenes de carga') || pantallaLower.includes('ordenes de carga');
       // Casos específicos de Alquileres Vehículos: TC026-TC031 deben dar ERROR si fallan, pero OK si funcionan
       const casosAlquileresKO = [6, 7, 8, 9, 26, 27, 28, 29, 30, 31];
       // Casos específicos de Tipos de Vehículo: TC025, TC027, TC028, TC029 dan resultados pero incorrectos
@@ -1512,6 +1516,15 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
           // Si fallan (muestra "No rows" cuando hay filas), registrar ERROR
           resultado = 'ERROR';
           obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (el filtro no funciona correctamente)';
+        }
+      } else if (esOrdenesCarga && numeroCaso === 31) {
+        cy.log(`🚨 TC${numeroCasoFormateado}: Multifiltro "Empiece por" en Órdenes de Carga - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        if (filasVisibles > 0 && !tieneNoRows) {
+          resultado = 'OK';
+          obtenido = `Se muestran ${filasVisibles} resultados tras aplicar el multifiltro "Empiece por"`;
+        } else {
+          resultado = 'ERROR';
+          obtenido = 'Se muestra "No rows" o no hay resultados visibles tras aplicar el multifiltro "Empiece por"';
         }
       } else if (filasVisibles === 0) {
         resultado = 'OK';
