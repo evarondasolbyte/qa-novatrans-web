@@ -48,6 +48,7 @@ const SHEET_GIDS = {
   'ALMACEN-ARTICULOS': '934160481',
   'ALMACEN-PEDIDOS': '1704715399', 
   'PROCESOS-ORDENES DE CARGA': '817274383',
+  'PROCESOS-RUTAS': '433035856',
   'Datos': '0'
 };
 
@@ -103,6 +104,10 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     pantallaSafe.includes('procesos') &&
     (pantallaSafe.includes('órdenes de carga') || pantallaSafe.includes('ordenes de carga') || pantallaSafe === 'procesos-ordenes de carga')
   ) return 'PROCESOS-ORDENES DE CARGA';
+  if (
+    pantallaSafe.includes('procesos') &&
+    (pantallaSafe.includes('rutas') || pantallaSafe === 'procesos-rutas')
+  ) return 'PROCESOS-RUTAS';
 
   // 👇 NUEVO: detectar Taller y Gastos (Repostajes)
   if (

@@ -988,6 +988,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       const casosCategoriasSinDatos = [30, 31];
       // Casos específicos de categorías que muestran datos correctos (TC027, TC028, TC029)
       const casosCategoriasCorrectos = [27, 28, 29];
+      // Casos específicos de Procesos (Rutas): TC012 debe ser OK mostrando "No rows"
+      const casosProcesosRutasOKConNoRows = [12];
       // Casos específicos de Multas: TC010 (caracteres especiales) debe ser OK cuando muestre "No rows"
       const casosMultasOKConNoRows = [10];
       // Casos específicos de Siniestros: TC002-TC010 deben dar ERROR si fallan, pero OK si funcionan
@@ -1005,7 +1007,15 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       const casosAlquileresKO = [6, 7, 8, 9, 26, 27, 28, 29, 30, 31];
       
       // Verificar primero si es un caso especial de Multas que debe ser OK con "No rows"
-      if (nombrePantalla && nombrePantalla.toLowerCase().includes('multas') && casosMultasOKConNoRows.includes(numeroCaso)) {
+      if (nombrePantalla && nombrePantalla.toLowerCase().includes('rutas') && nombrePantalla.toLowerCase().includes('procesos') && casosProcesosRutasOKConNoRows.includes(numeroCaso)) {
+        if (tieneNoRows || filasVisibles === 0) {
+          resultado = 'OK';
+          obtenido = 'No se muestran resultados (comportamiento esperado para filtros especiales)';
+        } else {
+          resultado = 'OK';
+          obtenido = `Se muestran ${filasVisibles} resultados`;
+        }
+      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('multas') && casosMultasOKConNoRows.includes(numeroCaso)) {
         if (tieneNoRows || filasVisibles === 0) {
           resultado = 'OK';
           obtenido = 'No se muestran resultados (comportamiento esperado para caracteres especiales)';

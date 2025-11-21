@@ -24,6 +24,7 @@ echo   - almacen_articulos
 echo   - almacen_pedidos
 echo   - procesos_planificacion
 echo   - procesos_ordenes_carga
+echo   - procesos_rutas
 echo ========================================
 echo.
 
@@ -41,6 +42,7 @@ set "SPECS=%SPECS%cypress/e2e/almacen_articulos.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/almacen_pedidos.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/procesos_planificacion.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/procesos_ordenes_carga.cy.js,"
+set "SPECS=%SPECS%cypress/e2e/procesos_rutas.cy.js,"
 
 REM Ejecuta las pruebas con Cypress usando Chrome (no Electron)
 npx cypress run --browser chrome --spec "%SPECS%"
