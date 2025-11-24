@@ -143,17 +143,17 @@ describe('FICHEROS (CATEGORÍAS) - Validación completa con gestión de errores 
         .parents('[role="columnheader"]')
         .trigger('mouseover');
       cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-      cy.get('li').contains('Sort by ASC').click({ force: true });
+      cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
       cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-      cy.get('li').contains('Sort by DESC').click({ force: true });
+      cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
     } else if (numeroCaso === 11) {
       cy.contains('.MuiDataGrid-columnHeaderTitle', 'Módulo')
         .parents('[role="columnheader"]')
         .trigger('mouseover');
       cy.get('[aria-label="Módulo column menu"]').click({ force: true });
-      cy.get('li').contains('Sort by ASC').click({ force: true });
+      cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
       cy.get('[aria-label="Módulo column menu"]').click({ force: true });
-      cy.get('li').contains('Sort by DESC').click({ force: true });
+      cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
     }
 
     return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
@@ -204,7 +204,7 @@ describe('FICHEROS (CATEGORÍAS) - Validación completa con gestión de errores 
     cy.get('div[role="columnheader"][data-field="name"]')
       .find('button[aria-label*="column menu"]')
       .click({ force: true });
-    cy.contains('li', /Hide column/i).click({ force: true });
+    cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
     return cy.wait(1000);
     }
 
@@ -215,7 +215,7 @@ describe('FICHEROS (CATEGORÍAS) - Validación completa con gestión de errores 
     cy.get('div[role="columnheader"][data-field="name"]')
       .find('button[aria-label*="column menu"]')
       .click({ force: true });
-    cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+    cy.contains('li', /Manage columns|Show columns|Administrar columnas/i).click({ force: true });
 
     cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
       cy.contains(/Nombre/i).parent().find('input[type="checkbox"]').first().uncheck({ force: true });
@@ -226,7 +226,7 @@ describe('FICHEROS (CATEGORÍAS) - Validación completa con gestión de errores 
     cy.get('div[role="columnheader"][data-field="name"]')
       .find('button[aria-label*="column menu"]')
       .click({ force: true });
-    cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+    cy.contains('li', /Manage columns|Show columns|Administrar columnas/i).click({ force: true });
 
     cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
       cy.contains(/Nombre/i).parent().find('input[type="checkbox"]').first().check({ force: true });

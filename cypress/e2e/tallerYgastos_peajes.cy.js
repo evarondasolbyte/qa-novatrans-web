@@ -545,10 +545,10 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
             .trigger('mouseover');
 
         cy.get('[aria-label="Lugar column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // Escribir en el campo Value
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('Vialtis');
@@ -566,7 +566,7 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
             .trigger('mouseover');
 
         cy.get('[aria-label="Lugar column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-columnHeaders')
             .should('be.visible')
@@ -585,7 +585,7 @@ describe('TALLER Y GASTOS - PEAJES - Validación completa con gestión de errore
             .trigger('mouseover');
 
         cy.get('[aria-label="Fecha column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         // Marcar Lugar para que vuelva a ser visible
         cy.get('.MuiDataGrid-panel')

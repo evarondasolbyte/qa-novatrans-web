@@ -727,10 +727,10 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
             .click({ force: true });
 
         //Pulso en la opción "Filter" del menú de columna
-        cy.contains('li[role="menuitem"]', 'Filter').click({ force: true });
+        cy.contains('li[role="menuitem"]', /Filter|Filtro|Filtros/i).click({ force: true });
 
         //Escribo "Malaga" en el input de filtro y doy enter
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .clear() // Limpio por si acaso había un filtro anterior
             .type('Malaga{enter}'); // Aplico el filtro escribiendo "Malaga"
 
@@ -763,7 +763,7 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
 
         //Clic en "Hide column" asegurando que sea un item clicable del menú (no un separador ni decorativo).
         cy.get('li.MuiButtonBase-root[role="menuitem"]')
-            .contains('Hide column')
+            .contains(/Hide column|Ocultar/i)
             .click({ force: true });
 
 
@@ -788,7 +788,7 @@ describe('PROCESOS > Órdenes de Carga- CARGAS/DESCARGAS - Validación completa 
 
         //Hacemos clic en "Manage columns"
         cy.get('li.MuiButtonBase-root[role="menuitem"]')
-            .contains('Manage columns')
+            .contains(/Manage columns|Administrar columnas/i)
             .click({ force: true });
 
         //Buscamos la opción "Lugar" y marcamos el checkbox si está desmarcado

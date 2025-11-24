@@ -578,10 +578,10 @@ describe('TESORERÍA (ANTICIPOS CONDUCTORES) - Validación completa con gestión
             .trigger('mouseover');
 
         cy.get('[aria-label="Conductor column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // Usar el placeholder correcto como en gastosgenerales
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('Elena', { force: true });
@@ -599,7 +599,7 @@ describe('TESORERÍA (ANTICIPOS CONDUCTORES) - Validación completa con gestión
             .trigger('mouseover');
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('[data-field="codigo"]').should('not.exist');
     }
@@ -614,7 +614,7 @@ describe('TESORERÍA (ANTICIPOS CONDUCTORES) - Validación completa con gestión
             .trigger('mouseover');
 
         cy.get('[aria-label="Conductor column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         // Usar el patrón correcto como en gastosgenerales
         cy.get('.MuiDataGrid-panel')

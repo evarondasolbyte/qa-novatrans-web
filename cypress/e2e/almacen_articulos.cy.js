@@ -242,11 +242,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -259,11 +259,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Familia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Familia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -276,11 +276,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Subfamilia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Subfamilia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -293,11 +293,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Descripción column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Descripción column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -310,11 +310,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Stock column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Stock column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -327,11 +327,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Precio column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Precio column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -344,11 +344,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Últ. Proveedor column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Últ. Proveedor column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -366,12 +366,12 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
 
         cy.get('@colRefProv').find('button[aria-label*="column menu"]').click({ force: true });
         cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', 'Sort by ASC').click({ force: true });
+        cy.contains('li', /Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('@colRefProv').find('button[aria-label*="column menu"]').click({ force: true });
         cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', 'Sort by DESC').click({ force: true });
+        cy.contains('li', /Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -387,11 +387,11 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Notas column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         // cy.wait(200); // Eliminado para velocidad
 
         cy.get('[aria-label="Notas column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -409,7 +409,7 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
 
         cy.get('@colRef').find('button[aria-label*="column menu"]').click({ force: true });
         cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', /^Filter$/i).click({ force: true });
+        cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
             cy.contains('label', /^Value$/i)
@@ -437,7 +437,7 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .click({ force: true });
 
         cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', /^Hide column$/i).click({ force: true });
+        cy.contains('li', /^(Hide column|Ocultar)$/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-columnHeaders')
             .should('not.contain.text', 'Referencia');
@@ -451,7 +451,7 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         // Verificar si todos los checkboxes ya están marcados
         return cy.get('.MuiDataGrid-panel')

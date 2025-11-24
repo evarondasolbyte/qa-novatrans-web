@@ -465,10 +465,10 @@ describe('UTILIDADES (AUDITORÍAS) - Validación completa con gestión de errore
             .trigger('mouseover');
 
         cy.get('[aria-label="Tabla Afectada column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // Escribir "avisos" en el campo Value
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('avisos', { force: true });
@@ -486,7 +486,7 @@ describe('UTILIDADES (AUDITORÍAS) - Validación completa con gestión de errore
             .trigger('mouseover');
 
         cy.get('[aria-label="Tabla Afectada column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('[data-field="tablaAfectada"]').should('not.exist');
     }
@@ -501,7 +501,7 @@ describe('UTILIDADES (AUDITORÍAS) - Validación completa con gestión de errore
             .trigger('mouseover');
 
         cy.get('[aria-label="Acción Realizada column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')

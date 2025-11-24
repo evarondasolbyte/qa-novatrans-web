@@ -333,7 +333,7 @@ describe('FICHEROS - TARJETAS - Validación completa con errores y reporte a Exc
         cy.get('div[role="columnheader"][data-field="number"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Hide column/i).click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
         return cy.wait(1000);
     }
 

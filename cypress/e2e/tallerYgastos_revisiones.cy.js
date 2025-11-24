@@ -590,7 +590,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.get('div[role="columnheader"][data-field="name"]')
             .find('button[aria-label="Nombre column menu"]').click({ force: true });
 
-        cy.contains('li', 'Hide column').click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('div[role="columnheader"]').contains('Nombre').should('not.exist');
     }
@@ -604,7 +604,7 @@ describe('TALLER Y GASTOS - REVISIONES - Validación completa con errores y repo
         cy.get('div[role="columnheader"][data-field="name"]')
             .find('button[aria-label="Nombre column menu"]').click({ force: true });
 
-        cy.contains('li', 'Hide column').click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
         cy.get('div[role="columnheader"]').contains('Nombre').should('not.exist');
 
         cy.get('div[role="columnheader"][data-field="kms"]')

@@ -307,10 +307,10 @@ describe('CONFIGURACIÓN (USUARIOS) - Validación completa con gestión de error
             .trigger('mouseover');
 
         cy.get('[aria-label="Login column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // Escribir "elena" en el campo Value
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('elena', { force: true });
@@ -328,7 +328,7 @@ describe('CONFIGURACIÓN (USUARIOS) - Validación completa con gestión de error
             .trigger('mouseover');
 
         cy.get('[aria-label="Login column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('[data-field="login"]').should('not.exist');
     }
@@ -343,7 +343,7 @@ describe('CONFIGURACIÓN (USUARIOS) - Validación completa con gestión de error
             .trigger('mouseover');
 
         cy.get('[aria-label="Perfil column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')

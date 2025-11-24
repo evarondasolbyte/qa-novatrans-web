@@ -310,7 +310,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="C. Autónoma column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(1000);
 
         // Ordenar por C. Autónoma DESC
@@ -318,7 +318,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="C. Autónoma column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -332,7 +332,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="Inicio column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(1000);
 
         // Ordenar por Inicio DESC
@@ -340,7 +340,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="Inicio column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -354,7 +354,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="Fin column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(1000);
 
         // Ordenar por Fin DESC
@@ -362,7 +362,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="Fin column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -376,7 +376,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="% column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(1000);
 
         // Ordenar por Porcentaje DESC
@@ -384,7 +384,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="% column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -398,10 +398,10 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="C. Autónoma column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
         // Escribir ANDALUCÍA en el campo Value
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('ANDALUCÍA', { force: true });
@@ -425,7 +425,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="C. Autónoma column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('[data-field="comunidadAutonoma"]').should('not.exist');
     }
@@ -439,7 +439,7 @@ describe('UTILIDADES (GASÓLEO PROF. AUTONÓMICO) - Validación completa con ges
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get('[aria-label="Inicio column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')

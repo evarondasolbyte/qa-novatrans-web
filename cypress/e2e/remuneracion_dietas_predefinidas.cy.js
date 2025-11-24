@@ -537,9 +537,9 @@ describe('REMUNERACIÓN (DIETAS PREDEFINIDAS) - Validación completa con gestió
             .trigger('mouseover');
 
         cy.get('[aria-label="Concepto column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('cena');
@@ -556,7 +556,7 @@ describe('REMUNERACIÓN (DIETAS PREDEFINIDAS) - Validación completa con gestió
             .trigger('mouseover');
 
         cy.get('[aria-label="Conductor column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-columnHeaders')
             .should('be.visible')
@@ -574,7 +574,7 @@ describe('REMUNERACIÓN (DIETAS PREDEFINIDAS) - Validación completa con gestió
             .trigger('mouseover');
 
         cy.get('[aria-label="ID column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')

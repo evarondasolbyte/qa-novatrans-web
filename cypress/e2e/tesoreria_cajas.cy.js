@@ -381,7 +381,7 @@ describe('TESORERÍA (CAJAS) - Validación completa con gestión de errores y re
             .trigger('mouseover');
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('[data-field="codigo"]').should('not.exist');
     }
@@ -396,7 +396,7 @@ describe('TESORERÍA (CAJAS) - Validación completa con gestión de errores y re
             .trigger('mouseover');
 
         cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')
@@ -447,10 +447,10 @@ describe('TESORERÍA (CAJAS) - Validación completa con gestión de errores y re
             .trigger('mouseover');
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // Usar el placeholder correcto como en gastosgenerales
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('1', { force: true });

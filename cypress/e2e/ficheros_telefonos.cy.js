@@ -171,7 +171,10 @@ describe('FICHEROS - TELÉFONOS - Validación completa con errores y reporte a E
             .trigger('mouseover');
 
         cy.get(`[aria-label="${columna} column menu"]`).click({ force: true });
-        cy.get('li').contains(`Sort by ${orden}`).click({ force: true });
+        const etiquetaOrden = orden === 'ASC'
+            ? /Sort by ASC|Ordenar ASC/i
+            : /Sort by DESC|Ordenar DESC/i;
+        cy.get('li').contains(etiquetaOrden).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -231,7 +234,7 @@ describe('FICHEROS - TELÉFONOS - Validación completa con errores y reporte a E
         cy.get('div[role="columnheader"][data-field="number"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Hide column/i).click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
         return cy.wait(1000);
     }
 
@@ -243,7 +246,7 @@ describe('FICHEROS - TELÉFONOS - Validación completa con errores y reporte a E
         cy.get('div[role="columnheader"][data-field="number"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+        cy.contains('li', /Manage columns|Show columns|Administrar columnas/i).click({ force: true });
 
         cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
             cy.contains(/Número/i)
@@ -259,7 +262,7 @@ describe('FICHEROS - TELÉFONOS - Validación completa con errores y reporte a E
         cy.get('div[role="columnheader"][data-field="number"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+        cy.contains('li', /Manage columns|Show columns|Administrar columnas/i).click({ force: true });
 
         cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
             cy.contains(/Número/i)

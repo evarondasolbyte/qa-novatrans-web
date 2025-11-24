@@ -428,7 +428,7 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
         cy.get('div[role="columnheader"][data-field="date"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Hide column/i).click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
         return cy.wait(1000);
     }
 
@@ -501,9 +501,9 @@ describe('FICHEROS - MULTAS - Validación completa con errores y reporte a Excel
         cy.get('div[role="columnheader"][data-field="driverName"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /^Filter$/i).click({ force: true });
+        cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
-        cy.get('input[placeholder*="Filter value"], input[aria-label*="filter"]', { timeout: 10000 })
+        cy.get('input[placeholder*="Filter value"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"]', { timeout: 10000 })
             .should('be.visible')
             .clear({ force: true })
             .type('Angel', { force: true })

@@ -320,7 +320,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     cy.get('div[role="columnheader"][data-field="id"]')
       .find('button[aria-label*="column menu"], button[aria-label="Menu"]')
       .click({ force: true });
-    cy.contains('li, button, span', /Hide column/i).click({ force: true });
+    cy.contains('li, button, span', /Hide column|Ocultar/i).click({ force: true });
     return cy.wait(1000);
   }
 
@@ -486,9 +486,9 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       .find('button[aria-label*="column menu"], button[aria-label="Menu"]')
       .click({ force: true });
 
-    cy.contains('li', /^Filter$/i).click({ force: true });
+    cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
-    cy.get('input[placeholder*="Filter value"], input[aria-label*="filter"], input[aria-label*="value"]', { timeout: 10000 })
+    cy.get('input[placeholder*="Filter value"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"], input[aria-label*="value"]', { timeout: 10000 })
       .should('be.visible')
       .clear({ force: true })
       .type('2017', { force: true })

@@ -156,10 +156,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -173,10 +173,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Fecha column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Fecha column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -190,10 +190,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -207,10 +207,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Artículo column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Artículo column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -224,10 +224,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Cantidad column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Cantidad column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -241,10 +241,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Precio/U. column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Precio/U. column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -258,10 +258,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="% dto. column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="% dto. column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -275,10 +275,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Dto. column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Dto. column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -295,10 +295,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Importe column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Importe column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -315,10 +315,10 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
         cy.get('[aria-label="Proveedor column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
 
         cy.get('[aria-label="Proveedor column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
             });
@@ -334,7 +334,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
 
         cy.get('@colFecha').find('button[aria-label*="column menu"]').click({ force: true });
         cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', /^Filter$/i).click({ force: true });
+        cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
             cy.contains('label', /^Value$/i)
@@ -358,7 +358,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
 
                 cy.get('@colRef').find('button[aria-label*="column menu"]').click({ force: true });
                 cy.get('ul[role="menu"]').should('be.visible');
-                cy.contains('li', /^Filter$/i).click({ force: true });
+                cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
                 cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
                     cy.contains('label', /^Value$/i)
@@ -382,7 +382,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
 
                 cy.get('@colArt').find('button[aria-label*="column menu"]').click({ force: true });
                 cy.get('ul[role="menu"]').should('be.visible');
-                cy.contains('li', /^Filter$/i).click({ force: true });
+                cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
                 cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
                     cy.contains('label', /^Value$/i)
@@ -409,7 +409,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
 
                 cy.get('@colProv').find('button[aria-label*="column menu"]').click({ force: true });
                 cy.get('ul[role="menu"]').should('be.visible');
-                cy.contains('li', /^Filter$/i).click({ force: true });
+                cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
                 cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
                     cy.contains('label', /^Value$/i)
@@ -436,7 +436,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .click({ force: true });
 
         cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', /^Hide column$/i).click({ force: true });
+        cy.contains('li', /^(Hide column|Ocultar)$/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-columnHeaders')
                     .should('not.contain.text', 'Referencia');
@@ -451,7 +451,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
             .trigger('mouseover');
 
                 cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
                 // Verificar si todos los checkboxes ya están marcados
         cy.get('.MuiDataGrid-panel')

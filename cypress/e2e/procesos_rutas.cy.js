@@ -380,9 +380,9 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
   function filtrarPorValor(columna, valor) {
     UI.abrirPantalla();
     abrirMenuColumna(columna);
-    cy.contains('li', /^Filter$/i).click({ force: true });
+    cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
-    cy.get('input[placeholder*="Filter value"], input[aria-label*="filter"], input[aria-label*="value"]', { timeout: 10000 })
+    cy.get('input[placeholder*="Filter value"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"], input[aria-label*="value"]', { timeout: 10000 })
       .should('be.visible')
       .clear({ force: true })
       .type(valor, { force: true })
@@ -396,7 +396,7 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
   function ocultarColumna(nombreColumna) {
     UI.abrirPantalla();
     abrirMenuColumna(nombreColumna);
-    cy.contains('li', /Hide column/i).click({ force: true });
+    cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
     return cy.wait(500);
   }
 

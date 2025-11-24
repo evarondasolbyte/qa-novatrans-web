@@ -550,9 +550,9 @@ describe('TALLER Y GASTOS - GASTOS GENERALES - Validación completa con gestión
             .trigger('mouseover');
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('35');
@@ -569,7 +569,7 @@ describe('TALLER Y GASTOS - GASTOS GENERALES - Validación completa con gestión
             .trigger('mouseover');
 
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-columnHeaders')
             .should('be.visible')
@@ -587,7 +587,7 @@ describe('TALLER Y GASTOS - GASTOS GENERALES - Validación completa con gestión
             .trigger('mouseover');
 
         cy.get('[aria-label="Inicio column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')

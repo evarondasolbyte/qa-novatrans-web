@@ -547,12 +547,12 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
         // Abrir menú de la columna "Código" y pulsar Filter
         const reCodigo = headerTextRegexCodigo();
         abrirMenuColumnaEnPanel('Familias', reCodigo);
-        clickOpcionMenuColumna(/Filter|Filtrar|Filtre/i);
+        clickOpcionMenuColumna(/Filter|Filtro|Filtros|Filtrar|Filtre/i);
 
         // Rellenar el campo Value desde Excel
         const valorFiltro = caso.dato_1 || '1';
         cy.get('.MuiDataGrid-filterForm')
-          .find('input[placeholder="Filter value"], input[type="text"]')
+          .find('input[placeholder="Filter value"], input[placeholder*="Filtro"], input[type="text"]')
           .should('be.visible')
           .clear({ force: true })
           .type(`${valorFiltro}{enter}`, { force: true });
@@ -586,12 +586,12 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
         // Abrir menú de la columna "Código" y pulsar Filter
         const reCodigo = headerTextRegexCodigo();
         abrirMenuColumnaEnPanel('Subfamilias', reCodigo);
-        clickOpcionMenuColumna(/Filter|Filtrar|Filtre/i);
+        clickOpcionMenuColumna(/Filter|Filtro|Filtros|Filtrar|Filtre/i);
 
         // Rellenar el campo Value desde Excel
         const valorFiltro = caso.dato_1 || '2';
         cy.get('.MuiDataGrid-filterForm')
-          .find('input[placeholder="Filter value"], input[type="text"]')
+          .find('input[placeholder="Filter value"], input[placeholder*="Filtro"], input[type="text"]')
           .should('be.visible')
           .clear({ force: true })
           .type(`${valorFiltro}{enter}`, { force: true });
@@ -623,12 +623,12 @@ describe('ALMACEN - Familias, Subfamilias y Almacenes - Validación completa con
         // Abrir menú de la columna "Código" y pulsar Filter
         const reCodigo = headerTextRegexCodigo();
         abrirMenuColumnaEnPanel('Almacenes', reCodigo);
-        clickOpcionMenuColumna(/Filter|Filtrar|Filtre/i);
+        clickOpcionMenuColumna(/Filter|Filtro|Filtros|Filtrar|Filtre/i);
 
         // Rellenar el campo Value desde Excel
         const valorFiltro = caso.dato_1 || '2';
         cy.get('.MuiDataGrid-filterForm')
-          .find('input[placeholder="Filter value"], input[type="text"]')
+          .find('input[placeholder="Filter value"], input[placeholder*="Filtro"], input[type="text"]')
           .should('be.visible')
           .clear({ force: true })
           .type(`${valorFiltro}{enter}`, { force: true });

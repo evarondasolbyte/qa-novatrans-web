@@ -378,7 +378,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         cy.get('div[role="columnheader"][data-field="name"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Hide column/i).click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
         return cy.wait(1000);
     }
 
@@ -391,7 +391,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         cy.get('div[role="columnheader"][data-field="trailer"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+        cy.contains('li', /Manage columns|Show columns|Administrar columnas/i).click({ force: true });
 
         cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
             cy.contains(/Código/i)
@@ -417,7 +417,7 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         cy.get('div[role="columnheader"][data-field="trailer"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+        cy.contains('li', /Manage columns|Show columns|Administrar columnas/i).click({ force: true });
 
         cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
             cy.contains(/Código/i)
@@ -467,9 +467,9 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         cy.get('div[role="columnheader"][data-field="name"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /^Filter$/i).click({ force: true });
+        cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
-        cy.get('input[placeholder*="Filter value"], input[aria-label*="filter"]', { timeout: 10000 })
+        cy.get('input[placeholder*="Filter value"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"]', { timeout: 10000 })
             .should('be.visible')
             .clear({ force: true })
             .type('coche', { force: true })

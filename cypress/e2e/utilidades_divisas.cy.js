@@ -589,10 +589,10 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Valor Euros column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // usar el placeholder "Filter value" (mismo patrón de tu ejemplo)
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('10', { force: true });
@@ -612,7 +612,7 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
             .find('button').eq(1).click({ force: true });
 
         // Hacer clic en "Hide column"
-        cy.contains('li[role="menuitem"]', 'Hide column').click({ force: true });
+        cy.contains('li[role="menuitem"]', /Hide column|Ocultar/i).click({ force: true });
 
         // Verificar que la columna "Inicio" ha desaparecido de la vista
         return cy.get('.MuiDataGrid-columnHeaderTitle')
@@ -632,7 +632,7 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
             .trigger('mouseover');
 
         cy.get('[aria-label="Fin column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         // Panel visible
         cy.get('.MuiDataGrid-panel').should('be.visible');
@@ -657,7 +657,7 @@ describe('UTILIDADES (DIVISAS) - Validación completa con gestión de errores y 
                 cy.contains('.MuiDataGrid-columnHeaderTitle', 'Fin')
                     .parents('[role="columnheader"]').trigger('mouseover');
                 cy.get('[aria-label="Fin column menu"]').click({ force: true });
-                cy.get('li').contains('Manage columns').click({ force: true });
+                cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
             }
         });
 

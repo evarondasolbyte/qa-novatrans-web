@@ -376,12 +376,12 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
       cy.wait(500);
       
       // Seleccionar "Filter" del menú
-      cy.get('[role="menuitem"]:contains("Filter")').click({ force: true });
+      cy.get('[role="menuitem"]').contains(/Filter|Filtro|Filtros/i).click({ force: true });
       cy.wait(1000);
       
       // Buscar el panel de filtro y escribir el valor
       cy.get('[role="tooltip"], .MuiPopper-root').should('be.visible').then($panel => {
-        cy.wrap($panel).find('input[placeholder*="Filter value"], input[placeholder*="Value"]')
+        cy.wrap($panel).find('input[placeholder*="Filter value"], input[placeholder*="Value"], input[placeholder*="Filtro"]')
           .should('be.visible')
           .clear({ force: true })
           .type(valor, { delay: 100, force: true });
@@ -409,7 +409,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
       cy.wait(500);
       
       // Seleccionar "Hide column" del menú
-      cy.get('[role="menuitem"]:contains("Hide column")').click({ force: true });
+      cy.get('[role="menuitem"]').contains(/Hide column|Ocultar/i).click({ force: true });
       cy.wait(1000);
       
       cy.log(`Columna ${columna} ocultada correctamente`);
@@ -430,7 +430,7 @@ describe('PROCESOS > PRESUPUESTOS - Validación completa con errores y reporte a
     cy.log('Mostrando columna usando Manage Columns');
     cargarPantallaPresupuestos();
     cy.get('button[aria-label*="column menu"]').first().click({ force: true });
-    cy.contains('li[role="menuitem"]', /Manage columns/i).click({ force: true });
+    cy.contains('li[role="menuitem"]', /Manage columns|Administrar columnas/i).click({ force: true });
     cy.get('[role="tooltip"], .MuiPopper-root').should('be.visible')
       .find('input[name="codigo"]').check({ force: true });
     cy.wait(600);

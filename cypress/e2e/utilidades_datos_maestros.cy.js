@@ -221,10 +221,10 @@ describe('Utilidades (Datos Maestros)', () => {
             .trigger('mouseover');
 
         cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
         // Escribir en el campo Value
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('prueba', { force: true });
@@ -244,7 +244,7 @@ describe('Utilidades (Datos Maestros)', () => {
             .trigger('mouseover');
 
         cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         // Panel visible
         cy.get('.MuiDataGrid-panel').should('be.visible');
@@ -269,7 +269,7 @@ describe('Utilidades (Datos Maestros)', () => {
                 cy.contains('.MuiDataGrid-columnHeaderTitle', 'Nombre')
                     .parents('[role="columnheader"]').trigger('mouseover');
                 cy.get('[aria-label="Nombre column menu"]').click({ force: true });
-                cy.get('li').contains('Manage columns').click({ force: true });
+                cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
             }
         });
 

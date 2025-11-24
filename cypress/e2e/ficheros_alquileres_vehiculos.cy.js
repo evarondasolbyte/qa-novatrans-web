@@ -345,7 +345,7 @@ describe('FICHEROS - ALQUILERES VEHÍCULOS - Validación completa con errores y 
         cy.get('div[role="columnheader"][data-field="vehicle"]')
             .find('button[aria-label*="column menu"]')
             .click({ force: true });
-        cy.contains('li', /Hide column/i).click({ force: true });
+        cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
         return cy.wait(1000);
     }
 

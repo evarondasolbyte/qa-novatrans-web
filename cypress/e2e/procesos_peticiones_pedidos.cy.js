@@ -378,11 +378,11 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
         
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(500);
         
         cy.get('[aria-label="Código column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
         
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -396,11 +396,11 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
         
         cy.get('[aria-label="Fecha de entrada column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(500);
         
         cy.get('[aria-label="Fecha de entrada column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
         
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -414,11 +414,11 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
         
         cy.get('[aria-label="Fecha de salida column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(500);
         
         cy.get('[aria-label="Fecha de salida column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
         
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -432,11 +432,11 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
         
         cy.get('[aria-label="Origen column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(500);
         
         cy.get('[aria-label="Origen column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
         
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -450,11 +450,11 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
         
         cy.get('[aria-label="Destino column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by ASC').click({ force: true });
+        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
         cy.wait(500);
         
         cy.get('[aria-label="Destino column menu"]').click({ force: true });
-        cy.get('li').contains('Sort by DESC').click({ force: true });
+        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
         
         return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
     }
@@ -614,9 +614,9 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
 
         cy.get('[aria-label="Cliente column menu"]').click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
+        cy.get('li').contains(/Filter|Filtro|Filtros/i).click({ force: true });
 
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
             .type('Cabrerizos');
@@ -633,7 +633,7 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .trigger('mouseover');
 
         cy.get('[aria-label="Cliente column menu"]').click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         return cy.get('.MuiDataGrid-columnHeaders')
             .should('be.visible')
@@ -660,7 +660,7 @@ describe('PROCESOS (PETICIONES PEDIDOS) - Validación completa con gestión de e
             .click({ force: true });
 
         // Buscar y hacer clic en "Hide column"
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
 
         // Esperar a que la columna se oculte
         cy.wait(2000);

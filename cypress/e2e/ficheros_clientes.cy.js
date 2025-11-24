@@ -183,13 +183,13 @@ describe('FICHEROS CLIENTES - Validación completa con gestión de errores y rep
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get(`[aria-label="${columna} column menu"]`).click({ force: true });
-        cy.get('li[data-value="asc"]').contains('Sort by ASC').click({ force: true });
+        cy.get('li[data-value="asc"]').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
       } else if (orden === 'desc') {
         cy.contains('.MuiDataGrid-columnHeaderTitle', columna)
             .parents('[role="columnheader"]')
             .trigger('mouseover');
         cy.get(`[aria-label="${columna} column menu"]`).click({ force: true });
-        cy.get('li[data-value="desc"]').contains('Sort by DESC').click({ force: true });
+        cy.get('li[data-value="desc"]').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
       }
       
       cy.wait(1000);
@@ -203,8 +203,8 @@ describe('FICHEROS CLIENTES - Validación completa con gestión de errores y rep
             .trigger('mouseover')
             .find('button.MuiButtonBase-root').eq(1)
             .click({ force: true });
-        cy.get('li').contains('Filter').click({ force: true });
-        cy.get('input[placeholder="Filter value"]')
+        cy.get('li').contains(/^(Filter|Filtro|Filtros)$/i).click({ force: true });
+        cy.get('input[placeholder="Filter value"], input[placeholder*="Filtro"]')
             .should('exist')
             .clear()
       .type(valor);
@@ -217,7 +217,7 @@ describe('FICHEROS CLIENTES - Validación completa con gestión de errores y rep
             .trigger('mouseover')
             .find('button.MuiButtonBase-root').eq(1)
             .click({ force: true });
-        cy.get('li').contains('Hide column').click({ force: true });
+        cy.get('li').contains(/Hide column|Ocultar/i).click({ force: true });
         return cy.get('div.MuiDataGrid-columnHeaders')
             .should('be.visible')
             .within(() => {
@@ -231,7 +231,7 @@ describe('FICHEROS CLIENTES - Validación completa con gestión de errores y rep
             .trigger('mouseover')
             .find('button.MuiButtonBase-root').eq(1)
             .click({ force: true });
-        cy.get('li').contains('Manage columns').click({ force: true });
+        cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
         cy.get('.MuiDataGrid-panel')
             .should('be.visible')
             .find('label')
