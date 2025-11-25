@@ -382,7 +382,7 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
     abrirMenuColumna(columna);
     cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
-    cy.get('input[placeholder*="Filter value"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"], input[aria-label*="value"]', { timeout: 10000 })
+    cy.get('input[placeholder*="Filter value"], input[placeholder*="Valor de filtro"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"], input[aria-label*="value"]', { timeout: 10000 })
       .should('be.visible')
       .clear({ force: true })
       .type(valor, { force: true })
@@ -396,7 +396,7 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
   function ocultarColumna(nombreColumna) {
     UI.abrirPantalla();
     abrirMenuColumna(nombreColumna);
-    cy.contains('li', /Hide column|Ocultar/i).click({ force: true });
+    cy.contains('li', /Ocultar|Hide column/i).click({ force: true });
     return cy.wait(500);
   }
 
@@ -425,7 +425,7 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
   function gestionarColumnas(columnaMenu, columnaObjetivo) {
     UI.abrirPantalla();
     abrirMenuColumna(columnaMenu);
-    cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+    cy.contains('li', /Administrar columnas|Manage columns|Show columns/i).click({ force: true });
 
     cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
       cy.contains(new RegExp(escapeRegex(columnaObjetivo), 'i'))
@@ -438,7 +438,7 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
     cy.wait(500);
 
     abrirMenuColumna(columnaMenu);
-    cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+    cy.contains('li', /Administrar columnas|Manage columns|Show columns/i).click({ force: true });
 
     cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
       cy.contains(new RegExp(escapeRegex(columnaObjetivo), 'i'))
@@ -466,9 +466,10 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
         .first()
-        .click({ force: true })
+        .within(() => {
+          cy.get('input[type="checkbox"]').check({ force: true });
+        })
         .then(() => {
-          cy.wait(400);
           cy.contains('button, a', /Editar/i, { timeout: 5000 }).click({ force: true });
           cy.wait(1000);
           return cy.log('Formulario de edición abierto correctamente');
@@ -487,9 +488,10 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
         .first()
-        .click({ force: true })
+        .within(() => {
+          cy.get('input[type="checkbox"]').check({ force: true });
+        })
         .then(() => {
-          cy.wait(400);
           cy.contains('button, a', /Eliminar|Papelera/i, { timeout: 5000 })
             .click({ force: true });
           cy.wait(1000);
@@ -509,7 +511,9 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
         .first()
-        .click({ force: true });
+        .within(() => {
+          cy.get('input[type="checkbox"]').check({ force: true });
+        });
     });
   }
 
@@ -534,31 +538,10 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
     return UI.abrirPantalla().then(() => {
       cy.contains('button', /Todos/i, { timeout: 10000 }).click({ force: true });
 
-      const targetDate = new Date(2014, 4, 1); // Mayo 2014
-      const now = new Date();
-      const monthsDiff = Math.max(0, (now.getFullYear() - targetDate.getFullYear()) * 12 + (now.getMonth() - targetDate.getMonth()));
-      const clicks = Math.min(Math.max(monthsDiff + 1, 0), 219);
-
-      for (let i = 0; i < clicks; i++) {
-        cy.get('button[title="Mes anterior"], button[aria-label="Mes anterior"]')
-          .first()
-          .click({ force: true });
-      }
-
-      const asegurarMesVisible = () => {
-        return cy.contains(/mayo 2014/i).then(($mes) => {
-          if ($mes && $mes.length) {
-            return cy.wrap($mes);
-          }
-          cy.log('⚠️ No se ve mayo 2014, avanzando un mes');
-          cy.get('button[title="Mes siguiente"], button[aria-label="Mes siguiente"]').first().click({ force: true });
-          return asegurarMesVisible();
-        });
-      };
-
-      asegurarMesVisible();
-      cy.contains('button', /^5$/).click({ force: true });
+      const targetDate = new Date(2014, 4, 5); // 5 de mayo de 2014
+      seleccionarFechaEnCalendario(targetDate);
       cy.contains('button', /Aplicar/i).click({ force: true });
+
       return cy.wait(500).then(() => {
         cy.get('body').then(($body) => {
           const texto = ($body.text() || '').toLowerCase();
@@ -568,6 +551,41 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
         });
       });
     });
+  }
+
+  const MESES_ES = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre'
+  ];
+
+  function seleccionarFechaEnCalendario(fechaObjetivo) {
+    const mesNombre = MESES_ES[fechaObjetivo.getMonth()];
+    const anio = `${fechaObjetivo.getFullYear()}`;
+    const dia = `${fechaObjetivo.getDate()}`;
+
+    cy.get('[data-date-range-popover="true"]').within(() => {
+      cy.get('[role="combobox"][aria-haspopup="listbox"]')
+        .first()
+        .click({ force: true });
+      cy.contains('li[role="option"]', new RegExp(`^${mesNombre}$`, 'i')).click({ force: true });
+
+      cy.get('[role="combobox"][aria-haspopup="listbox"]')
+        .eq(1)
+        .click({ force: true });
+      cy.contains('li[role="option"]', new RegExp(`^${anio}$`, 'i')).click({ force: true });
+    });
+
+    cy.contains('button', new RegExp(`^${dia}$`, 'i')).first().click({ force: true });
   }
 
   function guardarFiltro() {

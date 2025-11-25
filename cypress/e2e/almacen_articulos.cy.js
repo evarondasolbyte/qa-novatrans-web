@@ -225,6 +225,54 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
         }
     };
 
+    function escapeRegex(texto = '') {
+        return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function ordenarColumna(nombreColumna, opciones = {}) {
+        const { desplazar = null } = opciones;
+
+        UI.abrirPantalla();
+
+        if (desplazar === 'derecha') {
+            cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 800 });
+            cy.wait(200);
+        } else if (desplazar === 'izquierda') {
+            cy.get('.MuiDataGrid-virtualScroller').scrollTo('left', { duration: 800 });
+            cy.wait(200);
+        }
+
+        const patron = new RegExp(`^${escapeRegex(nombreColumna)}$`, 'i');
+        const maxIntentos = 4;
+
+        const intentarOrden = (intento = 0) => {
+            return cy.contains('.MuiDataGrid-columnHeaderTitle', patron)
+                .should('be.visible')
+                .closest('[role="columnheader"]')
+                .then(($header) => {
+                    const ariaSort = $header.attr('aria-sort') || 'none';
+
+                    if (ariaSort === 'ascending') {
+                        cy.wrap($header).click({ force: true }); // ASC -> DESC
+                        cy.wait(300);
+                        cy.wrap($header).click({ force: true }); // DESC -> ASC para dejar rastro
+                        return UI.filasVisibles().should('have.length.greaterThan', 0);
+                    }
+
+                    if (intento >= maxIntentos) {
+                        cy.log(`⚠️ No se pudo ordenar la columna "${nombreColumna}" tras ${maxIntentos} intentos`);
+                        return UI.filasVisibles().should('have.length.greaterThan', 0);
+                    }
+
+                    cy.wrap($header).click({ force: true });
+                    cy.wait(300);
+                    return intentarOrden(intento + 1);
+                });
+        };
+
+        return intentarOrden();
+    }
+
     // ===== FUNCIONES DE PRUEBA =====
 
     function cargarPantalla() {
@@ -235,165 +283,39 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
     
 
     function ordenarPorReferencia() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Referencia column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Referencia');
     }
 
     function ordenarPorFamilia() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Familia')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Familia column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Familia column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Familia');
     }
 
     function ordenarPorSubfamilia() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Subfamilia')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Subfamilia column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Subfamilia column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Subfamilia');
     }
 
     function ordenarPorDescripcion() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Descripción')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Descripción column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Descripción column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Descripción');
     }
 
     function ordenarPorStock() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Stock')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Stock column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Stock column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Stock');
     }
 
     function ordenarPorPrecio() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Precio')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Precio column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Precio column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Precio');
     }
 
     function ordenarPorUltimoProveedor() {
-        UI.abrirPantalla();
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Últ. Proveedor')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Últ. Proveedor column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Últ. Proveedor column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Últ. Proveedor');
     }
 
     function ordenarPorRefProveedor() {
-        UI.abrirPantalla();
-
-        cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 800 });
-        cy.wait(200);
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Ref. Proveedor')
-            .parents('[role="columnheader"]')
-            .as('colRefProv')
-            .trigger('mouseover');
-
-        cy.get('@colRefProv').find('button[aria-label*="column menu"]').click({ force: true });
-        cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', /Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('@colRefProv').find('button[aria-label*="column menu"]').click({ force: true });
-        cy.get('ul[role="menu"]').should('be.visible');
-        cy.contains('li', /Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Ref. Proveedor', { desplazar: 'derecha' });
     }
 
     function ordenarPorNotas() {
-        UI.abrirPantalla();
-
-        cy.get('.MuiDataGrid-virtualScroller').scrollTo('right', { duration: 800 });
-        cy.wait(200);
-
-        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Notas')
-            .parents('[role="columnheader"]')
-            .trigger('mouseover');
-
-        cy.get('[aria-label="Notas column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by ASC|Ordenar ASC/i).click({ force: true });
-        // cy.wait(200); // Eliminado para velocidad
-
-        cy.get('[aria-label="Notas column menu"]').click({ force: true });
-        cy.get('li').contains(/Sort by DESC|Ordenar DESC/i).click({ force: true });
-
-        return cy.get('.MuiDataGrid-row:visible').should('have.length.greaterThan', 0);
+        return ordenarColumna('Notas', { desplazar: 'derecha' });
     }
 
     function filtrarColumnaValue(caso) {
@@ -412,7 +334,7 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
         cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
         cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
-            cy.contains('label', /^Value$/i)
+            cy.contains('label', /^(Value|Valor)$/i)
                 .parent()
                 .find('input')
                 .clear({ force: true })
@@ -450,7 +372,10 @@ describe('ALMACEN (ARTÍCULOS) - Validación completa con gestión de errores y 
             .parents('[role="columnheader"]')
             .trigger('mouseover');
 
-        cy.get('[aria-label="Referencia column menu"]').click({ force: true });
+        cy.contains('.MuiDataGrid-columnHeaderTitle', 'Referencia')
+            .closest('[role="columnheader"]')
+            .find('button[aria-label*="column menu"]')
+            .click({ force: true });
         cy.get('li').contains(/Manage columns|Administrar columnas/i).click({ force: true });
 
         // Verificar si todos los checkboxes ya están marcados

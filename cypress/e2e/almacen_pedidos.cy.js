@@ -361,7 +361,7 @@ describe('ALMACEN (PEDIDOS) - Validación completa con gestión de errores y rep
                 cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
                 cy.get('.MuiDataGrid-panel').should('be.visible').within(() => {
-                    cy.contains('label', /^Value$/i)
+                    cy.contains('label', /^(Value|Valor)$/i)
                         .parent()
                         .find('input')
                         .clear({ force: true })

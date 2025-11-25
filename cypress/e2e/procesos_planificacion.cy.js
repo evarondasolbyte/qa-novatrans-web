@@ -329,7 +329,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
 
     abrirMenuColumna('Cliente');
-    cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+    cy.contains('li', /Administrar columnas|Manage columns|Show columns/i).click({ force: true });
 
     cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
       cy.contains(/Id/i)
@@ -351,7 +351,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     });
 
     abrirMenuColumna('Cliente');
-    cy.contains('li', /Manage columns|Show columns/i).click({ force: true });
+    cy.contains('li', /Administrar columnas|Manage columns|Show columns/i).click({ force: true });
 
     cy.get('div.MuiDataGrid-panel, .MuiPopover-paper').within(() => {
       cy.contains(/Id/i)
@@ -379,9 +379,10 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
         .first()
-        .click({ force: true })
+        .within(() => {
+          cy.get('input[type="checkbox"]').check({ force: true });
+        })
         .then(() => {
-          cy.wait(400);
           cy.contains('button, a', /Editar/i, { timeout: 5000 }).click({ force: true });
           cy.wait(1000);
           return cy.log('Formulario de edición abierto correctamente');
@@ -400,9 +401,10 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
         .first()
-        .click({ force: true })
+        .within(() => {
+          cy.get('input[type="checkbox"]').check({ force: true });
+        })
         .then(() => {
-          cy.wait(400);
           cy.contains('button, a', /Eliminar|Borrar|Papelera/i, { timeout: 5000 })
             .click({ force: true });
           cy.wait(1000);
@@ -428,7 +430,9 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
         .first()
-        .click({ force: true });
+        .within(() => {
+          cy.get('input[type="checkbox"]').check({ force: true });
+        });
     });
   }
 
@@ -452,17 +456,46 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
   function aplicarFechaSalida() {
     return UI.abrirPantalla().then(() => {
       cy.contains('button', /Todos/i, { timeout: 10000 }).click({ force: true });
-      const clicks = 96;
-      for (let i = 0; i < clicks; i++) {
-        cy.get('button[title="Mes anterior"], button[aria-label="Mes anterior"]')
-          .first()
-          .click({ force: true });
-      }
-      cy.contains(/noviembre 2017/i).should('be.visible');
-      cy.contains('button', /^6$/).click({ force: true });
+      const targetDate = new Date(2017, 10, 6); // 6 de noviembre de 2017
+      seleccionarFechaEnCalendario(targetDate);
       cy.contains('button', /Aplicar/i).click({ force: true });
       return cy.wait(500);
     });
+  }
+
+  const MESES_ES = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre'
+  ];
+
+  function seleccionarFechaEnCalendario(fechaObjetivo) {
+    const mesNombre = MESES_ES[fechaObjetivo.getMonth()];
+    const anio = `${fechaObjetivo.getFullYear()}`;
+    const dia = `${fechaObjetivo.getDate()}`;
+
+    cy.get('[data-date-range-popover="true"]').within(() => {
+      cy.get('[role="combobox"][aria-haspopup="listbox"]')
+        .first()
+        .click({ force: true });
+      cy.contains('li[role="option"]', new RegExp(`^${mesNombre}$`, 'i')).click({ force: true });
+
+      cy.get('[role="combobox"][aria-haspopup="listbox"]')
+        .eq(1)
+        .click({ force: true });
+      cy.contains('li[role="option"]', new RegExp(`^${anio}$`, 'i')).click({ force: true });
+    });
+
+    cy.contains('button', new RegExp(`^${dia}$`, 'i')).first().click({ force: true });
   }
 
   function aplicarFiltros() {
@@ -488,7 +521,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
     cy.contains('li', /^(Filter|Filtro|Filtros)$/i).click({ force: true });
 
-    cy.get('input[placeholder*="Filter value"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"], input[aria-label*="value"]', { timeout: 10000 })
+    cy.get('input[placeholder*="Filter value"], input[placeholder*="Valor de filtro"], input[placeholder*="Filtro"], input[aria-label*="filter"], input[aria-label*="filtro"], input[aria-label*="value"]', { timeout: 10000 })
       .should('be.visible')
       .clear({ force: true })
       .type('2017', { force: true })
