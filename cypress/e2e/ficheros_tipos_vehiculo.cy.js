@@ -1,4 +1,3 @@
-// ficheros_tipos_vehiculo.cy.js
 describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y reporte a Excel', () => {
     const archivo = 'reportes_pruebas_novatrans.xlsx';
 
@@ -22,6 +21,10 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
             cy.log(`Se encontraron ${casos.length} casos en la hoja`);
             cy.log(`Casos filtrados para Tipos de Vehículo: ${casosTiposVehiculo.length}`);
 
+            // Hacer login y abrir la pantalla una sola vez
+            const pantallaLista = cy.login()
+                .then(() => UI.abrirPantalla());
+
             // Función recursiva para ejecutar casos secuencialmente
             const ejecutarCaso = (index) => {
                 if (index >= casosTiposVehiculo.length) {
@@ -38,13 +41,11 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
 
                 cy.resetearFlagsTest();
 
-                cy.login();
-                cy.wait(400);
-
                 let funcion;
                 // Mapeo dinámico basado en los casos disponibles en Excel
                 if (numero === 1) funcion = TC001;
-                else if (numero >= 2 && numero <= 6) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Tipos de Vehículo)', 'Ficheros (Tipos de Vehículo)', 'Ficheros', 'Tipos de Vehículo');
+                else if (numero === 2) funcion = verificarColumnasPrincipales;
+                else if (numero >= 3 && numero <= 6) funcion = () => cy.ejecutarFiltroIndividual(numero, 'Ficheros (Tipos de Vehículo)', 'Ficheros (Tipos de Vehículo)', 'Ficheros', 'Tipos de Vehículo');
                 else if (numero === 7) funcion = TC007;
                 else if (numero === 8) funcion = TC008;
                 else if (numero === 9) funcion = TC009;
@@ -74,7 +75,9 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
                     return ejecutarCaso(index + 1);
                 }
 
-                return funcion().then(() => {
+                return pantallaLista
+                .then(() => funcion())
+                .then(() => {
                     return cy.estaRegistrado().then((ya) => {
                         if (!ya) {
                             // Casos específicos que dan resultados pero incorrectos: TC025, TC027, TC028, TC029
@@ -123,9 +126,14 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
     // ====== OBJETO UI ======
     const UI = {
         abrirPantalla() {
-            cy.navegarAMenu('Ficheros', 'Tipos de Vehículo');
-            cy.url().should('include', '/dashboard/vehicle-types');
-            return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+            return cy.url().then((urlActual) => {
+                if (!urlActual.includes('/dashboard/vehicle-types')) {
+                    cy.navegarAMenu('Ficheros', 'Tipos de Vehículo');
+                }
+
+                cy.url().should('include', '/dashboard/vehicle-types');
+                return cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+            });
         },
 
         setOperador(nombreOperador) {
@@ -329,6 +337,15 @@ describe('FICHEROS - TIPOS DE VEHÍCULO - Validación completa con errores y rep
         UI.abrirPantalla();
         cy.get('.MuiDataGrid-root').should('be.visible');
         return UI.filasVisibles().should('have.length.greaterThan', 0);
+    }
+
+    function verificarColumnasPrincipales() {
+        return UI.abrirPantalla().then(() => {
+            return cy.get('.MuiDataGrid-columnHeaders').should('be.visible').within(() => {
+                cy.contains('Código').should('exist');
+                cy.contains(/Nombre/i).should('exist');
+            });
+        });
     }
 
     // ====== FUNCIONES ESPECÍFICAS ======

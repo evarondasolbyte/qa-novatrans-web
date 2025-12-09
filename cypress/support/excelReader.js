@@ -192,6 +192,20 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
 }
 
 // Mapea cabeceras -> índice (independiente del orden)
+function detectarMaxCampos(headers = []) {
+  let max = 0;
+  headers.forEach((header) => {
+    const match = header.match(/(etiqueta|valor[_\s-]?etiqueta|dato)[_\s-]?(\d+)/i);
+    if (match) {
+      const numero = parseInt(match[2], 10);
+      if (!Number.isNaN(numero)) {
+        max = Math.max(max, numero);
+      }
+    }
+  });
+  return max || 4;
+}
+
 function mapHeaderIndexes(headers) {
   const idx = {};
   const find = (regexArr) =>
@@ -204,8 +218,11 @@ function mapHeaderIndexes(headers) {
   idx.prioridad     = find([/^\s*prioridad\s*$/i]);
   idx.funcion       = find([/^\s*funci[oó]n\s*$/i, /^\s*function\s*$/i]);
 
-  // etiquetas/valores/datos 1..4
-  for (let n = 1; n <= 4; n++) {
+  const maxCampos = detectarMaxCampos(headers);
+  idx.maxCampos = Math.max(maxCampos, 4);
+
+  // etiquetas/valores/datos dinámicos
+  for (let n = 1; n <= idx.maxCampos; n++) {
     idx[`etiqueta_${n}`]       = find([new RegExp(`^\\s*etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
     idx[`valor_etiqueta_${n}`] = find([new RegExp(`^\\s*valor[_\\s-]?etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
     idx[`dato_${n}`]           = find([new RegExp(`^\\s*dato[_\\s-]?${n}\\s*$`, 'i')]);
@@ -219,27 +236,26 @@ function buildCaso(fila, idx) {
   const casoRaw = safe(get('caso')).toUpperCase();
   if (!/^TC\d+$/i.test(casoRaw)) return null;
 
-  return {
+  const caso = {
     pantalla:      get('pantalla'),
     funcionalidad: get('funcionalidad'),
     caso:          casoRaw,                       // "TC001"
     nombre:        get('nombre'),
     prioridad:     get('prioridad'),
-    // 👇 IMPORTANTE: ya no forzamos "tc###" si no toca. En Repostajes vienen nombres de función reales.
-    funcion:       normalizeMaybeTc(get('funcion')),
-    etiqueta_1:    get('etiqueta_1'),
-    valor_etiqueta_1: get('valor_etiqueta_1'),
-    dato_1:        get('dato_1'),
-    etiqueta_2:    get('etiqueta_2'),
-    valor_etiqueta_2: get('valor_etiqueta_2'),
-    dato_2:        get('dato_2'),
-    etiqueta_3:    get('etiqueta_3'),
-    valor_etiqueta_3: get('valor_etiqueta_3'),
-    dato_3:        get('dato_3'),
-    etiqueta_4:    get('etiqueta_4'),
-    valor_etiqueta_4: get('valor_etiqueta_4'),
-    dato_4:        get('dato_4'),
+    // 👇 IMPORTANTE: ya no forzamos "tc###" si no toca.
+    funcion:       normalizeMaybeTc(get('funcion'))
   };
+
+  const totalCampos = idx.maxCampos || 4;
+  caso.__totalCamposExcel = totalCampos;
+
+  for (let n = 1; n <= totalCampos; n++) {
+    caso[`etiqueta_${n}`] = get(`etiqueta_${n}`);
+    caso[`valor_etiqueta_${n}`] = get(`valor_etiqueta_${n}`);
+    caso[`dato_${n}`] = get(`dato_${n}`);
+  }
+
+  return caso;
 }
 
 // Función que filtra los datos del Excel en base a la pantalla
@@ -253,12 +269,34 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
     const headers = (filas[0] || []).map(safe);
     const idx = mapHeaderIndexes(headers);
 
+    // Log de depuración para ver qué cabeceras y índices se detectan
+    cy.log(`🔍 DEBUG Excel Reader - Cabeceras detectadas (${headers.length} columnas):`);
+    headers.forEach((h, i) => {
+      if (h && h.trim() !== '') {
+        cy.log(`   Columna ${i}: "${h}"`);
+      }
+    });
+    cy.log(`🔍 DEBUG Excel Reader - Índices mapeados:`);
+    cy.log(`   dato_1: índice ${idx.dato_1} (${idx.dato_1 >= 0 ? `"${headers[idx.dato_1]}"` : 'NO ENCONTRADO'})`);
+    cy.log(`   etiqueta_1: índice ${idx.etiqueta_1} (${idx.etiqueta_1 >= 0 ? `"${headers[idx.etiqueta_1]}"` : 'NO ENCONTRADO'})`);
+    cy.log(`   valor_etiqueta_1: índice ${idx.valor_etiqueta_1} (${idx.valor_etiqueta_1 >= 0 ? `"${headers[idx.valor_etiqueta_1]}"` : 'NO ENCONTRADO'})`);
+
     const out = [];
     for (let i = 1; i < filas.length; i++) {
       const fila = (filas[i] || []).map(safe);
       if (fila.every(c => c === '')) continue;
       const caso = buildCaso(fila, idx);
-      if (caso) out.push(caso);
+      if (caso) {
+        // Log específico para casos 32 y 33 antes de construir el objeto
+        if (caso.caso === 'TC032' || caso.caso === 'TC033') {
+          cy.log(`🔍 DEBUG Excel Reader - Fila ${i} (${caso.caso}):`);
+          cy.log(`   Fila completa: [${fila.map((c, idx) => `col${idx}:"${c}"`).join(', ')}]`);
+          cy.log(`   dato_1 desde fila[${idx.dato_1}]: "${fila[idx.dato_1] || '(vacío)'}"`);
+          cy.log(`   etiqueta_1 desde fila[${idx.etiqueta_1}]: "${fila[idx.etiqueta_1] || '(vacío)'}"`);
+          cy.log(`   valor_etiqueta_1 desde fila[${idx.valor_etiqueta_1}]: "${fila[idx.valor_etiqueta_1] || '(vacío)'}"`);
+        }
+        out.push(caso);
+      }
     }
 
     // Ordena por número de TC
@@ -270,7 +308,13 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
 
     // Log resumen
     cy.log(`Leídos ${out.length} casos de "${hoja}"`);
-    out.forEach(c => cy.log(`${c.caso} | ${c.funcion} | ${c.nombre}`));
+    out.forEach(c => {
+      cy.log(`${c.caso} | ${c.funcion} | ${c.nombre}`);
+      // Log específico para casos 32 y 33 para depuración
+      if (c.caso === 'TC032' || c.caso === 'TC033') {
+        cy.log(`   🔍 DEBUG ${c.caso}: dato_1="${c.dato_1}", dato_2="${c.dato_2}", valor_etiqueta_1="${c.valor_etiqueta_1}"`);
+      }
+    });
 
     return cy.wrap(out);
   });
