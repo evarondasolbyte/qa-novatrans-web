@@ -12,6 +12,7 @@ echo ========================================
 echo.
 echo Ejecutando las siguientes pruebas:
 echo   - ficheros_tipos_vehiculo
+echo   - ficheros_clientes
 echo   - ficheros_categorias_conductores
 echo   - ficheros_categorias
 echo   - ficheros_multas
@@ -30,6 +31,7 @@ echo.
 
 REM Define los archivos específicos a ejecutar
 set "SPECS=cypress/e2e/ficheros_tipos_vehiculo.cy.js,"
+set "SPECS=%SPECS%cypress/e2e/ficheros_clientes.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/ficheros_categorias_conductores.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/ficheros_categorias.cy.js,"
 set "SPECS=%SPECS%cypress/e2e/ficheros_multas.cy.js,"
