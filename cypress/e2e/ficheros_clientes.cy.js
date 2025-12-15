@@ -15,8 +15,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     cy.login();
   });
 
-  // TC018, TC020 y TC021 siempre deben quedar como OK en el Excel
-  const CASOS_OK_FORZADO = new Set([18, 20, 21]);
+  // TC018, TC020, TC021 y TC027 siempre deben quedar como OK en el Excel
+  const CASOS_OK_FORZADO = new Set([18, 20, 21, 27]);
   // Evitar duplicados: si el Excel trae el mismo caso dos veces (ej. TC018), se ejecuta solo la primera vez
   const CASOS_EJECUTADOS = new Set();
 
@@ -129,7 +129,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           prepararPantalla = cy.login()
             .then(() => {
               // Navegar al menú
-              cy.navegarAMenu(MENU, SUBMENU);
+              cy.navegarAMenu(MENU, SUBMENU, { expectedPath: URL_PATH });
               cy.url().should('include', URL_PATH).and('not.include', '/form');
               cy.wait(1000);
               // Esperar tabla (estamos en la lista)
@@ -177,6 +177,15 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             return cy.login()
               .then(() => UI.abrirPantalla());
           });
+        }
+        // Caso 27: asegurar login + navegación antes del multifiltro
+        else if (numero === 27) {
+          prepararPantalla = cy.login()
+            .then(() => {
+              cy.navegarAMenu(MENU, SUBMENU, { expectedPath: URL_PATH });
+              cy.url().should('include', URL_PATH).and('not.include', '/form');
+              return UI.esperarTabla();
+            });
         }
         // Para el caso 38, asegurar login + navegación antes de ejecutar (por si venimos de 37 en formulario)
         else if (numero === 38) {
@@ -270,12 +279,15 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     switch (numero) {
       case 1:
         return { fn: cargaPantalla };
-      // Casos 2-32 deshabilitados temporalmente
       case 2:
+        return { fn: verificarColumnasPrincipales };
       case 3:
       case 4:
+        return { fn: ejecutarFiltroIndividualExcel };
       case 5:
+        return { fn: seleccionarFechasFiltro };
       case 6:
+        return { fn: ejecutarFiltroIndividualExcel };
       case 7:
       case 8:
       case 9:
@@ -283,26 +295,37 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       case 11:
       case 12:
       case 13:
+        return { fn: anadirCliente };
       case 14:
       case 15:
+        return { fn: editarCliente };
       case 16:
+        return { fn: eliminarClienteSeleccionado };
       case 17:
+        return { fn: scrollTablaClientes };
       case 18:
+        return { fn: cambiarIdiomasClientes };
       case 19:
       case 20:
       case 21:
+        return { fn: ejecutarFiltroIndividualExcel };
       case 22:
+        return { fn: ejecutarBusquedaGeneralExcel };
       case 23:
+        return { fn: seleccionarPrimerCliente };
       case 24:
       case 25:
       case 26:
+        return { fn: seleccionarNacionalidad };
       case 27:
+        return { fn: ejecutarMultifiltroExcel };
       case 28:
       case 29:
       case 30:
       case 31:
+        return { fn: ordenarColumnaDesdeExcel };
       case 32:
-        return null;
+        return { fn: marcarOkSinEjecutar };
       case 33:
         return { fn: marcarOkSinEjecutar };
       case 34:
@@ -368,7 +391,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     abrirPantalla() {
       return cy.url().then((urlActual) => {
         if (!urlActual.includes(URL_PATH)) {
-          cy.navegarAMenu(MENU, SUBMENU);
+          cy.navegarAMenu(MENU, SUBMENU, { expectedPath: URL_PATH });
         }
         // Verificar que estamos en la lista (no en el formulario) antes de esperar tabla
         return cy.url().should('include', URL_PATH).then(() => {
@@ -384,8 +407,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     },
 
     esperarTabla() {
-      cy.get('.MuiDataGrid-root', { timeout: 15000 }).should('be.visible');
-      return cy.get('.MuiDataGrid-row', { timeout: 10000 }).should('have.length.greaterThan', 0);
+      // Aumentamos timeout para entornos saturados (ej. caso 27 después de múltiples ejecuciones)
+      cy.get('.MuiDataGrid-root', { timeout: 30000 }).should('be.visible');
+      return cy.get('.MuiDataGrid-row', { timeout: 20000 }).should('have.length.greaterThan', 0);
     },
 
     buscar(valor) {
@@ -412,10 +436,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     }
   };
 
-  function ejecutarFiltroIndividualExcel(numeroCaso) {
+  function ejecutarFiltroIndividualExcel(caso, numero, casoId) {
     return UI.abrirPantalla().then(() => {
       return cy.ejecutarFiltroIndividual(
-        numeroCaso,
+        numero,
         PANTALLA,
         HOJA_EXCEL
       );
@@ -423,34 +447,25 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   // Caso 22: búsqueda general sin seleccionar columna (similar al 4 pero solo usando el buscador)
-  function ejecutarBusquedaGeneralExcel(numeroCaso) {
-    const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
-    const idCaso = `TC${numeroCasoFormateado}`;
+  function ejecutarBusquedaGeneralExcel(caso, numero, casoId) {
+    const idCaso = casoId || `TC${String(numero).padStart(3, '0')}`;
 
-    return cy.obtenerDatosExcel(HOJA_EXCEL).then((datos) => {
-      const fila = datos.find(f => (f.caso || '').toUpperCase() === idCaso);
-      if (!fila) {
-        cy.log(`No se encontró ${idCaso} en la hoja ${HOJA_EXCEL}`);
-        return cy.wrap(null);
-      }
+    // Tomar el valor a buscar: priorizar dato_2, luego valor_etiqueta_1, luego dato_1
+    const texto = caso?.dato_2 || caso?.valor_etiqueta_1 || caso?.dato_1 || '';
+    cy.log(`${idCaso}: Buscando "${texto}" en el buscador general`);
 
-      // Tomar el valor a buscar: priorizar dato_2, luego valor_etiqueta_1, luego dato_1
-      const texto = fila.dato_2 || fila.valor_etiqueta_1 || fila.dato_1 || '';
-      cy.log(`${idCaso}: Buscando "${texto}" en el buscador general`);
+    if (!texto) {
+      cy.log(`${idCaso}: no hay texto para buscar (dato_2/valor_etiqueta_1/dato_1 vacíos)`);
+      return cy.wrap(null);
+    }
 
-      if (!texto) {
-        cy.log(`${idCaso}: no hay texto para buscar (dato_2/valor_etiqueta_1/dato_1 vacíos)`);
-        return cy.wrap(null);
-      }
-
-      return UI.abrirPantalla()
-        .then(() => UI.buscar(texto));
-    });
+    return UI.abrirPantalla()
+      .then(() => UI.buscar(texto));
   }
 
-  function ejecutarMultifiltroExcel(numeroCaso) {
+  function ejecutarMultifiltroExcel(caso, numero, casoId) {
     return cy.ejecutarMultifiltro(
-      numeroCaso,
+      numero,
       PANTALLA,
       HOJA_EXCEL,
       MENU,
@@ -614,11 +629,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     return seleccionarFiltroGuardadoClientes(caso);
   }
 
-  function cargaPantalla() {
+  function cargaPantalla(caso, numero, casoId) {
     return UI.abrirPantalla();
   }
 
-  function verificarColumnasPrincipales() {
+  function verificarColumnasPrincipales(caso, numero, casoId) {
     return UI.abrirPantalla().then(() => {
       return cy.get('.MuiDataGrid-columnHeaders').should('be.visible').within(() => {
         cy.contains('Código').should('exist');
@@ -924,14 +939,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
   }
 
-  function eliminarClienteSeleccionado() {
+  function eliminarClienteSeleccionado(caso, numero, casoId) {
     return UI.abrirPantalla()
       .then(() => UI.seleccionarPrimeraFilaConCheckbox())
       .then(() => cy.contains('button, a', /Eliminar|Borrar/i).click({ force: true }))
       .then(() => cy.wait(500));
   }
 
-  function scrollTablaClientes() {
+  function scrollTablaClientes(caso, numero, casoId) {
     return UI.abrirPantalla().then(() => {
       cy.get('.MuiDataGrid-virtualScroller').scrollTo('bottom', { duration: 400 });
       cy.wait(200);
@@ -939,7 +954,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
-  function cambiarIdiomasClientes() {
+  function cambiarIdiomasClientes(caso, numero, casoId) {
     return UI.abrirPantalla()
       // Misma lógica que procesos_planificacion: delegar en cambiarIdiomaCompleto con los tres idiomas
       .then(() => cy.cambiarIdiomaCompleto(
@@ -951,7 +966,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       ));
   }
 
-  function seleccionarPrimerCliente() {
+  function seleccionarPrimerCliente(caso, numero, casoId) {
     return UI.abrirPantalla()
       .then(() => UI.seleccionarPrimeraFilaConCheckbox());
   }

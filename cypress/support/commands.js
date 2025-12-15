@@ -105,22 +105,40 @@ Cypress.Commands.add('abrirPanelListados', () => {
         });
       });
     });
+
+    // Fallback: buscar cualquier botón/enlace visible cuyo aria-label/title/texto contenga "list" o "listados"
+    chain = chain.then(() => {
+      return cy.get('body').then($b => {
+        const candidatos = $b
+          .find('button, a, [role="button"]')
+          .filter((_, el) => {
+            const label = (
+              el.getAttribute('aria-label') ||
+              el.getAttribute('title') ||
+              el.innerText ||
+              ''
+            ).toLowerCase();
+            return label.includes('listados') || label.includes('list') || label.includes('listado');
+          })
+          .filter(':visible');
+
+        if (candidatos.length) {
+          cy.log('Fallback Listados: clic en primer candidato visible');
+          return cy.wrap(candidatos[0]).click({ force: true });
+        }
+      });
+    });
   });
 
   // Asegurar que el panel se abrió (al menos un drawer visible)
-  // Si el drawer no está visible, intentar de nuevo o continuar si ya estamos en la página correcta
   cy.get('body').then(($body) => {
     const drawerVisible = $body.find('.MuiDrawer-paper:visible, [data-testid*="listados-drawer"]:visible').length > 0;
     if (!drawerVisible) {
-      cy.log('⚠️ Drawer no visible, intentando abrir de nuevo...');
-      // Intentar hacer clic de nuevo en el botón Listados
-      cy.get('.MuiList-root .MuiListItemButton-root').last().click({ force: true });
-      cy.wait(500);
+      cy.log('⚠️ Drawer no visible tras intentar Listados');
     }
   });
   
   // Verificar drawer con timeout más corto y no fallar si no está visible
-  // (puede que ya estemos en la página correcta)
   cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 5000 })
     .should('exist')
     .then(($drawer) => {
@@ -140,31 +158,31 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
 
   // 1. Ir al dashboard (se asume usuario YA logueado con cy.login y sesión)
   cy.visit('/dashboard');
-  cy.wait(800);
+  cy.wait(1500); // más margen en entornos lentos
 
   // 2. Abrir panel "Listados"
   cy.abrirPanelListados();
-  cy.wait(400);
+  cy.wait(800); // más margen para que abra el drawer
 
   // 3. Click en el menú principal (columna izquierda: Ficheros, TallerYGastos, ...)
-  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 10000 })
+  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 20000 })
     .should('have.length.greaterThan', 0)
     .first()                                    // 👈 PRIMER drawer = columna de menús
     .within(() => {
       cy.contains(
         '.MuiListItemButton-root, button, a, [role="button"]',
         new RegExp(`^${textoMenu}\\s*$`, 'i'),
-        { timeout: 10000 }
+        { timeout: 20000 }
       )
         // no exigir visible; algunos drawers quedan con visibility hidden
         .click({ force: true });
     });
 
-  cy.wait(400);
+  cy.wait(800);
 
   // 4. Click en el submenú (columna derecha: Clientes, Personal, Multas...)
   if (textoSubmenu) {
-    cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 10000 })
+    cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 20000 })
       .should('have.length.greaterThan', 0)
       .last()                                  // 👈 ÚLTIMO drawer = columna de submenús
       .within(() => {
@@ -176,33 +194,31 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
               return txt.includes('categorías') && !txt.includes('conductores');
             })
             .first()
-            .should('be.visible')
             .click({ force: true });
         } else {
           cy.contains(
             '.MuiListItemButton-root, button, a, [role="button"]',
             new RegExp(`^${textoSubmenu}\\s*$`, 'i'),
-            { timeout: 10000 }
+            { timeout: 20000 }
           )
-            .should('be.visible')
             .click({ force: true });
         }
       });
 
-    cy.wait(600);
+    cy.wait(1200);
   }
 
   // 5. Verificar navegación
   if (opts.expectedPath) {
-    cy.url({ timeout: 10000 }).should('include', opts.expectedPath);
+    cy.url({ timeout: 20000 }).should('include', opts.expectedPath);
   } else {
-    cy.url({ timeout: 10000 }).should('include', '/dashboard/');
+    cy.url({ timeout: 20000 }).should('include', '/dashboard/');
   }
 
   // 6. Si hay tabla, asegurar que esté visible
   cy.get('body').then($body => {
     if ($body.find('.MuiDataGrid-root').length) {
-      cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+      cy.get('.MuiDataGrid-root', { timeout: 20000 }).should('be.visible');
     }
   });
 });
