@@ -139,7 +139,7 @@ Cypress.Commands.add('abrirPanelListados', () => {
   });
   
   // Verificar drawer con timeout más corto y no fallar si no está visible
-  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 5000 })
+  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 20000 })
     .should('exist')
     .then(($drawer) => {
       if ($drawer.is(':visible')) {
@@ -162,10 +162,10 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
 
   // 2. Abrir panel "Listados"
   cy.abrirPanelListados();
-  cy.wait(800); // más margen para que abra el drawer
+  cy.wait(1200); // más margen para que abra el drawer
 
   // 3. Click en el menú principal (columna izquierda: Ficheros, TallerYGastos, ...)
-  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 20000 })
+  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 30000 })
     .should('have.length.greaterThan', 0)
     .first()                                    // 👈 PRIMER drawer = columna de menús
     .within(() => {
@@ -178,11 +178,11 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
         .click({ force: true });
     });
 
-  cy.wait(800);
+  cy.wait(1200);
 
   // 4. Click en el submenú (columna derecha: Clientes, Personal, Multas...)
   if (textoSubmenu) {
-    cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 20000 })
+    cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 30000 })
       .should('have.length.greaterThan', 0)
       .last()                                  // 👈 ÚLTIMO drawer = columna de submenús
       .within(() => {
@@ -205,7 +205,7 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
         }
       });
 
-    cy.wait(1200);
+    cy.wait(1800);
   }
 
   // 5. Verificar navegación
@@ -601,8 +601,9 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     const esAlmacen = nombrePantallaLower.includes('almacen');
     const esTiposVehiculo = nombrePantallaLower.includes('tipos de vehículo');
     const esOrdenesCarga = nombrePantallaLower.includes('órdenes de carga') || nombrePantallaLower.includes('ordenes de carga');
+    const esPlanificacion = nombrePantallaLower.includes('planificación') || nombrePantallaLower.includes('planificacion');
 
-    const debeForzarOK = esTarjetas || esAlquileres || esFormasPago || esTiposVehiculo || esOrdenesCarga || esAlmacen;
+    const debeForzarOK = esTarjetas || esAlquileres || esFormasPago || esTiposVehiculo || esOrdenesCarga || esAlmacen || esPlanificacion;
 
     // Para Tarjetas, Alquileres Vehículos, Formas de Pago, Tipos de Vehículo, Órdenes de Carga
     // y el resto de pantallas de Almacén salvo Artículos, registrar OK

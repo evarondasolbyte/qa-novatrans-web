@@ -15,8 +15,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     cy.login();
   });
 
-  // TC018, TC020, TC021 y TC027 siempre deben quedar como OK en el Excel
-  const CASOS_OK_FORZADO = new Set([18, 20, 21, 27]);
+  // Casos que siempre deben quedar como OK en el Excel
+  const CASOS_OK_FORZADO = new Set([18, 20, 21]);
   // Evitar duplicados: si el Excel trae el mismo caso dos veces (ej. TC018), se ejecuta solo la primera vez
   const CASOS_EJECUTADOS = new Set();
 
@@ -407,9 +407,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     },
 
     esperarTabla() {
-      // Aumentamos timeout para entornos saturados (ej. caso 27 después de múltiples ejecuciones)
-      cy.get('.MuiDataGrid-root', { timeout: 30000 }).should('be.visible');
-      return cy.get('.MuiDataGrid-row', { timeout: 20000 }).should('have.length.greaterThan', 0);
+      // Aumentamos timeout para entornos saturados
+      cy.get('.MuiDataGrid-root', { timeout: 45000 }).should('be.visible');
+      return cy.get('.MuiDataGrid-row', { timeout: 30000 }).should('have.length.greaterThan', 0);
     },
 
     buscar(valor) {
@@ -643,67 +643,121 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
-  function seleccionarFechasFiltro(caso, numero, casoId) {
-    return UI.abrirPantalla().then(() => {
-      // Asegurar que la tabla está cargada
-      cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
-      cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
+  const mesesMap = {
+    // ES
+    enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5,
+    julio: 6, agosto: 7, septiembre: 8, setiembre: 8, octubre: 9,
+    noviembre: 10, diciembre: 11,
+    // EN
+    january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+    july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+  };
 
-      // 1) Abrir el selector de rango ("Todos")
-      cy.contains('button', /^Todos$/i)
-        .first()
-        .click({ force: true });
-      cy.wait(300);
+  function parseMesAnio(labelText) {
+    const t = labelText.toLowerCase().trim();
+    const [mesStr, anioStr] = t.split(/\s+/);
+    const mes = mesesMap[mesStr];
+    const anio = parseInt(anioStr, 10);
+    if (mes === undefined || Number.isNaN(anio)) {
+      throw new Error(`No pude parsear mes/año del label: "${labelText}"`);
+    }
+    return { mes, anio };
+  }
 
-      // 2) Abrir "Fecha de inicio"
-      cy.get('button[label="Fecha de inicio"]').click({ force: true });
-      cy.wait(300);
+  function getPopoverCalendario() {
+    return cy.get('div[role="dialog"], .MuiPopover-root').filter(':visible').last();
+  }
 
-      // 3) Cambiar a vista de años y elegir 2020
-      cy.get('.MuiPickersCalendarHeader-switchViewButton')
-        .first()
-        .click({ force: true });
+  function seleccionarFechaEnPopover(anio, mesIndex, dia) {
+    return getPopoverCalendario().within(() => {
+      // 1) Vista de años
+      cy.get('.MuiPickersCalendarHeader-switchViewButton').click({ force: true });
 
-      cy.contains('button.MuiYearCalendar-button', /^2020$/)
+      // 2) Seleccionar año
+      cy.contains('button.MuiYearCalendar-button', new RegExp(`^${anio}$`))
         .scrollIntoView()
         .click({ force: true });
 
+      cy.wait(150);
+
+      // 3) Ajustar mes con flechas
+      const stepMes = () => {
+        cy.get('.MuiPickersCalendarHeader-label')
+          .first()
+          .invoke('text')
+          .then((txt) => {
+            const { mes, anio: anioActual } = parseMesAnio(txt);
+
+            if (anioActual !== anio) {
+              cy.get('.MuiPickersCalendarHeader-switchViewButton').click({ force: true });
+              cy.contains('button.MuiYearCalendar-button', new RegExp(`^${anio}$`))
+                .scrollIntoView()
+                .click({ force: true });
+              cy.wait(150);
+              return stepMes();
+            }
+
+            if (mes === mesIndex) return;
+
+            const goPrev = mes > mesIndex;
+            const btnSel = goPrev
+              ? 'button[aria-label="Previous month"], button[title="Previous month"]'
+              : 'button[aria-label="Next month"], button[title="Next month"]';
+
+            cy.get(btnSel).first().click({ force: true });
+            cy.wait(80);
+            return stepMes();
+          });
+      };
+
+      stepMes();
+
+      // 4) Seleccionar día (evita días gris)
+      cy.get('button.MuiPickersDay-root:not([disabled])')
+        .contains(new RegExp(`^${dia}$`))
+        .click({ force: true });
+    });
+  }
+
+  function seleccionarFechasFiltro(caso, numero, casoId) {
+    return UI.abrirPantalla().then(() => {
+      cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
+      cy.get('.MuiDataGrid-row').should('have.length.greaterThan', 0);
+
+      // Abrir selector de rango
+      cy.contains('button', /^Todos$/i).first().click({ force: true });
       cy.wait(300);
 
-      // 4) Calendario de arriba:
-      //    - columna izquierda => diciembre 2020 -> día 1
-      //    - columna derecha   => enero 2021    -> día 4
-      cy.get('.MuiDayCalendar-monthContainer')
-        .eq(0) // mes izquierda (diciembre 2020)
-        .within(() => {
-          cy.contains('button', /^1$/).click({ force: true });
-        });
-
+      // =========================
+      // INICIO: 01/12/2020
+      // =========================
+      cy.get('button[label="Fecha de inicio"]').click({ force: true });
       cy.wait(200);
 
-      cy.get('.MuiDayCalendar-monthContainer')
-        .eq(1) // mes derecha (enero 2021)
-        .within(() => {
-          cy.contains('button', /^4$/).click({ force: true });
-        });
+      // Diciembre = 11
+      seleccionarFechaEnPopover(2020, 11, 1);
 
-      cy.wait(500);
+      cy.wait(300);
 
-      // 5) Aplicar el rango (popover de fechas)
-      cy.contains('button', /^Aplicar$/i)
-        .first()
-        .click({ force: true });
+      // =========================
+      // FIN: 04/01/2021
+      // =========================
+      cy.get('button[label="Fecha de fin"]').click({ force: true });
+      cy.wait(200);
 
+      // Enero = 0
+      seleccionarFechaEnPopover(2021, 0, 4);
+
+      cy.wait(400);
+
+      // Aplicar (popover)
+      cy.contains('button', /^Aplicar$/i).first().click({ force: true });
       cy.wait(800);
 
-      // 6) Aplicar el filtro general (botón Aplicar del panel)
-      cy.contains('button', /^Aplicar$/i)
-        .last()
-        .click({ force: true });
-
+      // Aplicar filtro general
+      cy.contains('button', /^Aplicar$/i).last().click({ force: true });
       cy.wait(1000);
 
-      // 7) Verificar resultados
       return UI.filasVisibles().should('have.length.greaterThan', 0);
     });
   }
@@ -730,11 +784,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     // OPCIÓN 2: Si estamos en la tabla, hacer todos los pasos necesarios
     return cy.url().then((urlActual) => {
       const enFormulario = urlActual.includes('/dashboard/clients/form');
-      
+
       if (enFormulario) {
         // OPCIÓN 1: Ya estamos en el formulario, ir directamente a la pestaña
         cy.log(`Ya estamos en el formulario, navegando directamente a la pestaña: ${seccion}`);
-        
+
         // Si no es Datos Generales, navegar a la pestaña correspondiente
         if (!esDatosGenerales && seccion) {
           return navegarSeccionFormulario(seccion)
