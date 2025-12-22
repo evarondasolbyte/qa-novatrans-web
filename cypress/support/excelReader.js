@@ -49,6 +49,7 @@ const SHEET_GIDS = {
   'ALMACEN-PEDIDOS': '1704715399', 
   'PROCESOS-ORDENES DE CARGA': '817274383',
   'PROCESOS-RUTAS': '433035856',
+  'FICHEROS-PERSONAL': '316490626',
   'Datos': '0'
 };
 
@@ -188,6 +189,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /(pedidos|pedido)/.test(pantallaSafe)
   ) return 'ALMACEN-PEDIDOS';
 
+  // 👇 NUEVO: detectar Ficheros (Personal)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(personal|personnel)/.test(pantallaSafe)
+  ) return 'FICHEROS-PERSONAL';
+
   return 'Datos';
 }
 
@@ -305,6 +312,32 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
       const nb = parseInt(b.caso.replace(/\D/g, ''), 10);
       return na - nb;
     });
+
+    // Si es la hoja de Login, rellenar credenciales por defecto cuando estén vacías
+    if (hoja === 'LOGIN') {
+      const credencialesPorDefecto = {
+        dato_1: 'NTDesarrolloGonzalo',      // Base de Datos
+        dato_2: 'SERVER\\DESARROLLO',      // Servidor
+        dato_3: 'AdminNovatrans',          // Usuario
+        dato_4: 'solbyte@2023'             // Contraseña
+      };
+
+      out.forEach(caso => {
+        // Rellenar solo si el campo está vacío o no existe
+        if (!caso.dato_1 || caso.dato_1.trim() === '') {
+          caso.dato_1 = credencialesPorDefecto.dato_1;
+        }
+        if (!caso.dato_2 || caso.dato_2.trim() === '') {
+          caso.dato_2 = credencialesPorDefecto.dato_2;
+        }
+        if (!caso.dato_3 || caso.dato_3.trim() === '') {
+          caso.dato_3 = credencialesPorDefecto.dato_3;
+        }
+        if (!caso.dato_4 || caso.dato_4.trim() === '') {
+          caso.dato_4 = credencialesPorDefecto.dato_4;
+        }
+      });
+    }
 
     // Log resumen
     cy.log(`Leídos ${out.length} casos de "${hoja}"`);

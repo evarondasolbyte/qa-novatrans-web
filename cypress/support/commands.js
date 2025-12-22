@@ -31,9 +31,10 @@ Cypress.Commands.add('login', ({
   database = 'NTDesarrolloGonzalo',
   server = 'SERVER\\DESARROLLO',
   username = 'AdminNovatrans',
-  password = 'solbyte@2023',
+  password: passwordRaw = 'solbyte@2023',
   useSession = true
 } = {}) => {
+  const password = passwordRaw;
 
   const performLogin = () => {
     cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app/login', {
@@ -404,8 +405,10 @@ Cypress.Commands.add('hacerLogin', (datosCaso) => {
     dato_1: database = 'NTDesarrolloGonzalo',
     dato_2: server = 'SERVER\\DESARROLLO',
     dato_3: username = 'AdminNovatrans',
-    dato_4: password = 'solbyte@2023'
+    dato_4: passwordRaw = 'solbyte@2023'
   } = datosCaso;
+  
+  const password = passwordRaw || 'solbyte@2023';
 
   const performLogin = () => {
     cy.visit('https://novatrans-web-2mhoc.ondigitalocean.app/login', {

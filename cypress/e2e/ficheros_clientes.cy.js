@@ -1604,7 +1604,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       const valorTexto = campo.valor?.toString() || '';
 
       if (/actividad/i.test((campo.etiquetaVisible || '').toLowerCase())) {
-        return seleccionarOpcionMaterial(campo.selector, valorTexto, campo.etiquetaVisible)
+        return seleccionarOpcionMaterial(campo.selector, valorTexto, campo.etiquetaVisible
+        )
           .then(
             () => completarCampo(index + 1),
             () => {
