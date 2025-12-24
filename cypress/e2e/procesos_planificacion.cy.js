@@ -6,7 +6,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
   const MENU = 'Procesos';
   const SUBMENU = 'Planificación';
   const URL_PATH = '/dashboard/planification';
-  const CASOS_ERROR = new Set(['TC035']);
+  const CASOS_ERROR = new Set([]);
 
   const COLUMNAS_ORDENAMIENTO = {
     12: 'Id',
