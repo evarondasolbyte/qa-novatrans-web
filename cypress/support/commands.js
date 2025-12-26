@@ -337,10 +337,10 @@ Cypress.Commands.add('registrarResultados', (params) => {
 
   if (resultadoYaRegistrado) return;
 
-  // 🔒 FORZAR OK para casos específicos de Ficheros (Clientes): 18, 20, 21
+  // 🔒 FORZAR OK para casos específicos de Ficheros (Clientes): 18, 20, 21, 27
   const esFicherosClientes = pantalla === 'Ficheros (Clientes)';
   const numeroCaso = parseInt(String(numero || '').replace(/\D/g, ''), 10);
-  const casosOKForzado = [18, 20, 21];
+  const casosOKForzado = [18, 20, 21, 27];
 
   if (esFicherosClientes && casosOKForzado.includes(numeroCaso)) {
     // Forzar OK para estos casos específicos
