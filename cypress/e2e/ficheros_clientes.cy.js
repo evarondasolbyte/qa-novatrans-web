@@ -172,6 +172,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               return UI.esperarTabla();
             });
         }
+        // Para el caso 16, recargar antes de ejecutar
+        else if (numero === 16) {
+          prepararPantalla = cy.login().then(() => UI.abrirPantalla());
+        }
         // Para el caso 38, asegurar login + navegación antes de ejecutar (por si venimos de 37 en formulario)
         else if (numero === 38) {
           prepararPantalla = cy.login().then(() => UI.abrirPantalla());
@@ -747,7 +751,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const esSeccionDocumentos = /documento/i.test(seccion);
     const esSeccionDireccion = /dirección|direccion/i.test(seccion);
     const esSeccionFacturacion = /facturación|facturacion/i.test(seccion);
-    const esSeccionConModal = esSeccionContacto || esSeccionAcciones || esZonasCarga || esSeccionCertificaciones || esDatosAdicionales || esSeccionDocumentos || esSeccionDireccion;
+    const esSeccionConModal = esSeccionContacto || esSeccionAcciones || esZonasCarga || esSeccionCertificaciones || esSeccionDocumentos || esSeccionDireccion;
 
     // OPCIÓN 1: Si ya estamos en el formulario, ir directamente a la pestaña
     // OPCIÓN 2: Si estamos en la tabla, hacer todos los pasos necesarios
@@ -854,18 +858,15 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                 cy.log('Zonas de carga: sin campos definidos en Excel, se guarda directamente');
                 return cy.wrap(null);
               }
-              // Contacto, Acciones, Certificaciones, Datos adicionales, Documentos usan funciones específicas, otras secciones usan la genérica
+              // Contacto, Acciones, Certificaciones, Documentos usan funciones específicas, otras secciones usan la genérica
               if (esSeccionContacto) {
                 return llenarFormularioContacto(caso, numeroCaso);
               }
               if (esSeccionAcciones) {
-                return llenarFormularioSeccion(caso, numeroCaso, seccion);
+                return llenarFormularioAcciones(caso, numeroCaso);
               }
               if (esSeccionCertificaciones) {
                 return llenarFormularioCertificaciones(caso, numeroCaso);
-              }
-              if (esDatosAdicionales) {
-                return llenarFormularioDatosAdicionales(caso, numeroCaso);
               }
               if (esSeccionDocumentos) {
                 return llenarFormularioDocumentos(caso, numeroCaso);
@@ -879,6 +880,18 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         if (esSeccionFacturacion) {
           return navegarSeccionFormulario(seccion)
             .then(() => llenarFormularioFacturacion(caso, numeroCaso));
+        }
+
+        // Sección Datos adicionales sin modal (rellenar directamente en la pestaña)
+        if (esDatosAdicionales) {
+          return navegarSeccionFormulario(seccion)
+            .then(() => llenarFormularioDatosAdicionales(caso, numeroCaso));
+        }
+
+        // Sección Datos adicionales sin modal (rellenar directamente en la pestaña)
+        if (esDatosAdicionales) {
+          return navegarSeccionFormulario(seccion)
+            .then(() => llenarFormularioDatosAdicionales(caso, numeroCaso));
         }
 
         // Otras secciones sin modal
@@ -2296,23 +2309,27 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
-  // Rellenar formulario de Datos adicionales (Factura Electrónica) en el modal lateral
+  // Rellenar formulario de Datos adicionales (Factura Electrónica) directamente en la pestaña
   function llenarFormularioDatosAdicionales(caso, numeroCaso) {
     const oficinaContable = caso.dato_1;
     const organoGestor = caso.dato_2;
     const unidadTramitadora = caso.dato_3;
     const organoProponente = caso.dato_4;
+    const riesgoAsegurado = caso.dato_5;
+    const discount = caso.dato_6;
 
-    cy.log(`Datos adicionales detectados: oficinaContable=${oficinaContable}, organoGestor=${organoGestor}, unidadTramitadora=${unidadTramitadora}, organoProponente=${organoProponente}`);
+    cy.log(`Datos adicionales detectados: oficinaContable=${oficinaContable}, organoGestor=${organoGestor}, unidadTramitadora=${unidadTramitadora}, organoProponente=${organoProponente}, riesgoAsegurado=${riesgoAsegurado}, discount=${discount}`);
 
     let chain = cy.wrap(null);
 
-    // Campos de Factura Electrónica
+    // Campos de Factura Electrónica y Otros Datos - buscar por name del HTML
     const camposDatosAdicionales = [
-      { name: 'ei_accounting_office', valor: oficinaContable, label: 'Oficina contable' },
-      { name: 'ei_management_body', valor: organoGestor, label: 'Órgano gestor' },
-      { name: 'ei_processing_unit', valor: unidadTramitadora, label: 'Unidad tramitadora' },
-      { name: 'ei_preponderant_body', valor: organoProponente, label: 'Órgano proponente' }
+      { name: 'client.accountableOffice', valor: oficinaContable, label: 'Oficina contable' },
+      { name: 'client.managingOrganization', valor: organoGestor, label: 'Órgano gestor' },
+      { name: 'client.processingUnit', valor: unidadTramitadora, label: 'Unidad tramitadora' },
+      { name: 'client.preponentOrganization', valor: organoProponente, label: 'Órgano proponente' },
+      { name: 'client.RiesgoAsegurado', valor: riesgoAsegurado, label: 'Riesgo Asegurado' },
+      { name: 'client.discount', valor: discount, label: 'Dto' }
     ];
 
     camposDatosAdicionales.forEach((campo) => {
@@ -2673,7 +2690,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             const esSeccionDocumentos = /documento/i.test(seccion);
             const esSeccionDireccion = /dirección|direccion/i.test(seccion);
             const esSeccionFacturacion = /facturación|facturacion/i.test(seccion);
-            const esSeccionConModal = esSeccionContacto || esSeccionAcciones || esZonasCarga || esSeccionCertificaciones || esDatosAdicionales || esSeccionDocumentos || esSeccionDireccion;
+            const esSeccionConModal = esSeccionContacto || esSeccionAcciones || esZonasCarga || esSeccionCertificaciones || esSeccionDocumentos || esSeccionDireccion;
             
             // Secciones con modal
             if (esSeccionConModal) {
@@ -2714,9 +2731,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   if (esSeccionCertificaciones) {
                     return llenarFormularioCertificaciones(casoPestaña, numeroPestaña);
                   }
-                  if (esDatosAdicionales) {
-                    return llenarFormularioDatosAdicionales(casoPestaña, numeroPestaña);
-                  }
                   if (esSeccionDocumentos) {
                     return llenarFormularioDocumentos(casoPestaña, numeroPestaña);
                   }
@@ -2730,6 +2744,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             if (esSeccionFacturacion) {
               return navegarSeccionFormulario(seccion)
                 .then(() => llenarFormularioFacturacion(casoPestaña, numeroPestaña))
+                .then(() => cy.wait(500));
+            }
+            
+            // Sección Datos adicionales sin modal (rellenar directamente en la pestaña)
+            if (esDatosAdicionales) {
+              return navegarSeccionFormulario(seccion)
+                .then(() => llenarFormularioDatosAdicionales(casoPestaña, numeroPestaña))
                 .then(() => cy.wait(500));
             }
             
