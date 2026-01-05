@@ -209,79 +209,78 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      // Casos 1-23 comentados temporalmente
-      // case 1:
-      //   return { fn: cargaPantalla };
-      // case 2:
-      // case 3:
-      // case 4:
-      // case 5:
-      // case 6:
-      // case 7:
-      // case 8:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 9:
-      // case 10:
-      // case 11:
-      // case 12:
-      // case 13:
-      //   return { fn: ejecutarBusquedaGeneralExcel };
-      // case 14:
-      // case 15:
-      // case 16:
-      // case 17:
-      // case 18:
-      // case 19:
-      // case 20:
-      //   return { fn: ordenarColumnaDesdeExcel };
-      // case 21:
-      //   return { fn: ocultarColumnaDesdeExcel };
-      // case 22:
-      //   return { fn: mostrarColumnaDesdeExcel };
-      // case 23:
-      // case 24: // Comentado - no ejecutar
-      // case 25: // Comentado - no ejecutar
-      // case 26: // Comentado - no ejecutar
-      // case 27: // Comentado - no ejecutar
-      // case 28: // Comentado - no ejecutar
-      // case 29: // Comentado - no ejecutar
-                // case 30: // Comentado - no ejecutar
-                // case 31: // Comentado - no ejecutar
-                // case 32: // Comentado - no ejecutar
-                // case 33: // Comentado - no ejecutar
-                // case 34: // Comentado - no ejecutar
-      // case 35: // Comentado - no ejecutar
-      // case 36: // Comentado - no ejecutar
-      // case 37: // Comentado - no ejecutar
-      // case 38: // Comentado - no ejecutar
-      //   return { fn: eliminarPersonalSeleccionado };
-      // case 39: // Comentado - no ejecutar
-      //   return { fn: seleccionarPrimeraFila };
-      // case 40: // Comentado - no ejecutar
-      //   return { fn: scrollTablaPersonal };
-      // case 41: // Comentado - no ejecutar
-      //   return { fn: resetFiltrosAlRecargar };
-      // case 42: // Comentado - no ejecutar
-      //   return { fn: aplicarFechaFiltro };
-      // case 43: // Comentado - no ejecutar
-      //   return { fn: guardarFiltroDesdeExcel };
-      // case 44: // Comentado - no ejecutar
-      //   return { fn: limpiarFiltroDesdeExcel };
-      // case 45: // Comentado - no ejecutar
-      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
-      // case 46: // Comentado - no ejecutar
-      // case 47: // Comentado - no ejecutar
-      // case 48: // Comentado - no ejecutar
-      // case 49: // Comentado - no ejecutar
-      // case 50: // Comentado - no ejecutar
-      // case 51: // Comentado - no ejecutar
-      //   return { fn: ejecutarMultifiltroExcel };
-      // case 52: // Comentado - no ejecutar
-      // case 53: // Comentado - no ejecutar
-      // case 54: // Comentado - no ejecutar
-      //   return { fn: seleccionarFiltroNacionalidad };
-      // case 55: // Comentado - no ejecutar
-      //   return { fn: cambiarIdiomasPersonal };
+      case 1:
+        return { fn: cargaPantalla };
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+        return { fn: ejecutarBusquedaGeneralExcel };
+      case 14:
+      case 15:
+      case 16:
+      case 17:
+      case 18:
+      case 19:
+      case 20:
+        return { fn: ordenarColumnaDesdeExcel };
+      case 21:
+        return { fn: ocultarColumnaDesdeExcel };
+      case 22:
+        return { fn: mostrarColumnaDesdeExcel };
+      case 23:
+      case 24:
+      case 25:
+      case 26:
+      case 27:
+      case 28:
+      case 29:
+      case 30:
+      case 31:
+      case 32:
+      case 33:
+      case 34:
+      case 35:
+      case 36:
+      case 37:
+      case 38:
+        return { fn: eliminarPersonalSeleccionado };
+      case 39:
+        return { fn: seleccionarPrimeraFila };
+      case 40:
+        return { fn: scrollTablaPersonal };
+      case 41:
+        return { fn: resetFiltrosAlRecargar };
+      case 42:
+        return { fn: aplicarFechaFiltro };
+      case 43:
+        return { fn: guardarFiltroDesdeExcel };
+      case 44:
+        return { fn: limpiarFiltroDesdeExcel };
+      case 45:
+        return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      case 46:
+      case 47:
+      case 48:
+      case 49:
+      case 50:
+      case 51:
+        return { fn: ejecutarMultifiltroExcel };
+      case 52:
+      case 53:
+      case 54:
+        return { fn: seleccionarFiltroNacionalidad };
+      case 55:
+        return { fn: cambiarIdiomasPersonal };
       case 56:
         return { fn: TC056 };
       default:
