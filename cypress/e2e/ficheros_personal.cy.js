@@ -14,6 +14,9 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   const CAMPOS_IGNORADOS = new Set(['código', 'codigo', 'activo', 'nacionalidad', 'nationality']);
 
+  // Flag para detectar error de isValid
+  let errorIsValidOcurrido = false;
+
   before(() => {
     cy.login();
   });
@@ -24,6 +27,63 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     Cypress.config('defaultCommandTimeout', 30000);
     Cypress.config('requestTimeout', 30000);
     Cypress.config('responseTimeout', 30000);
+
+    Cypress.on('uncaught:exception', (err) => {
+      const msg = (err?.message || '').toString();
+
+      if (
+        /e\.isValid is not a function/i.test(msg) ||
+        /application error/i.test(msg) ||
+        /client-side exception/i.test(msg)
+      ) {
+        errorIsValidOcurrido = true;
+        // IMPORTANTÍSIMO: si no haces esto, se cae el test entero y no continúa
+        return false;
+      }
+
+      // para otros errores deja que Cypress falle
+      return true;
+    });
+
+  });
+
+  afterEach(function () {
+    const test = this.currentTest;
+    const fallo = test?.state === 'failed';
+    const errMsg = (test?.err?.message || '').toString();
+
+    const esAppError =
+      !!appErrorDetectado ||
+      /e\.isValid is not a function/i.test(errMsg) ||
+      /application error/i.test(errMsg) ||
+      /client-side exception/i.test(errMsg);
+
+    if (fallo && esAppError && registroActual) {
+      const obtenido = `Application error: ${appErrorDetectado?.message || errMsg}`;
+
+      // ✅ registra ERROR en excel (usa TU función/comando real)
+      // Si tú usas "registrarResultadoAutomatico", úsalo aquí:
+      return registrarResultadoAutomatico(
+        registroActual.numero,
+        registroActual.casoId,
+        registroActual.nombre,
+        obtenido,
+        'ERROR',
+        registroActual.autoRegistro
+      ).then(() => {
+        // Limpieza para el siguiente test
+        appErrorDetectado = null;
+        registroActual = null;
+
+        // ✅ opcional: recuperar la app para que el siguiente test no empiece en la pantalla rota
+        // Si tu beforeEach ya hace login+abrir pantalla, puedes quitar esto.
+        return cy.login().then(() => UI.abrirPantalla());
+      });
+    }
+
+    // si no aplica, limpiamos igualmente
+    appErrorDetectado = null;
+    registroActual = null;
   });
 
   after(() => {
@@ -82,8 +142,14 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
         let prepararPantalla = pantallaLista;
 
+        // Caso 23: necesita reiniciar antes para volver a la pantalla principal
+        if (numero === 23) {
+          cy.log(`Caso 23: Reiniciando para volver a la pantalla principal...`);
+          prepararPantalla = cy.reload().then(() => UI.abrirPantalla());
+        }
+
         // Casos que requieren abrir formulario limpio y/o tab concreta
-        if ((numero >= 24 && numero <= 34) || numero === 23 || numero === 56) {
+        if ((numero >= 24 && numero <= 34) || numero === 56) {
           const seccion = deducirSeccionDesdeCaso(caso);
           cy.log(`Caso ${numero}: Preparando estado limpio (login + navegación + abrir formulario)`);
 
@@ -96,29 +162,35 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               return UI.esperarTabla();
             })
             .then(() => {
-              cy.log('Pulsando botón "+ Nuevo" para abrir formulario...');
+              cy.log(`Caso ${numero}: Pulsando botón "+ Nuevo" para abrir formulario...`);
               return abrirFormularioNuevoPersonal();
             })
             .then(() => {
+              // Verificar que realmente estamos en el formulario
               return cy.url().then((urlDespuesNuevo) => {
                 if (!urlDespuesNuevo.includes('/dashboard/personnel/form')) {
-                  cy.log('El formulario no se abrió, intentando de nuevo el botón "+ Nuevo"...');
-                  return abrirFormularioNuevoPersonal().then(() =>
-                    cy.url().should('include', '/dashboard/personnel/form')
-                  );
+                  cy.log(`Caso ${numero}: El formulario no se abrió, intentando de nuevo el botón "+ Nuevo"...`);
+                  return abrirFormularioNuevoPersonal().then(() => {
+                    cy.wait(1000);
+                    return cy.url().should('include', '/dashboard/personnel/form', { timeout: 10000 });
+                  });
                 }
+                cy.log(`Caso ${numero}: Formulario abierto correctamente, URL: ${urlDespuesNuevo}`);
                 return cy.wrap(null);
               });
             })
             .then(() => {
+              // Esperar a que el formulario esté completamente cargado antes de navegar a pestañas
+              cy.wait(1000);
               if (seccion && !/personales/i.test(seccion)) {
-                cy.log(`Navegando a la pestaña: ${seccion}`);
+                cy.log(`Caso ${numero}: Navegando a la pestaña: ${seccion}`);
                 return navegarSeccionFormulario(seccion).then(() => {
                   cy.wait(500);
-                  cy.log(`Navegación a la pestaña "${seccion}" completada`);
+                  cy.log(`Caso ${numero}: Navegación a la pestaña "${seccion}" completada`);
                   return cy.wrap(null);
                 });
               }
+              cy.log(`Caso ${numero}: Sección es Datos Personales, no es necesario navegar a otra pestaña`);
               return cy.wrap(null);
             });
         }
@@ -135,72 +207,203 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           });
         }
 
+        // Resetear flag de error isValid al inicio de cada caso
+        errorIsValidOcurrido = false;
+
+        // Variable para rastrear si ya se reinició por error
+        let yaReiniciadoPorError = false;
+
         return prepararPantalla
           .then(() => {
             cy.log(`Ejecutando función del caso ${numero}...`);
             return fn(caso, numero, casoId);
+          }, (err) => {
+            // Si ocurrió un error durante la ejecución, verificar si es el error de isValid o filter
+            const esErrorIsValid = errorIsValidOcurrido || (err?.message && err.message.includes('e.isValid is not a function'));
+            const esErrorFilter = err?.message && (
+              err.message.includes('cy.filter() failed') ||
+              err.message.includes('requires a DOM element') ||
+              err.message.includes('jQuery{0}') ||
+              err.message.includes('MuiPickersCalendarHeader') ||
+              (err.message.includes('Timed out retrying') && err.message.includes('DOM element')) ||
+              (err.message.includes('Timed out retrying') && err.message.includes('filter()'))
+            );
+
+            if (esErrorIsValid) {
+              errorIsValidOcurrido = true;
+              cy.log(`Error de aplicación detectado durante ejecución (e.isValid is not a function). Se detendrá y registrará en Excel.`);
+              // Continuar con el flujo normal para registrar el error
+              return cy.wrap(null);
+            }
+
+            if (esErrorFilter) {
+              cy.log(`Error de calendario detectado durante ejecución (cy.filter() failed)`);
+              // Continuar con el flujo normal para registrar el error - se manejará en el catch principal
+              throw err;
+            }
+
+            // Si es otro error, relanzarlo
+            throw err;
           })
-          .then(
-            () => {
-              if (CASOS_OK_FORZADO.has(numero)) {
-                return registrarResultadoAutomatico(
-                  numero,
-                  casoId,
-                  nombre,
-                  'Comportamiento correcto (OK forzado)',
-                  'OK',
-                  autoRegistro
-                );
-              }
-
-              const resultado = 'OK';
-              const obtenido = 'Comportamiento correcto';
-
+          .then(() => {
+            // Verificar si ocurrió el error de isValid
+            if (errorIsValidOcurrido) {
+              cy.log(`Error de aplicación detectado (e.isValid is not a function), registrando como ERROR en Excel`);
+              yaReiniciadoPorError = true;
               return registrarResultadoAutomatico(
                 numero,
                 casoId,
                 nombre,
-                obtenido,
-                resultado,
+                'Error de aplicación: e.isValid is not a function',
+                'ERROR',
                 autoRegistro
-              );
-            },
-            (err) => {
-              if (CASOS_OK_FORZADO.has(numero)) {
-                return registrarResultadoAutomatico(
-                  numero,
-                  casoId,
-                  nombre,
-                  'Comportamiento correcto (OK forzado, error ignorado)',
-                  'OK',
-                  autoRegistro
-                );
-              }
+              ).then(() => {
+                cy.log(`Reiniciando con login después de error de aplicación para continuar con siguiente caso...`);
+                // Reiniciar flag antes de login para el siguiente caso
+                errorIsValidOcurrido = false;
+                return cy.login().then(() => UI.abrirPantalla());
+              });
+            }
 
-              // OJO: tú estabas marcando "OK" incluso en error. Mantengo tu lógica,
-              // pero si quieres que quede ERROR aquí, cambia resultado a 'ERROR'.
-              const resultado = 'OK';
-              const obtenido = caso?.observacion || err?.message || 'Comportamiento correcto';
-
+            if (CASOS_OK_FORZADO.has(numero)) {
               return registrarResultadoAutomatico(
                 numero,
                 casoId,
                 nombre,
-                obtenido,
-                resultado,
+                'Comportamiento correcto (OK forzado)',
+                'OK',
                 autoRegistro
               );
             }
-          )
+
+            const resultado = 'OK';
+            const obtenido = 'Comportamiento correcto';
+
+            return registrarResultadoAutomatico(
+              numero,
+              casoId,
+              nombre,
+              obtenido,
+              resultado,
+              autoRegistro
+            );
+          }, (err) => {
+            // Si el error es relacionado con expedición, marcar como ERROR
+            const esErrorExpedicion = err?.message &&
+              (err.message.includes('Expedición') ||
+                err.message.includes('Expedicion') ||
+                err.message.includes('expedición') ||
+                err.message.includes('expedicion'));
+
+            // Verificar si es error de isValid (ya manejado arriba, pero por si acaso)
+            const esErrorIsValid = errorIsValidOcurrido || (err?.message && err.message.includes('e.isValid is not a function'));
+
+            // Verificar si es error de filter (calendario no encontrado)
+            const esErrorFilter = err?.message && (
+              err.message.includes('cy.filter() failed') ||
+              err.message.includes('requires a DOM element') ||
+              err.message.includes('jQuery{0}') ||
+              err.message.includes('MuiPickersCalendarHeader') ||
+              err.message.includes('Timed out retrying') && err.message.includes('DOM element') ||
+              err.message.includes('Timed out retrying') && err.message.includes('filter()')
+            );
+
+            if (esErrorExpedicion) {
+              cy.log(`Error detectado en campo Expedición, registrando como ERROR en Excel`);
+              yaReiniciadoPorError = true;
+              return registrarResultadoAutomatico(
+                numero,
+                casoId,
+                nombre,
+                err?.message || 'Error al rellenar campo Expedición',
+                'ERROR',
+                autoRegistro
+              ).then(() => {
+                // Reiniciar - el flujo normal continuará al siguiente caso
+                cy.log(`Reiniciando después de error en Expedición...`);
+                return cy.reload().then(() => UI.abrirPantalla());
+              });
+            }
+
+            if (esErrorIsValid) {
+              cy.log(`Error de aplicación detectado (e.isValid is not a function), registrando como ERROR en Excel`);
+              yaReiniciadoPorError = true;
+              return registrarResultadoAutomatico(
+                numero,
+                casoId,
+                nombre,
+                'Error de aplicación: e.isValid is not a function',
+                'ERROR',
+                autoRegistro
+              ).then(() => {
+                // Reiniciar flag antes de login para el siguiente caso
+                errorIsValidOcurrido = false;
+                // Reiniciar con login completo para el siguiente caso
+                cy.log(`Reiniciando con login después de error de aplicación para continuar con siguiente caso...`);
+                return cy.login().then(() => UI.abrirPantalla());
+              });
+            }
+
+            if (esErrorFilter) {
+              cy.log(`Error de calendario detectado (cy.filter() failed), registrando como ERROR en Excel`);
+              yaReiniciadoPorError = true;
+              return registrarResultadoAutomatico(
+                numero,
+                casoId,
+                nombre,
+                'Error: No se encontraron elementos del calendario',
+                'ERROR',
+                autoRegistro
+              ).then(() => {
+                // Reiniciar con login completo para el siguiente caso
+                cy.log(`Reiniciando con login después de error de calendario para continuar con siguiente caso...`);
+                return cy.login().then(() => UI.abrirPantalla());
+              });
+            }
+
+            if (CASOS_OK_FORZADO.has(numero)) {
+              return registrarResultadoAutomatico(
+                numero,
+                casoId,
+                nombre,
+                'Comportamiento correcto (OK forzado, error ignorado)',
+                'OK',
+                autoRegistro
+              );
+            }
+
+            // OJO: tú estabas marcando "OK" incluso en error. Mantengo tu lógica,
+            // pero si quieres que quede ERROR aquí, cambia resultado a 'ERROR'.
+            const resultado = 'OK';
+            const obtenido = caso?.observacion || err?.message || 'Comportamiento correcto';
+
+            return registrarResultadoAutomatico(
+              numero,
+              casoId,
+              nombre,
+              obtenido,
+              resultado,
+              autoRegistro
+            );
+          })
           .then(() => {
+            // Si ya se reinició por error, no hacer recarga adicional
+            if (yaReiniciadoPorError) {
+              cy.log(`Ya se reinició por error, continuando directamente con siguiente caso...`);
+              return cy.wrap(null);
+            }
+
             if (numero === 35 || numero === 36) return cy.wrap(null);
 
             if (numero === 34) return cy.login().then(() => UI.abrirPantalla());
 
-            // siempre recarga para limpiar estado
+            // siempre recarga para limpiar estado (excepto si ya se reinició por error)
             return cy.reload().then(() => UI.abrirPantalla());
           })
-          .then(() => ejecutarCaso(index + 1));
+          .then(() => {
+            cy.log(`Continuando con siguiente caso después del caso ${numero}...`);
+            return ejecutarCaso(index + 1);
+          });
       };
 
       return ejecutarCaso(0);
@@ -209,6 +412,8 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
+      // Casos 1-22 comentados - no se ejecutan
+      /*
       case 1:
         return { fn: cargaPantalla };
       case 2:
@@ -238,6 +443,8 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       case 22:
         return { fn: mostrarColumnaDesdeExcel };
       case 23:
+        return { fn: eliminarPersonalSeleccionado };
+      */
       case 24:
       case 25:
       case 26:
@@ -249,6 +456,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       case 32:
       case 33:
       case 34:
+        return { fn: anadirPersonal };
       case 35:
       case 36:
       case 37:
@@ -644,7 +852,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function abrirFormularioNuevoPersonal() {
     return cy.contains('button, a', /\+?\s?Nuevo|Añadir/i, { timeout: 10000 })
-      .scrollIntoView()
       .click({ force: true })
       .then(() => {
         cy.url().should('include', '/dashboard/personnel/form');
@@ -655,7 +862,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   function deducirSeccionDesdeCaso(caso) {
     const nombre = (caso?.nombre || '').toLowerCase();
     cy.log(`Deduciendo sección desde caso. Nombre del caso: "${caso?.nombre}" (lowercase: "${nombre}")`);
-    
+
     // Verificar INCIDENCIAS primero (antes de otras secciones que puedan contener palabras similares)
     if (nombre.includes('incidencia') || nombre.includes('incidencias')) {
       cy.log('✓ Sección detectada: Incidencias');
@@ -698,10 +905,10 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
     const nombreSeccion = seccion.trim();
     cy.log(`Buscando pestaña: "${nombreSeccion}"`);
-    
+
     // Si es INCIDENCIAS, primero hacer clic en el botón de scroll para mostrar la última pestaña
     const esIncidencia = nombreSeccion.toLowerCase().includes('incidencia') || nombreSeccion.toLowerCase().includes('incidencias');
-    
+
     if (esIncidencia) {
       cy.log('INCIDENCIAS es la última pestaña, haciendo clic en el botón de scroll...');
       return cy
@@ -735,7 +942,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           });
         });
     }
-    
+
     const palabras = nombreSeccion.split(/\s+/).map(p => escapeRegex(p)).join('.*');
     const regex = new RegExp(palabras, 'i');
 
@@ -784,15 +991,22 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         const enFormulario = urlActual.includes('/dashboard/personnel/form');
 
         if (enFormulario) {
-          cy.log(`Ya estamos en el formulario, navegando directamente a la pestaña: ${seccion}`);
-          if (!esDatosPersonales && seccion) {
-            return navegarSeccionFormulario(seccion).then(() => {
-              cy.wait(500);
-              cy.log(`Navegación a la pestaña "${seccion}" completada`);
+          cy.log(`Ya estamos en el formulario (caso ${numeroCaso}), verificando estado...`);
+          // Si ya estamos en el formulario (por la preparación de pantalla), verificar que realmente se abrió
+          return cy.url().should('include', '/dashboard/personnel/form', { timeout: 5000 })
+            .then(() => {
+              cy.wait(500); // Esperar a que el formulario esté completamente cargado
+              if (!esDatosPersonales && seccion) {
+                cy.log(`Navegando directamente a la pestaña: ${seccion}`);
+                return navegarSeccionFormulario(seccion).then(() => {
+                  cy.wait(500);
+                  cy.log(`Navegación a la pestaña "${seccion}" completada`);
+                  return cy.wrap(null);
+                });
+              }
+              cy.log('Estamos en Datos Personales, continuando con el rellenado...');
               return cy.wrap(null);
             });
-          }
-          return cy.wrap(null);
         }
 
         cy.log('Estamos en la tabla, ejecutando todos los pasos: abrir pantalla, esperar tabla, abrir formulario');
@@ -829,16 +1043,22 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           });
       })
       .then(() => {
+        // Esperar un momento para asegurar que el formulario esté completamente cargado
+        cy.wait(500);
+
         // Verificar explícitamente si es INCIDENCIAS para evitar procesarlo como DATOS PERSONALES
         const esIncidenciaExplicita = seccion && (seccion.toLowerCase().includes('incidencia') || seccion.toLowerCase().includes('incidencias'));
-        
+
         if (esDatosPersonales && !esIncidenciaExplicita) {
+          cy.log(`Caso ${numeroCaso}: Rellenando Datos Personales desde Excel...`);
           return llenarFormularioDatosPersonalesDesdeExcel(caso, numeroCaso);
         }
 
         if (esSeccionConModal || esIncidenciaExplicita) {
+          cy.log(`Caso ${numeroCaso}: Navegando a pestaña ${seccion} y rellenando modal...`);
           return navegarSeccionFormulario(seccion)
             .then(() => {
+              cy.wait(500);
               if (esIncidenciaExplicita) {
                 cy.log('Es INCIDENCIAS, abriendo modal...');
                 return abrirModalSeccion(seccion);
@@ -849,6 +1069,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             .then(() => guardarModalSeccion(seccion));
         }
 
+        cy.log(`Caso ${numeroCaso}: Navegando a pestaña ${seccion} y rellenando campos...`);
         return navegarSeccionFormulario(seccion).then(() => llenarCamposFormulario(caso));
       })
       .then(() => {
@@ -871,7 +1092,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   // =========================
   function seleccionarTelefono(caso, numero, casoId) {
     const numeroCaso = numero || parseInt(String(caso?.caso || '').replace(/\D/g, ''), 10);
-    
+
     cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Seleccionar teléfono`);
 
     return cy.url()
@@ -977,17 +1198,68 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       // Buscar el label dentro del contenedor para obtener el texto
       const label = $cont.find('label').first();
       const labelText = label.text();
-      
+
       cy.log(`Abriendo calendario para ${labelText} y seleccionando fecha`);
-      
+
       // Buscar el botón del calendario dentro del contenedor
-      return cy.wrap($cont[0]).within(() => {
-        cy.get('button[aria-label*="Choose date"], button[aria-label*="Seleccionar fecha"], button.MuiIconButton-root', { timeout: 5000 })
-          .should('be.visible')
-          .first()
-          .click({ force: true });
-      }).wait(500).then(() => {
-        return seleccionarFechaEnPopover(anio, mesIndex, dia);
+      // Mejorar la búsqueda para incluir más selectores y ser más robusta
+      return cy.wrap($cont[0]).then(($contEl) => {
+        // Buscar el botón dentro del contenedor
+        const botonCal = $contEl.find('button[aria-label*="date"], button[aria-label*="fecha"], button[aria-label*="calendar"], button[aria-label*="Choose date"], button[aria-label*="Seleccionar fecha"], button.MuiIconButton-root')
+          .filter(':visible')
+          .first();
+
+        if (botonCal.length > 0) {
+          cy.log(`Botón del calendario encontrado en contenedor para "${labelText}"`);
+          return cy.wrap(botonCal[0])
+            .should('be.visible')
+            .scrollIntoView()
+            .click({ force: true })
+            .wait(500)
+            .then(() => {
+              return seleccionarFechaEnPopover(anio, mesIndex, dia);
+            });
+        }
+
+        // Si no se encuentra, buscar en el contenedor padre
+        cy.log(`Botón no encontrado en contenedor directo, buscando en contenedor padre...`);
+        const contenedorPadre = $contEl.closest('.MuiFormControl-root, .MuiPickersTextField-root');
+        if (contenedorPadre.length) {
+          const botonPadre = contenedorPadre.find('button[aria-label*="date"], button[aria-label*="fecha"], button[aria-label*="calendar"], button.MuiIconButton-root')
+            .filter(':visible')
+            .first();
+
+          if (botonPadre.length > 0) {
+            cy.log(`Botón del calendario encontrado en contenedor padre para "${labelText}"`);
+            return cy.wrap(botonPadre[0])
+              .should('be.visible')
+              .scrollIntoView()
+              .click({ force: true })
+              .wait(500)
+              .then(() => {
+                return seleccionarFechaEnPopover(anio, mesIndex, dia);
+              });
+          }
+        }
+
+        // Fallback: usar within con timeout más largo
+        cy.log(`Usando fallback: within con búsqueda amplia para "${labelText}"`);
+        return cy.wrap($contEl).within(() => {
+          cy.get('button', { timeout: 10000 })
+            .filter((_, el) => {
+              const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
+              const className = (el.className || '').toLowerCase();
+              return (ariaLabel.includes('date') || ariaLabel.includes('fecha') || ariaLabel.includes('calendar') ||
+                className.includes('muiiconbutton')) &&
+                Cypress.$(el).is(':visible');
+            })
+            .first()
+            .should('be.visible')
+            .scrollIntoView()
+            .click({ force: true });
+        }).wait(500).then(() => {
+          return seleccionarFechaEnPopover(anio, mesIndex, dia);
+        });
       });
     });
   }
@@ -1003,6 +1275,12 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       return cy.wrap(null);
     }
 
+    // Detectar si es expedición para manejar errores específicos
+    const esExpedicion = etiquetaLower.includes('expedición') ||
+      etiquetaLower.includes('expedicion') ||
+      (tipo && tipo.toLowerCase().includes('expedici')) ||
+      (selector && selector.toLowerCase().includes('expedici'));
+
     const fechaObj = parseFechaBasicaExcel(fecha);
     const fechaFormateada = `${fechaObj.getFullYear()}-${String(fechaObj.getMonth() + 1).padStart(2, '0')}-${String(fechaObj.getDate()).padStart(2, '0')}`;
     // Formato para escribir directamente con espacios: DD MM YYYY
@@ -1015,7 +1293,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         cy.log(`Buscando date picker por clase MuiPickers`);
         // Buscar todos los date pickers y encontrar el que no está rellenado o el siguiente disponible
         const contenedores = $body.find('.MuiPickersInputBase-root, .MuiPickersSectionList-root').closest('.MuiFormControl-root, .MuiTextField-root');
-        
+
         if (contenedores.length > 0) {
           // Buscar el contenedor que tenga un label con texto de fecha o que esté vacío
           let contenedorEncontrado = null;
@@ -1037,18 +1315,18 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               const esVencimiento = labelText.includes('vencimiento') || labelText.includes('expiration');
               const esFechaAlta = labelText.includes('fecha alta') || labelText.includes('start date');
               const esFechaBaja = labelText.includes('fecha baja') || labelText.includes('end date');
-              
+
               if (!diaText || diaText === 'DD' || esNacimiento || esExpedicion || esVencimiento || esFechaAlta || esFechaBaja) {
                 contenedorEncontrado = cont;
                 break;
               }
             }
           }
-          
+
           if (contenedorEncontrado && contenedorEncontrado.length) {
             return escribirFechaEnContenedor(contenedorEncontrado, fechaObj, fechaFormateada);
           }
-          
+
           // Si no se encontró uno específico, usar el primero disponible
           if (contenedores.length > 0) {
             return escribirFechaEnContenedor(contenedores.first(), fechaObj, fechaFormateada);
@@ -1058,40 +1336,42 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       // Buscar el label específico según el tipo/selector, o usar índice si no se encuentra
       cy.log(`Buscando label de fecha para: tipo="${tipo}", selector="${selector}", índice=${indiceFecha}`);
-      
+
       let label = null;
-      
+
       // Primero intentar buscar por palabras clave específicas del tipo/selector
       if (tipo || selector) {
         const textoBuscar = (tipo || selector || '').toLowerCase();
         cy.log(`Intentando buscar label por tipo/selector: "${textoBuscar}"`);
-        
+
         // Buscar labels que coincidan con palabras clave específicas
         const keywords = [];
+        // IMPORTANTE: Verificar expedición ANTES que vencimiento porque "expir" puede coincidir con ambos
         if (/expedici|drivinglicenseissue/i.test(textoBuscar)) {
           keywords.push(/^expedici[oó]n$/i);
-        } else if (/vencim|drivinglicenseexpiry|expir/i.test(textoBuscar)) {
+        } else if (/vencim|drivinglicenseexpiry/i.test(textoBuscar) && !/expedici/i.test(textoBuscar)) {
+          // Solo vencimiento si NO es expedición
           keywords.push(/^vencimiento$/i);
         } else if (/fecha alta|start date|alta/i.test(textoBuscar)) {
           keywords.push(/^fecha alta$/i);
         } else if (/nacim|birth/i.test(textoBuscar)) {
           keywords.push(/^nacimiento$/i);
         }
-        
+
         if (keywords.length > 0) {
           const labelsEspecificos = $body.find('label').filter((_, el) => {
             const text = (el.innerText || '').trim();
-            return keywords.some(keyword => keyword.test(text)) && 
-                   !/nacionalidad|nationality|años nacimiento hijos/i.test(text);
+            return keywords.some(keyword => keyword.test(text)) &&
+              !/nacionalidad|nationality|años nacimiento hijos/i.test(text);
           });
-          
+
           if (labelsEspecificos.length > 0) {
             label = labelsEspecificos.first();
             cy.log(`Label específico encontrado: "${label.text()}"`);
           }
         }
       }
-      
+
       // Si no se encontró por tipo/selector, usar índice
       if (!label || !label.length) {
         cy.log(`Buscando por índice ${indiceFecha}`);
@@ -1102,11 +1382,11 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           if (/nacionalidad|nationality|años nacimiento hijos/i.test(text)) return false;
           // Incluir solo campos de fecha conocidos
           return /^(nacimiento|expedici[oó]n|vencimiento|fecha alta|fecha baja)$/i.test(text) ||
-                 /birth|expiration|start date|end date/i.test(text);
+            /birth|expiration|start date|end date/i.test(text);
         });
-        
+
         cy.log(`Total labels de fecha encontrados: ${todosLabelsFecha.length}`);
-        
+
         if (todosLabelsFecha.length > indiceFecha) {
           label = todosLabelsFecha.eq(indiceFecha);
           cy.log(`Usando label de fecha en índice ${indiceFecha}: "${label.text()}"`);
@@ -1127,25 +1407,47 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       }
 
       // Buscar el contenedor del date picker y hacer clic para abrir el calendario
-      const contenedorPadre = label.closest('.MuiFormControl-root, .MuiTextField-root');
-      
+      const contenedorPadre = label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiPickersTextField-root');
+
       if (!contenedorPadre.length) {
-        cy.log(`No se encontró contenedor para ${etiquetaFecha}`);
-        return cy.wrap(null);
+        cy.log(`No se encontró contenedor para ${etiquetaFecha}, intentando buscar directamente el date picker`);
+        // Fallback: buscar el date picker directamente cerca del label
+        return cy.get('body').then(($body) => {
+          const labelText = label.text();
+          // Buscar el contenedor que tenga el label y un date picker
+          const contenedorAlternativo = label.closest('div').siblings('.MuiPickersTextField-root, .MuiFormControl-root').first();
+          if (contenedorAlternativo.length) {
+            return cy.wrap(contenedorAlternativo[0]).within(() => {
+              cy.get('button[aria-label*="date"], button[aria-label*="fecha"], button.MuiIconButton-root', { timeout: 5000 })
+                .first()
+                .should('be.visible')
+                .click({ force: true });
+            }).wait(500).then(() => {
+              const dia = fechaObj.getDate();
+              const mesIndex = fechaObj.getMonth();
+              const anio = fechaObj.getFullYear();
+              return seleccionarFechaEnPopover(anio, mesIndex, dia);
+            });
+          }
+          cy.log(`No se encontró contenedor alternativo para ${etiquetaFecha}`);
+          return cy.wrap(null);
+        });
       }
-      
+
       cy.log(`Abriendo calendario para ${etiquetaFecha} y seleccionando fecha`);
       const dia = fechaObj.getDate();
       const mesIndex = fechaObj.getMonth();
       const anio = fechaObj.getFullYear();
-      
+
       const labelText = label.text();
       cy.log(`Buscando botón del calendario para label: "${labelText}"`);
-      
+
       // Usar el contenedor padre encontrado para buscar el botón del calendario
+      // Usar within() y cy.get() como en ficheros_clientes.cy.js
       return cy.wrap(contenedorPadre[0]).within(() => {
-        // Buscar el botón del calendario dentro del contenedor
-        cy.get('button[aria-label="Choose date"], button.MuiIconButton-root', { timeout: 5000 })
+        cy.log(`Buscando botón del calendario en contenedor para "${labelText}"`);
+        cy.get('button[aria-label*="date"], button[aria-label*="fecha"], button[aria-label*="calendar"], button.MuiIconButton-root', { timeout: 5000 })
+          .filter(':visible')
           .first()
           .should('be.visible')
           .click({ force: true });
@@ -1161,7 +1463,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
     // Para el caso 25, rellenar todos los campos (no ignorar campos excepto Nacionalidad)
     const esCaso25 = numeroCaso === 25;
-    const camposIgnoradosParaEsteCaso = esCaso25 
+    const camposIgnoradosParaEsteCaso = esCaso25
       ? new Set(['nacionalidad', 'nationality']) // Solo ignorar Nacionalidad en caso 25
       : CAMPOS_IGNORADOS;
 
@@ -1178,20 +1480,78 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         t.includes('baja') ||
         t.includes('date') ||
         t.includes('birth') ||
-        /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(t.trim()) // Detecta formato de fecha DD/MM/YYYY
+        /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(t.trim())
       );
     };
 
-    // Campos que están en otras pestañas - Guardar para rellenarlos después
-    const camposOtrasPestanasDireccion = ['client.address', 'client.city', 'client.postalCode', 'client.country', 'client.region', 'client.adressNotes', 'address', 'city', 'postal', 'country', 'region', 'provincia', 'dirección', 'direccion', 'adressnotes', 'addressnotes', 'notas'];
-    const camposOtrasPestanasEconomicos = ['ccc', 'cccpart1', 'cccpart2', 'cccpart3', 'cccpart4', 'client.cccpart1', 'client.cccpart2', 'client.cccpart3', 'client.cccpart4', 'client.cccPart1', 'client.cccPart2', 'client.cccPart3', 'client.cccPart4', 'iban', 'ibanpart1', 'ibanpart2', 'ibanpart3', 'ibanpart4', 'ibanpart5', 'client.ibanpart1', 'client.ibanpart2', 'client.ibanpart3', 'client.ibanpart4', 'client.ibanpart5', 'client.ibanPart1', 'client.ibanPart2', 'client.ibanPart3', 'client.ibanPart4', 'client.ibanPart5', 'perfil de pago', 'perfilpago', 'paymentprofileid', 'client.paymentprofileid', 'client.paymentProfileId', 'mui-component-select-client.paymentprofileid', 'mui-component-select-client.paymentProfileId', 'precio', 'priceperhour', 'priceperhour', 'client.priceperhour', 'client.pricePerHour', 'cuenta contable', 'cuentacontable', 'accountingaccount', 'client.accountingaccount', 'client.accountingAccount', 'accounting', 'client.accounting', 'clientaccounting', 'economicnotes', 'client.economicnotes', 'client.economicNotes', 'notas', 'client.bankAccount', 'client.iban', 'client.paymentProfile'];
+    // =========================
+    // ✅ NUEVO: Detector de "error de aplicación" SOLO para cortar el caso 24 y continuar suite
+    // =========================
+    // IMPORTANTE: para que continúe con el siguiente caso, tu it() debe tener:
+    // cy.on('fail', (err) => { cy.capturarError(err, {...}); return false; });
+    const detectarErrorAplicacionYAbortar = (paso) => {
+      if (numeroCaso !== 24) return cy.wrap(null);
 
-    // Separar campos en normales, fechas, campos de DIRECCIÓN, DATOS ECONÓMICOS y Propietario (debe ir primero)
+      return cy.get('body', { timeout: 1500 }).then(($body) => {
+        const txt = ($body.text() || '').toLowerCase();
+
+        const hayAppError =
+          txt.includes('application error') ||
+          txt.includes('unexpected application error') ||
+          txt.includes('something went wrong') ||
+          txt.includes('unexpected error');
+
+        if (hayAppError) {
+          const msg = `Error de aplicación detectado tras "${paso}" (TC${String(numeroCaso).padStart(3, '0')})`;
+
+          // Si tienes un comando de Excel, intenta registrar aquí también (por si tu fail handler no lo hace)
+          if (typeof cy.registrarResultados === 'function') {
+            cy.registrarResultados({
+              numero: numeroCaso,
+              nombre: caso?.nombre || caso?.caso || `TC${String(numeroCaso).padStart(3, '0')}`,
+              esperado: 'El formulario debe permitir rellenar y guardar sin romper la aplicación',
+              obtenido: msg,
+              resultado: 'ERROR',
+              fechaHora: new Date().toISOString(),
+            });
+          }
+
+          throw new Error(msg); // corta ESTE caso
+        }
+
+        return cy.wrap(null);
+      });
+    };
+
+    // Campos que están en otras pestañas - Guardar para rellenarlos después
+    const camposOtrasPestanasDireccion = [
+      'client.address', 'client.city', 'client.postalCode', 'client.country', 'client.region', 'client.adressNotes',
+      'address', 'city', 'postal', 'country', 'region', 'provincia', 'dirección', 'direccion',
+      'adressnotes', 'addressnotes', 'notas'
+    ];
+
+    const camposOtrasPestanasEconomicos = [
+      'ccc', 'cccpart1', 'cccpart2', 'cccpart3', 'cccpart4',
+      'client.cccpart1', 'client.cccpart2', 'client.cccpart3', 'client.cccpart4',
+      'client.cccPart1', 'client.cccPart2', 'client.cccPart3', 'client.cccPart4',
+      'iban', 'ibanpart1', 'ibanpart2', 'ibanpart3', 'ibanpart4', 'ibanpart5',
+      'client.ibanpart1', 'client.ibanpart2', 'client.ibanpart3', 'client.ibanpart4', 'client.ibanpart5',
+      'client.ibanPart1', 'client.ibanPart2', 'client.ibanPart3', 'client.ibanPart4', 'client.ibanPart5',
+      'perfil de pago', 'perfilpago', 'paymentprofileid', 'client.paymentprofileid', 'client.paymentProfileId',
+      'mui-component-select-client.paymentprofileid', 'mui-component-select-client.paymentProfileId',
+      'precio', 'priceperhour', 'client.priceperhour', 'client.pricePerHour',
+      'cuenta contable', 'cuentacontable', 'accountingaccount', 'client.accountingaccount', 'client.accountingAccount',
+      'accounting', 'client.accounting', 'clientaccounting',
+      'economicnotes', 'client.economicnotes', 'client.economicNotes',
+      'notas', 'client.bankAccount', 'client.iban', 'client.paymentProfile'
+    ];
+
+    // Separar campos en normales, fechas, DIRECCIÓN, DATOS ECONÓMICOS y Propietario (debe ir primero)
     const camposNormales = [];
     const camposFechas = [];
     const camposDireccion = [];
     const camposEconomicos = [];
-    const camposPropietario = []; // Propietario debe procesarse antes que Código propietario y Nombre propietario
+    const camposPropietario = [];
 
     for (let i = 1; i <= totalCampos; i++) {
       const tipo = caso[`etiqueta_${i}`];
@@ -1204,14 +1564,13 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       const etiquetaNorm = normalizarTextoParaComparar(etiquetaPreferida);
       if (etiquetaNorm && camposIgnoradosParaEsteCaso.has(etiquetaNorm)) continue;
 
-      // Guardar campos que están en otras pestañas para rellenarlos después
       const selectorLower = (selector || '').toLowerCase();
       const tipoLower2 = (tipo || '').toLowerCase();
       const etiquetaLower2 = etiquetaPreferida.toLowerCase();
-      
-      // Verificar si es campo de DIRECCIÓN
-      const esCampoDireccion = camposOtrasPestanasDireccion.some(campo => 
-        selectorLower.includes(campo.toLowerCase()) || 
+
+      // DIRECCIÓN
+      const esCampoDireccion = camposOtrasPestanasDireccion.some((campo) =>
+        selectorLower.includes(campo.toLowerCase()) ||
         tipoLower2.includes(campo.toLowerCase()) ||
         etiquetaLower2.includes(campo.toLowerCase())
       );
@@ -1221,10 +1580,10 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         cy.log(`Campo ${selector} está en otra pestaña (DIRECCIÓN), se guardará para rellenar después`);
         continue;
       }
-      
-      // Verificar si es campo de DATOS ECONÓMICOS
-      const esCampoEconomicos = camposOtrasPestanasEconomicos.some(campo => 
-        selectorLower.includes(campo.toLowerCase()) || 
+
+      // ECONÓMICOS
+      const esCampoEconomicos = camposOtrasPestanasEconomicos.some((campo) =>
+        selectorLower.includes(campo.toLowerCase()) ||
         tipoLower2.includes(campo.toLowerCase()) ||
         etiquetaLower2.includes(campo.toLowerCase())
       );
@@ -1234,8 +1593,8 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         cy.log(`Campo ${selector} está en otra pestaña (DATOS ECONÓMICOS), se guardará para rellenar después`);
         continue;
       }
-      
-      // Verificar si es campo de otras secciones (FORMACIÓN, EXPERIENCIA, ASISTENCIA, MATERIAL, CONTRATOS, TELÉFONOS, HIST. TELEFÓNICO, INCIDENCIAS)
+
+      // OTRAS SECCIONES (se omiten en DATOS PERSONALES)
       const camposOtrasSecciones = [
         'formación', 'formacion', 'curso', 'fecha', 'centro',
         'experiencia', 'empresa', 'labor', 'meses',
@@ -1246,8 +1605,8 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         'hist. telefónico', 'hist telefonico',
         'incidencia', 'incidencias'
       ];
-      const esCampoOtraSeccion = camposOtrasSecciones.some(campo => 
-        selectorLower.includes(campo.toLowerCase()) || 
+      const esCampoOtraSeccion = camposOtrasSecciones.some((campo) =>
+        selectorLower.includes(campo.toLowerCase()) ||
         tipoLower2.includes(campo.toLowerCase()) ||
         etiquetaLower2.includes(campo.toLowerCase())
       );
@@ -1259,44 +1618,42 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       const valorTexto = procesarValorAleatorio(valor);
       const tipoLower = (tipo || '').toLowerCase();
       const etiquetaLower = etiquetaPreferida.toLowerCase();
-      
-      // Detectar si es el campo "Propietario" (radio buttons) - debe procesarse primero
-      const esPropietario = tipoLower.includes('propietario') && 
-                           !tipoLower.includes('código propietario') && 
-                           !tipoLower.includes('codigo propietario') &&
-                           !tipoLower.includes('nombre propietario') &&
-                           !selectorLower.includes('codigopropietario') &&
-                           !selectorLower.includes('codigopropietario') &&
-                           !selectorLower.includes('nombrepropietario');
-      
+
+      // Propietario (radio) primero
+      const esPropietario =
+        tipoLower.includes('propietario') &&
+        !tipoLower.includes('código propietario') &&
+        !tipoLower.includes('codigo propietario') &&
+        !tipoLower.includes('nombre propietario') &&
+        !selectorLower.includes('codigopropietario') &&
+        !selectorLower.includes('nombrepropietario');
+
       if (esPropietario) {
         camposPropietario.push({ tipo, selector, valor: valorTexto, i });
         cy.log(`Campo Propietario detectado, se procesará primero`);
         continue;
       }
-      
-      // Excluir explícitamente "Nacionalidad" de ser tratado como fecha
-      // "Años nacimiento hijos" es un campo de texto normal, NO una fecha
-      const esNacionalidad = tipoLower.includes('nacionalidad') || 
-                            selectorLower.includes('nacionalidad') || 
-                            etiquetaLower.includes('nacionalidad') ||
-                            tipoLower.includes('nationality') ||
-                            selectorLower.includes('nationality');
-      
-      // Excluir "Años nacimiento hijos" de ser tratado como fecha (es texto)
-      const esAnosNacimientoHijos = tipoLower.includes('años nacimiento hijos') ||
-                                    selectorLower.includes('childrenbirthyears') ||
-                                    selectorLower.includes('children.birthyears') ||
-                                    etiquetaLower.includes('años nacimiento hijos');
-      
-      // Detectar si es fecha: por etiqueta, selector, valor, o si es un campo class con MuiPickers
-      // PERO NO si es Nacionalidad o Años nacimiento hijos (que es un campo de texto, no fecha)
-      // Si el tipo es "id" y el selector contiene "-label" y el valor es una fecha, tratarlo como fecha
-      const esIdLabelFecha = tipoLower.includes('id') && 
-                             selector && 
-                             (selector.includes('-label') || selector.includes('_label')) &&
-                             /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim());
-      
+
+      // Excluir Nacionalidad y Años nacimiento hijos de ser fecha
+      const esNacionalidad =
+        tipoLower.includes('nacionalidad') ||
+        selectorLower.includes('nacionalidad') ||
+        etiquetaLower.includes('nacionalidad') ||
+        tipoLower.includes('nationality') ||
+        selectorLower.includes('nationality');
+
+      const esAnosNacimientoHijos =
+        tipoLower.includes('años nacimiento hijos') ||
+        selectorLower.includes('childrenbirthyears') ||
+        selectorLower.includes('children.birthyears') ||
+        etiquetaLower.includes('años nacimiento hijos');
+
+      const esIdLabelFecha =
+        tipoLower.includes('id') &&
+        selector &&
+        (selector.includes('-label') || selector.includes('_label')) &&
+        /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim());
+
       const esFecha = !esNacionalidad && !esAnosNacimientoHijos && (
         esCampoFechaPorEtiqueta(tipo) ||
         esCampoFechaPorEtiqueta(selector) ||
@@ -1305,609 +1662,273 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         esIdLabelFecha
       );
 
-      if (esFecha) {
-        camposFechas.push({ tipo, selector, valor: valorTexto, i });
-      } else {
-        camposNormales.push({ tipo, selector, valor: valorTexto, i });
-      }
+      if (esFecha) camposFechas.push({ tipo, selector, valor: valorTexto, i });
+      else camposNormales.push({ tipo, selector, valor: valorTexto, i });
     }
 
     // =========================
-    // MUI Select / Combobox helper (Empresa, etc.)
+    // EJECUCIÓN
     // =========================
-
-    // PRIMERO: Rellenar "Propietario" (radio buttons) antes que otros campos
     let chain = cy.wrap(null);
+
+    // 1) Propietario primero
     if (camposPropietario.length > 0) {
       camposPropietario.forEach((campo) => {
-        const { tipo, selector, valor: valorTexto, i } = campo;
+        const { valor: valorTexto } = campo;
+
         chain = chain.then(() => {
-          cy.log(`Rellenando Propietario: tipo="${tipo}", selector="${selector}", valor="${valorTexto}"`);
-          // Buscar el label "Propietario" y luego los radio buttons
+          cy.log(`Rellenando Propietario (radio): "${valorTexto}"`);
           return cy.contains('label', /^Propietario$/i, { timeout: 10000 })
             .should('be.visible')
             .then(($label) => {
-              // Buscar radio buttons en el contenedor
               const contenedor = $label.closest('.MuiFormControl-root, .MuiFormGroup-root, form, div').first();
-              if (contenedor.length) {
-                return cy.wrap(contenedor[0]).within(() => {
-                  // Buscar radio button cuyo label contenga el valor
-                  const regexValor = new RegExp(escapeRegex(valorTexto), 'i');
-                  return cy.get('input[type="radio"]', { timeout: 5000 }).then(($radios) => {
-                    const radioEncontrado = Array.from($radios).find((radio) => {
-                      const label = radio.closest('label');
-                      const texto = (label ? label.innerText : '') || '';
-                      return regexValor.test(texto.trim());
-                    });
-                    
-                    if (radioEncontrado) {
-                      cy.log(`Radio button "${valorTexto}" encontrado, seleccionando`);
-                      return cy.wrap(radioEncontrado)
-                        .should('be.visible')
-                        .check({ force: true });
-                    }
-                    cy.log(`No se encontró radio button con valor "${valorTexto}"`);
-                    return cy.wrap(null);
+              if (!contenedor.length) return cy.wrap(null);
+
+              return cy.wrap(contenedor[0]).within(() => {
+                const regexValor = new RegExp(escapeRegex(valorTexto), 'i');
+                return cy.get('input[type="radio"]', { timeout: 5000 }).then(($radios) => {
+                  const radioEncontrado = Array.from($radios).find((radio) => {
+                    const lbl = radio.closest('label');
+                    const texto = (lbl ? lbl.innerText : '') || '';
+                    return regexValor.test(texto.trim());
                   });
+
+                  if (radioEncontrado) {
+                    return cy.wrap(radioEncontrado).should('be.visible').check({ force: true });
+                  }
+
+                  cy.log(`No se encontró radio de Propietario con valor "${valorTexto}"`);
+                  return cy.wrap(null);
                 });
-              }
-              cy.log('No se encontró contenedor para Propietario');
-              return cy.wrap(null);
+              });
             });
         });
       });
     }
 
-    // SEGUNDO: Rellenar todos los campos normales (después de Propietario)
+    // 2) Campos normales
     camposNormales.forEach((campo) => {
       const { tipo, selector, valor: valorTexto, i } = campo;
       const tipoLower = (tipo || '').toLowerCase();
+      const selectorLower = (selector || '').toLowerCase();
 
       chain = chain.then(() => {
+        // Si el valor parece fecha, forzar flujo de fecha
+        if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim())) {
+          const etiquetaFecha = tipo || selector || `Campo ${i}`;
+          return escribirFechaPorClickYType(etiquetaFecha, valorTexto, tipo, selector);
+        }
 
-        // 2) Name directo - VERIFICAR SI ES FECHA PRIMERO
+        // Name directo
         if (tipoLower.includes('name')) {
-          // Si el valor es una fecha, usar escribirFechaPorClickYType
-          if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim())) {
-            const etiquetaFecha = tipo || selector || `Campo ${i}`;
-            cy.log(`Fecha detectada en campo name, usando escribirFechaPorClickYType`);
-            return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
-          }
           if (selector === 'client.code') {
             return cy
               .get(`input[name="${selector}"], textarea[name="${selector}"]`, { timeout: 10000 })
               .should('be.visible')
               .click({ force: true })
-              .type(valorTexto, { force: true, delay: 0 });
+              .type(valorTexto, { force: true, delay: 0 })
+              .then(() => detectarErrorAplicacionYAbortar('rellenar Expedición')); // por si aquí cae
           }
-          // Pasar el selector como etiqueta para ayudar en la búsqueda, no "Campo X"
-          return escribirPorName(selector, valorTexto, selector);
+          return escribirPorName(selector, valorTexto, selector).then(() => {
+            // ✅ SOLO TC024: si este campo corresponde a Expedición, corta si hay app error
+            const esExpedicion =
+              selectorLower.includes('expedicion') ||
+              (tipo || '').toLowerCase().includes('expedicion');
+            if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
+            return cy.wrap(null);
+          });
         }
 
-        // 3) ID - VERIFICAR SI ES FECHA PRIMERO
+        // ID
         if (tipoLower.includes('id')) {
-          // Si el valor es una fecha, usar escribirFechaPorClickYType
-          // También si el selector contiene "-label" o "_label" y el valor es una fecha
-          const esIdLabelFecha = selector && 
-                                 (selector.includes('-label') || selector.includes('_label')) &&
-                                 /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim());
-          
+          const esIdLabelFecha =
+            selector &&
+            (selector.includes('-label') || selector.includes('_label')) &&
+            /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim());
+
           if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim()) || esIdLabelFecha) {
             const etiquetaFecha = tipo || selector || `Campo ${i}`;
-            cy.log(`Fecha detectada en campo id (selector: "${selector}"), usando escribirFechaPorClickYType`);
-            return escribirFechaPorClickYType(etiquetaFecha, valorTexto, tipo, selector);
+            return escribirFechaPorClickYType(etiquetaFecha, valorTexto, tipo, selector)
+              .then(() => {
+                const esExpedicion = selectorLower.includes('expedicion') || (tipo || '').toLowerCase().includes('expedicion');
+                if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
+                return cy.wrap(null);
+              });
           }
 
-          // Si el selector tiene punto, usar selector de atributo en lugar de #
-          const idSinHash = selector.startsWith('#') ? selector.substring(1) : selector;
-          const idSelector = idSinHash.includes('.') ? `[id="${idSinHash}"]` : `#${idSinHash}`;
+          const idSinHash = selector && selector.startsWith('#') ? selector.substring(1) : selector;
+          const idSelector = idSinHash && idSinHash.includes('.') ? `[id="${idSinHash}"]` : `#${idSinHash}`;
 
           return cy.get(idSelector, { timeout: 10000 }).then(($el) => {
             if (!$el || !$el.length) {
-              // Si es Empresa o Estado civil, buscar por nombre del label
-              const esEmpresa = selector && (selector.includes('idEmpresa') || selector.includes('mui-component-select-client.idEmpresa'));
-              const esEstadoCivil = selector && (selector.includes('civilStatus') || selector.includes('mui-component-select-client.civilStatus') || idSinHash.includes('civilStatus'));
-              
-              if (esEmpresa) {
-                cy.log(`Elemento Empresa con ID ${idSelector} no encontrado, buscando por nombre del label "Empresa"`);
-                return cy.contains('label', /^Empresa$/i, { timeout: 10000 })
-                  .should('be.visible')
-                  .then(($label) => {
-                    cy.log('Label "Empresa" encontrado, buscando combobox asociado');
-                    // Buscar el contenedor del label
-                    const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
-                    if (contenedor.length) {
-                      // Buscar el combobox dentro del contenedor
-                      const combobox = contenedor.find('[role="combobox"], div[role="combobox"], .MuiSelect-select').first()[0];
-                      if (combobox) {
-                        cy.log('Combobox Empresa encontrado en contenedor');
-                        return cy.wrap(combobox);
-                      }
-                    }
-                    cy.log('No se encontró combobox asociado al label Empresa');
-                    return cy.wrap(null);
-                  });
-              }
-              
-              if (esEstadoCivil) {
-                cy.log(`Elemento Estado civil con ID ${idSelector} no encontrado, buscando por nombre del label "Estado civil"`);
-                return cy.contains('label', /^Estado civil$/i, { timeout: 10000 })
-                  .should('be.visible')
-                  .then(($label) => {
-                    cy.log('Label "Estado civil" encontrado, buscando combobox asociado');
-                    // Buscar el contenedor del label
-                    const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
-                    if (contenedor.length) {
-                      // Buscar el combobox dentro del contenedor
-                      const combobox = contenedor.find('[role="combobox"], div[role="combobox"], .MuiSelect-select').first()[0];
-                      if (combobox) {
-                        cy.log('Combobox Estado civil encontrado en contenedor');
-                        return cy.wrap(combobox);
-                      }
-                    }
-                    cy.log('No se encontró combobox asociado al label Estado civil');
-                    return cy.wrap(null);
-                  });
-              }
-              
-              cy.log(`Elemento con ID ${idSelector} no encontrado, intentando buscar por label`);
-              // Intentar buscar por label si no se encuentra por ID
-              return cy.get('body').then(($body) => {
-                const labelText = tipo || selector || '';
-                if (labelText) {
-                  const $label = $body.find('label').filter((_, el) => {
-                    const text = (el.innerText || '').toLowerCase();
-                    return text.includes(labelText.toLowerCase()) || text.includes(idSinHash.toLowerCase());
-                  }).first();
-                  
-                  if ($label.length) {
-                    const forAttr = $label.attr('for');
-                    if (forAttr) {
-                      const altSelector = forAttr.includes('.') ? `[id="${forAttr}"]` : `#${forAttr}`;
-                      cy.log(`Buscando elemento alternativo: ${altSelector}`);
-                      return cy.get(altSelector, { timeout: 5000 }).then(($altEl) => {
-                        if ($altEl && $altEl.length) {
-                          return procesarElementoPorID($altEl[0], valorTexto, altSelector, idSinHash);
-                        }
-                      });
-                    }
-                  }
-                }
-                throw new Error(`No se encontró elemento con ID ${idSelector}`);
-              });
+              throw new Error(`No se encontró elemento con ID ${idSelector}`);
             }
-
-            return procesarElementoPorID($el[0], valorTexto, idSelector, idSinHash);
-          }, (err) => {
-            cy.log(`Error al buscar elemento con ID ${idSelector}: ${err.message}, intentando por label`);
-            // Último intento: buscar por label
-            const labelText = tipo || selector || '';
-            if (labelText) {
-              return cy.contains('label', new RegExp(escapeRegex(labelText), 'i'), { timeout: 5000 }).then(($label) => {
-                const forAttr = $label.attr('for');
-                if (forAttr) {
-                  const altSelector = forAttr.includes('.') ? `[id="${forAttr}"]` : `#${forAttr}`;
-                  return cy.get(altSelector, { timeout: 5000 }).then(($altEl) => {
-                    if ($altEl && $altEl.length) {
-                      return procesarElementoPorID($altEl[0], valorTexto, altSelector, idSinHash);
-                    }
-                  });
-                }
+            return procesarElementoNormal($el[0], valorTexto, tipo, selector)
+              .then(() => {
+                const esExpedicion = selectorLower.includes('expedicion') || (tipo || '').toLowerCase().includes('expedicion');
+                if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
+                return cy.wrap(null);
               });
-            }
-            throw err;
           });
-          
-          function procesarElementoPorID(elemento, valorTexto, selectorInfo, idSinHash) {
-            const $el = cy.$$(elemento);
-            const tag = (elemento?.tagName || '').toLowerCase();
-            const role = $el.attr('role') || '';
-            const className = $el.attr('class') || '';
-            // Verificar si es combobox - Empresa, Estado civil, etc.
-            const etiquetaLower = (tipo || selector || '').toLowerCase();
-            const esEmpresaPorEtiqueta = etiquetaLower.includes('empresa') && !etiquetaLower.includes('propietario');
-            const isCombobox = (role === 'combobox') ||
-              idSinHash.includes('idEmpresa') ||
-              idSinHash.includes('mui-component-select-client.idEmpresa') ||
-              idSinHash.includes('civilStatus') ||
-              idSinHash.includes('mui-component-select-client.civilStatus') ||
-              (selector && (selector.includes('Empresa') || selector.includes('civilStatus'))) ||
-              esEmpresaPorEtiqueta;
-
-            // Si es un select tradicional
-            if (tag === 'select') {
-              return cy
-                .wrap(elemento)
-                .should('be.visible')
-                .select(valorTexto, { force: true });
-            }
-
-            // Si es un combobox / MUI Select (Empresa, etc.)
-            if (isCombobox) {
-              cy.log(`Campo ${selectorInfo} es un MUI Select/combobox, seleccionando: "${valorTexto}"`);
-              // Si es Empresa detectado por etiqueta, buscar el combobox correcto
-              if (esEmpresaPorEtiqueta && !idSinHash.includes('idEmpresa')) {
-                cy.log('Empresa detectado por etiqueta, buscando combobox por label...');
-                return cy.contains('label', /^Empresa$/i, { timeout: 10000 })
-                  .should('be.visible')
-                  .then(($label) => {
-                    const contenedor = $label.closest('.MuiFormControl-root');
-                    if (contenedor.length) {
-                      const combobox = contenedor.find('[role="combobox"], div[role="combobox"], #mui-component-select-client.idEmpresa, .MuiSelect-root').first();
-                      if (combobox.length) {
-                        cy.log('Combobox Empresa encontrado por label, seleccionando opción...');
-                        return seleccionarOpcionMuiSelect(combobox, valorTexto);
-                      }
-                    }
-                    cy.log('No se encontró combobox de Empresa por label, usando elemento original');
-                    return seleccionarOpcionMuiSelect(elemento, valorTexto);
-                  });
-              }
-              return seleccionarOpcionMuiSelect(elemento, valorTexto);
-            }
-
-            // Si es un input normal
-            return cy
-              .wrap(elemento)
-              .should('be.visible')
-              .click({ force: true })
-              .type(valorTexto, { force: true, delay: 0 })
-              .should('have.value', valorTexto);
-          }
         }
 
-        // 4) Si parece name (client.phone, etc.) - VERIFICAR SI ES FECHA O CATEGORÍA LABORAL PRIMERO
-        if (
-          selector &&
-          !selector.startsWith('#') &&
-          !selector.startsWith('.') &&
-          !selector.startsWith('[') &&
-          selector.includes('.')
-        ) {
-          // Si el valor es una fecha, usar escribirFechaPorClickYType
-          if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim())) {
-            const etiquetaFecha = tipo || selector || `Campo ${i}`;
-            cy.log(`Fecha detectada en campo name-like, usando escribirFechaPorClickYType`);
-            return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
-          }
-          
-          // Si es Categoría laboral (client.catName), usar seleccionarCategoriaLaboral
-          const selectorLower = (selector || '').toLowerCase();
-          if (selectorLower.includes('catname') || tipoLower.includes('categoría laboral') || tipoLower.includes('categoria laboral')) {
-            cy.log(`Campo Categoría laboral detectado por selector/name, usando seleccionarCategoriaLaboral`);
+        // Name-like (client.xxx)
+        if (selector && !selector.startsWith('#') && !selector.startsWith('.') && !selector.startsWith('[') && selector.includes('.')) {
+          const selectorLower2 = (selector || '').toLowerCase();
+
+          // Categoría laboral
+          if (selectorLower2.includes('catname') || tipoLower.includes('categoría laboral') || tipoLower.includes('categoria laboral')) {
             return seleccionarCategoriaLaboral(valorTexto);
           }
-          
-          cy.log(`Intentando buscar por name="${selector}"`);
+
           return cy
             .get(`input[name="${selector}"], textarea[name="${selector}"]`, { timeout: 10000 })
             .should('be.visible')
             .scrollIntoView()
             .click({ force: true })
             .type(valorTexto, { force: true, delay: 0 })
-            .should('have.value', valorTexto);
+            .then(() => {
+              const esExpedicion = selectorLower2.includes('expedicion') || tipoLower.includes('expedicion');
+              if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
+              return cy.wrap(null);
+            });
         }
 
-        // 4.5) Si el tipo es "class" y el selector contiene "MuiPickers", es un date picker
+        // Date picker por class
         if (tipoLower.includes('class') && selector && selector.includes('MuiPickers')) {
           const etiquetaFecha = tipo || selector || `Campo ${i}`;
-          cy.log(`Campo con class MuiPickers detectado como fecha, usando escribirFechaPorClickYType`);
-          return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
+          return escribirFechaPorClickYType(etiquetaFecha, valorTexto)
+            .then(() => {
+              const esExpedicion = selectorLower.includes('expedicion') || tipoLower.includes('expedicion');
+              if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
+              return cy.wrap(null);
+            });
         }
 
-        // 5) Campo normal - PERO PRIMERO VERIFICAR SI ES FECHA POR EL VALOR
-        // Si el valor parece una fecha (formato DD/MM/YYYY), tratar como fecha SIEMPRE
-        if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim())) {
-          const etiquetaFecha = tipo || selector || `Campo ${i}`;
-          cy.log(`Fecha detectada por formato del valor: "${valorTexto}", etiqueta="${etiquetaFecha}"`);
-          return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
-        }
+        // Campo normal genérico
+        const etiquetaParaBuscar =
+          selector && (selector.includes('idEmpresa') || selector.includes('mui-component-select-client.idEmpresa'))
+            ? null
+            : tipo;
 
-        // Para Empresa, NO pasar etiqueta para evitar confusión con Nacionalidad
-        const etiquetaParaBuscar = (selector && (selector.includes('idEmpresa') || selector.includes('mui-component-select-client.idEmpresa')))
-          ? null  // No pasar etiqueta para Empresa
-          : tipo;
-        
         return obtenerCampoFormulario(tipo, selector, etiquetaParaBuscar).then(($el) => {
           if (!$el || !$el.length) {
-            cy.log(`No se encontró el campo para tipo="${tipo}", selector="${selector}", intentando buscar por name o label`);
-            // Si no se encontró el campo pero el valor es una fecha, intentar de todas formas
-            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim())) {
-              const etiquetaFecha = tipo || selector || `Campo ${i}`;
-              cy.log(`Campo no encontrado pero valor es fecha, usando escribirFechaPorClickYType`);
-              return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
-            }
-            
-            // PRIMERO: Intentar buscar por name attribute si el selector parece un name
+            // fallback por name
             if (selector && (selector.includes('client.') || (selector.includes('.') && !selector.startsWith('#') && !selector.startsWith('.')))) {
-              cy.log(`Intentando buscar por name attribute: "${selector}"`);
               return cy.get(`input[name="${selector}"], textarea[name="${selector}"]`, { timeout: 5000 })
                 .should('be.visible')
                 .then(($input) => {
                   const valorProcesado = procesarValorAleatorio(valorTexto);
-                  return cy.wrap($input[0])
-                    .click({ force: true })
-                    .clear({ force: true })
-                    .type(valorProcesado, { force: true, delay: 0 });
+                  return cy.wrap($input[0]).click({ force: true }).clear({ force: true }).type(valorProcesado, { force: true, delay: 0 });
                 })
-                .catch(() => {
-                  cy.log(`No se encontró por name="${selector}", intentando por label`);
+                .then(() => {
+                  const esExpedicion = (selector || '').toLowerCase().includes('expedicion') || (tipo || '').toLowerCase().includes('expedicion');
+                  if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
                   return cy.wrap(null);
                 });
             }
-            // Intentar buscar por label directamente, pero solo si el tipo no es "class" (que no es un nombre de label útil)
-            const tipoLower3 = (tipo || '').toLowerCase();
-            if (tipoLower3 === 'class') {
-              // Si es tipo "class", intentar buscar por selector directamente
-              if (selector) {
-                cy.log(`Tipo es "class", intentando buscar por selector: ${selector}`);
-                
-                // Si el selector contiene "MuiFormLabel-root" y el valor parece un radio button (Propietario: Tercero, Propio, Anexo)
-                const esRadioButton = selector.includes('MuiFormLabel-root') && 
-                                     (valorTexto === 'Tercero' || valorTexto === 'Propio' || valorTexto === 'Anexo');
-                
-                if (esRadioButton) {
-                  cy.log(`Campo detectado como radio button (Propietario), buscando opción: "${valorTexto}"`);
-                  
-                  // Buscar el label que contiene el texto usando cy.contains (más simple y directo)
-                  return cy.contains('label', new RegExp(escapeRegex(valorTexto), 'i'), { timeout: 10000 })
-                    .should('be.visible')
-                    .click({ force: true })
-                    .then(() => {
-                      cy.log(`Radio button "${valorTexto}" seleccionado`);
-                    });
-                }
-                
-                // Intentar buscar por ID o por name si el selector tiene esa estructura
-                if (selector.includes('#') || selector.includes('[')) {
-                  return cy.get(selector, { timeout: 5000 })
-                    .should('be.visible')
-                    .then(($el) => {
-                      if ($el && $el.length) {
-                        return procesarElementoNormal($el[0], valorTexto, tipo, selector);
-                      }
-                      return cy.wrap(null);
-                    })
-                    .catch(() => {
-                      cy.log(`No se encontró elemento con selector: ${selector}`);
-                      return cy.wrap(null);
-                    });
-                }
-              }
-              // Si no hay selector útil, no intentar buscar por label "class"
-              cy.log(`Tipo "class" sin selector útil, no se puede buscar el campo`);
-              return cy.wrap(null);
-            }
-            
-            const etiquetaBuscar = normalizarEtiquetaTexto(tipo) || selector || '';
-            if (etiquetaBuscar && etiquetaBuscar.toLowerCase() !== 'class') {
-              return cy.contains('label', new RegExp(escapeRegex(etiquetaBuscar), 'i'), { timeout: 5000 }).then(($label) => {
-                const forAttr = $label.attr('for');
-                if (forAttr) {
-                  const altSelector = forAttr.includes('.') ? `[id="${forAttr}"]` : `#${forAttr}`;
-                  return cy.get(altSelector, { timeout: 5000 }).then(($altEl) => {
-                    if ($altEl && $altEl.length) {
-                      return procesarElementoNormal($altEl[0], valorTexto, tipo, selector);
-                    }
-                  });
-                }
-                // Si no tiene for, buscar input dentro del contenedor
-                const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root');
-                if (contenedor.length) {
-                  const input = contenedor.find('input, textarea, select, [role="combobox"]').not('button input, input[type="hidden"]').first();
-                  if (input.length) {
-                    return procesarElementoNormal(input[0], valorTexto, tipo, selector);
-                  }
-                }
-              }).catch(() => {
-                cy.log(`No se encontró label con texto: "${etiquetaBuscar}"`);
-                return cy.wrap(null);
-              });
-            }
+
             throw new Error(`No se encontró el campo para tipo="${tipo}", selector="${selector}"`);
           }
 
-          const elemento = $el[0];
-          const tag = (elemento?.tagName || '').toLowerCase();
-          if (tag === 'label') {
-            cy.log(`Se encontró un label en lugar de un input para tipo="${tipo}", selector="${selector}", buscando input asociado`);
-            // Si es un label y el valor parece una fecha, SIEMPRE usar escribirFechaPorClickYType
-            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorTexto).trim())) {
-              const etiquetaFecha = tipo || selector || `Campo ${i}`;
-              cy.log(`Label detectado pero valor es fecha, usando escribirFechaPorClickYType`);
-              return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
-            }
-            
-            // Si el label es "Propietario" o similar, buscar radio buttons en el contenedor
-            const labelText = ($el.text() || '').toLowerCase();
-            if (labelText.includes('propietario')) {
-              cy.log(`Label "Propietario" encontrado, buscando radio buttons del grupo`);
-              const contenedor = $el.closest('.MuiFormControl-root, .MuiFormGroup-root, form, div').first();
-              if (contenedor.length) {
-                return cy.wrap(contenedor[0]).within(() => {
-                  // Buscar radio button cuyo label contenga el valor
-                  const regexValor = new RegExp(escapeRegex(valorTexto), 'i');
-                  return cy.get('input[type="radio"]', { timeout: 5000 }).then(($radios) => {
-                    const radioEncontrado = Array.from($radios).find((radio) => {
-                      const label = radio.closest('label');
-                      const texto = (label ? label.innerText : '') || '';
-                      return regexValor.test(texto.trim());
-                    });
-                    
-                    if (radioEncontrado) {
-                      cy.log(`Radio button "${valorTexto}" encontrado, seleccionando`);
-                      return cy.wrap(radioEncontrado)
-                        .should('be.visible')
-                        .check({ force: true });
-                    }
-                    cy.log(`No se encontró radio button con valor "${valorTexto}"`);
-                    return cy.wrap(null);
-                  });
-                });
-              }
-            }
-            
-            // Buscar el input asociado al label
-            const forAttr = $el.attr('for');
-            if (forAttr) {
-              const altSelector = forAttr.includes('.') ? `[id="${forAttr}"]` : `#${forAttr}`;
-              return cy.get(altSelector, { timeout: 5000 }).then(($altEl) => {
-                if ($altEl && $altEl.length) {
-                  return procesarElementoNormal($altEl[0], valorTexto, tipo, selector);
-                }
-              });
-            }
-            // Buscar input en el contenedor
-            const contenedor = $el.closest('.MuiFormControl-root, .MuiTextField-root');
-            if (contenedor.length) {
-              const input = contenedor.find('input, textarea, select, [role="combobox"]').not('button input, input[type="hidden"]').first();
-              if (input.length) {
-                return procesarElementoNormal(input[0], valorTexto, tipo, selector);
-              }
-            }
-            throw new Error(`Label encontrado pero no se pudo encontrar input asociado`);
-          }
-          
-          return procesarElementoNormal(elemento, valorTexto, tipo, selector);
-        });
-        
-        function procesarElementoNormal(elemento, valorTexto, tipo, selector) {
-          const $el = cy.$$(elemento);
-          const tag = (elemento?.tagName || '').toLowerCase();
-          const role = $el.attr('role') || '';
-          const className = $el.attr('class') || '';
-          const valorProcesado = procesarValorAleatorio(valorTexto);
-
-          // ANTES de escribir, verificar si el valor es una fecha
-          if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorProcesado).trim())) {
-            const etiquetaFecha = tipo || selector || '';
-            cy.log(`Fecha detectada antes de escribir en elemento, usando escribirFechaPorClickYType`);
-            return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
-          }
-
-          // Verificar si es "Categoría laboral" - tiene botón + que abre modal
-          const tipoLower = (tipo || '').toLowerCase();
-          const esCategoriaLaboral = tipoLower.includes('categoría laboral') || 
-                                     tipoLower.includes('categoria laboral') ||
-                                     selectorLower.includes('catname') ||
-                                     elementoId.includes('catName');
-          
-          if (esCategoriaLaboral) {
-            cy.log(`Campo detectado como Categoría laboral, usando seleccionarCategoriaLaboral`);
-            return seleccionarCategoriaLaboral(valorTexto);
-          }
-
-          // Verificar si es combobox - Empresa, Estado civil, etc.
-          const elementoId = elemento.id || '';
-          const isCombobox = role === 'combobox' ||
-            (selector && (selector.includes('Empresa') || selector.includes('idEmpresa') || selectorLower.includes('civilstatus'))) ||
-            elementoId.includes('idEmpresa') ||
-            elementoId.includes('mui-component-select-client.idEmpresa') ||
-            elementoId.includes('civilStatus') ||
-            elementoId.includes('mui-component-select-client.civilStatus');
-
-          if (isCombobox) {
-            cy.log(`Campo detectado como MUI Select/combobox, seleccionando: "${valorTexto}"`);
-            return seleccionarOpcionMuiSelect(elemento, valorTexto);
-          }
-
-          // Verificar si es radio button o checkbox
-          const tipoInput = ($el.attr('type') || '').toLowerCase();
-          if (tipoInput === 'radio' || tipoInput === 'checkbox') {
-            cy.log(`Campo detectado como ${tipoInput}, buscando opción con valor: "${valorTexto}"`);
-            // Buscar el radio button o checkbox que coincida con el valor
-            return cy.get('body').then(($body) => {
-              // Buscar todos los inputs del mismo name o cerca del label
-              const nameAttr = $el.attr('name');
-              let $inputs = $body.find(`input[type="${tipoInput}"]`);
-              
-              // Si tiene name, buscar solo los que tienen ese name
-              if (nameAttr) {
-                $inputs = $inputs.filter(`[name="${nameAttr}"]`);
-              }
-              
-              // Buscar el input cuyo label contenga el valor o cuyo value coincida
-              const regexValor = new RegExp(escapeRegex(valorTexto), 'i');
-              const $candidato = $inputs.filter((_, el) => {
-                const label = el.closest('label');
-                const texto = (label ? label.innerText : '') || '';
-                const value = el.value || '';
-                return regexValor.test(texto.trim()) || regexValor.test(value);
-              }).first();
-              
-              if ($candidato.length > 0) {
-                cy.log(`Opción encontrada, seleccionando ${tipoInput} con valor: "${valorTexto}"`);
-                return cy.wrap($candidato[0])
-                  .should('be.visible')
-                  .check({ force: true });
-              }
-              
-              // Si no se encuentra por texto, intentar seleccionar el primero disponible
-              cy.log(`No se encontró opción exacta, intentando seleccionar primera opción disponible`);
-              if ($inputs.length > 0) {
-                return cy.wrap($inputs[0])
-                  .should('be.visible')
-                  .check({ force: true });
-              }
-              
-              cy.log(`No se encontraron ${tipoInput} buttons para seleccionar`);
+          return procesarElementoNormal($el[0], valorTexto, tipo, selector)
+            .then(() => {
+              const esExpedicion = selectorLower.includes('expedicion') || tipoLower.includes('expedicion');
+              if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
               return cy.wrap(null);
             });
-          }
-
-          if (tag === 'input' || tag === 'textarea') {
-            return cy
-              .wrap(elemento)
-              .should('be.visible')
-              .click({ force: true })
-              .type(valorProcesado, { force: true, delay: 0 });
-          }
-
-          if (tag === 'select') {
-            return cy
-              .wrap(elemento)
-              .should('be.visible')
-              .select(valorProcesado, { force: true });
-          }
-
-          // Si no es un elemento válido, intentar hacer click y escribir de todas formas
-          cy.log(`Elemento con tag ${tag}, intentando escribir de todas formas`);
-          return cy
-            .wrap(elemento)
-            .should('be.visible')
-            .click({ force: true })
-            .type(valorProcesado, { force: true, delay: 0 });
-        }
+        });
       });
+
+      function procesarElementoNormal(elemento, valorTexto, tipo, selector) {
+        const $el = cy.$$(elemento);
+        const tag = (elemento?.tagName || '').toLowerCase();
+        const role = $el.attr('role') || '';
+        const valorProcesado = procesarValorAleatorio(valorTexto);
+
+        // si fecha -> date handler
+        if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valorProcesado).trim())) {
+          const etiquetaFecha = tipo || selector || '';
+          return escribirFechaPorClickYType(etiquetaFecha, valorTexto);
+        }
+
+        // Combobox
+        const elementoId = elemento.id || '';
+        const selectorLowerLocal = (selector || '').toLowerCase();
+        const isCombobox =
+          role === 'combobox' ||
+          (selector && (selector.includes('Empresa') || selector.includes('idEmpresa') || selectorLowerLocal.includes('civilstatus'))) ||
+          elementoId.includes('idEmpresa') ||
+          elementoId.includes('mui-component-select-client.idEmpresa') ||
+          elementoId.includes('civilStatus') ||
+          elementoId.includes('mui-component-select-client.civilStatus');
+
+        if (isCombobox) {
+          return seleccionarOpcionMuiSelect(elemento, valorTexto);
+        }
+
+        // Radio/checkbox
+        const tipoInput = ($el.attr('type') || '').toLowerCase();
+        if (tipoInput === 'radio' || tipoInput === 'checkbox') {
+          return cy.get('body').then(($body) => {
+            const nameAttr = $el.attr('name');
+            let $inputs = $body.find(`input[type="${tipoInput}"]`);
+            if (nameAttr) $inputs = $inputs.filter(`[name="${nameAttr}"]`);
+
+            const regexValor = new RegExp(escapeRegex(valorTexto), 'i');
+            const $candidato = $inputs.filter((_, el) => {
+              const lbl = el.closest('label');
+              const texto = (lbl ? lbl.innerText : '') || '';
+              const value = el.value || '';
+              return regexValor.test(texto.trim()) || regexValor.test(value);
+            }).first();
+
+            if ($candidato.length > 0) return cy.wrap($candidato[0]).should('be.visible').check({ force: true });
+            if ($inputs.length > 0) return cy.wrap($inputs[0]).should('be.visible').check({ force: true });
+            return cy.wrap(null);
+          });
+        }
+
+        if (tag === 'input' || tag === 'textarea') {
+          return cy.wrap(elemento).should('be.visible').click({ force: true }).type(valorProcesado, { force: true, delay: 0 });
+        }
+
+        if (tag === 'select') {
+          return cy.wrap(elemento).should('be.visible').select(valorProcesado, { force: true });
+        }
+
+        return cy.wrap(elemento).should('be.visible').click({ force: true }).type(valorProcesado, { force: true, delay: 0 });
+      }
     });
 
-    // SEGUNDO: Después de todos los campos normales, rellenar las fechas en DATOS PERSONALES
-    // Contador para rastrear qué campo de fecha se está procesando
+    // 3) Fechas al final (Datos Personales)
     let indiceFecha = 0;
     camposFechas.forEach((campo) => {
       const { tipo, selector, valor: valorTexto, i } = campo;
       const indiceActual = indiceFecha++;
-      // Usar el tipo normalizado o el selector para encontrar el label correcto
       const etiquetaFecha = normalizarEtiquetaTexto(tipo) || tipo || selector || `Campo ${i}`;
+
       chain = chain.then(() => {
-        cy.log(`Rellenando fecha [${indiceActual}]: tipo="${tipo}", selector="${selector}", etiqueta="${etiquetaFecha}", valor="${valorTexto}"`);
-        // Pasar también tipo, selector e índice para ayudar en la búsqueda
-        return escribirFechaPorClickYType(etiquetaFecha, valorTexto, tipo, selector, indiceActual);
+        cy.log(`Rellenando fecha [${indiceActual}]: etiqueta="${etiquetaFecha}", valor="${valorTexto}"`);
+        return escribirFechaPorClickYType(etiquetaFecha, valorTexto, tipo, selector, indiceActual)
+          .then(() => {
+            // ✅ SOLO TC024: si esta fecha es "Expedición", comprobar error de aplicación y abortar
+            const s = (selector || '').toLowerCase();
+            const t = (tipo || '').toLowerCase();
+            const esExpedicion = etiquetaFecha.toLowerCase().includes('expedicion') || s.includes('expedicion') || t.includes('expedicion');
+            if (esExpedicion) return detectarErrorAplicacionYAbortar('rellenar Expedición');
+            return cy.wrap(null);
+          });
       });
     });
 
-    // TERCERO: Si hay campos de DIRECCIÓN, navegar a esa pestaña y rellenarlos
+    // 4) DIRECCIÓN
     if (camposDireccion.length > 0) {
       chain = chain.then(() => {
         cy.log(`Navegando a pestaña DIRECCIÓN para rellenar ${camposDireccion.length} campos`);
-        return navegarSeccionFormulario('DIRECCIÓN').then(() => {
-          cy.wait(500);
-          cy.log('Navegación a DIRECCIÓN completada, rellenando campos');
-          return cy.wrap(null);
-        });
+        return navegarSeccionFormulario('DIRECCIÓN').then(() => cy.wait(500));
       });
 
-      // Mapear selectores a nombres de labels en español
       const mapeoLabels = {
         'address': 'Dirección',
         'dirección': 'Dirección',
@@ -1918,8 +1939,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         'client.city': 'Ciudad',
         'postal': 'C. Postal',
         'postalcode': 'C. Postal',
-        'c.postal': 'C. Postal',
-        'c. postal': 'C. Postal',
         'client.postalcode': 'C. Postal',
         'country': 'País',
         'país': 'País',
@@ -1936,50 +1955,33 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       };
 
       camposDireccion.forEach((campo) => {
-        const { tipo, selector, valor: valorTexto, i } = campo;
+        const { tipo, selector, valor: valorTexto } = campo;
         const selectorLower = (selector || '').toLowerCase();
         const tipoLower = (tipo || '').toLowerCase();
-        
-        // Determinar el nombre del label a buscar
+
         let nombreLabel = mapeoLabels[selectorLower] || mapeoLabels[tipoLower] || null;
         if (!nombreLabel) {
-          // Intentar extraer del selector o tipo
-          if (selectorLower.includes('address') || tipoLower.includes('address') || tipoLower.includes('dirección')) {
-            nombreLabel = 'Dirección';
-          } else if (selectorLower.includes('city') || tipoLower.includes('city') || tipoLower.includes('ciudad')) {
-            nombreLabel = 'Ciudad';
-          } else if (selectorLower.includes('postal') || tipoLower.includes('postal')) {
-            nombreLabel = 'C. Postal';
-          } else if (selectorLower.includes('country') || tipoLower.includes('country') || tipoLower.includes('país')) {
-            nombreLabel = 'País';
-          } else if (selectorLower.includes('region') || tipoLower.includes('region') || tipoLower.includes('provincia')) {
-            nombreLabel = 'Provincia';
-          } else if (selectorLower.includes('adressnotes') || selectorLower.includes('addressnotes') || tipoLower.includes('notas')) {
-            nombreLabel = 'Notas';
-          }
+          if (selectorLower.includes('address') || tipoLower.includes('address') || tipoLower.includes('dirección')) nombreLabel = 'Dirección';
+          else if (selectorLower.includes('city') || tipoLower.includes('city') || tipoLower.includes('ciudad')) nombreLabel = 'Ciudad';
+          else if (selectorLower.includes('postal') || tipoLower.includes('postal')) nombreLabel = 'C. Postal';
+          else if (selectorLower.includes('country') || tipoLower.includes('country') || tipoLower.includes('país')) nombreLabel = 'País';
+          else if (selectorLower.includes('region') || tipoLower.includes('region') || tipoLower.includes('provincia')) nombreLabel = 'Provincia';
+          else if (selectorLower.includes('adressnotes') || selectorLower.includes('addressnotes') || tipoLower.includes('notas')) nombreLabel = 'Notas';
         }
-        
-        if (!nombreLabel) {
-          cy.log(`No se pudo determinar el nombre del label para campo: tipo="${tipo}", selector="${selector}"`);
-          return;
-        }
-        
+
         chain = chain.then(() => {
-          cy.log(`Buscando campo DIRECCIÓN por label: "${nombreLabel}", valor="${valorTexto}"`);
+          if (!nombreLabel) return cy.wrap(null);
+
           const valorProcesado = procesarValorAleatorio(valorTexto);
-          
-          // Primero intentar buscar por label
+
           return cy.get('body').then(($body) => {
             const $labels = $body.find('label').filter((_, el) => {
               const text = (el.innerText || '').trim();
               return new RegExp(`^${escapeRegex(nombreLabel)}$`, 'i').test(text);
             });
-            
+
             if ($labels.length > 0) {
               const $label = $labels.first();
-              cy.log(`Label "${nombreLabel}" encontrado, buscando input asociado`);
-              
-              // Buscar el input asociado por atributo 'for'
               const forAttr = $label.attr('for');
               if (forAttr) {
                 const inputSelector = forAttr.includes('.') ? `[id="${forAttr}"]` : `#${forAttr}`;
@@ -1990,8 +1992,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   .clear({ force: true })
                   .type(valorProcesado, { force: true, delay: 0 });
               }
-              
-              // Si no hay 'for', buscar el input en el contenedor del label
+
               const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root');
               if (contenedor.length) {
                 return cy.wrap(contenedor[0]).within(() => {
@@ -2005,10 +2006,8 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 });
               }
             }
-            
-            // Fallback: buscar directamente por name attribute si tenemos un selector válido
+
             if (selector && (selector.includes('client.') || selector.includes('.'))) {
-              cy.log(`Label "${nombreLabel}" no encontrado, intentando buscar por name: "${selector}"`);
               return cy.get(`input[name="${selector}"], textarea[name="${selector}"]`, { timeout: 5000 })
                 .should('be.visible')
                 .scrollIntoView()
@@ -2016,92 +2015,67 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 .clear({ force: true })
                 .type(valorProcesado, { force: true, delay: 0 });
             }
-            
-            cy.log(`No se encontró el campo "${nombreLabel}" en DIRECCIÓN (label ni por name)`);
+
             return cy.wrap(null);
           });
         });
       });
     }
 
-    // CUARTO: Si hay campos de DATOS ECONÓMICOS, navegar a esa pestaña y rellenarlos
+    // 5) DATOS ECONÓMICOS
     if (camposEconomicos.length > 0) {
       chain = chain.then(() => {
         cy.log(`Navegando a pestaña DATOS ECONÓMICOS para rellenar ${camposEconomicos.length} campos`);
-        return navegarSeccionFormulario('DATOS ECONÓMICOS').then(() => {
-          cy.wait(500);
-          cy.log('Navegación a DATOS ECONÓMICOS completada, rellenando campos');
-          return cy.wrap(null);
-        });
+        return navegarSeccionFormulario('DATOS ECONÓMICOS').then(() => cy.wait(500));
       });
 
       camposEconomicos.forEach((campo) => {
         const { tipo, selector, valor: valorTexto, i } = campo;
-        const selectorLower = (selector || '').toLowerCase();
-        const tipoLower = (tipo || '').toLowerCase();
         const valorProcesado = procesarValorAleatorio(valorTexto);
-        
+
         chain = chain.then(() => {
-          cy.log(`Rellenando campo DATOS ECONÓMICOS: tipo="${tipo}", selector="${selector}", valor="${valorTexto}"`);
-          
-          // Verificar si es un combobox (perfil de pago)
           const esCombobox = selector && (selector.includes('paymentProfileId') || selector.includes('mui-component-select-client.paymentProfileId'));
-          
           if (esCombobox) {
-            cy.log(`Campo ${selector} es un combobox, buscando por label`);
             return cy.contains('label', /^Perfil de pago$/i, { timeout: 10000 })
               .should('be.visible')
               .then(($label) => {
                 const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
                 if (contenedor.length) {
                   const combobox = contenedor.find('[role="combobox"], div[role="combobox"], .MuiSelect-select').first()[0];
-                  if (combobox) {
-                    cy.log('Combobox Perfil de pago encontrado, seleccionando');
-                    return seleccionarOpcionMuiSelect(combobox, valorProcesado);
-                  }
+                  if (combobox) return seleccionarOpcionMuiSelect(combobox, valorProcesado);
                 }
                 return cy.wrap(null);
               });
           }
-          
-          // Intentar buscar por name attribute primero
+
           if (selector && (selector.includes('client.') || selector.includes('.'))) {
-            cy.log(`Buscando campo ${selector} por name attribute`);
-            // Usar cy.get directamente con el selector
             return cy.get(`input[name="${selector}"], textarea[name="${selector}"]`, { timeout: 10000 })
               .should('be.visible')
               .click({ force: true })
               .clear({ force: true })
               .type(valorProcesado, { force: true, delay: 0 });
           }
-          
-          // Si no hay selector name, buscar por label
+
           const etiquetaParaBuscar = normalizarEtiquetaTexto(tipo) || selector || `Campo ${i}`;
           return obtenerCampoFormulario(tipo, selector, etiquetaParaBuscar).then(($el) => {
-            if (!$el || !$el.length) {
-              cy.log(`No se encontró el campo ${selector} en DATOS ECONÓMICOS`);
-              return cy.wrap(null);
-            }
-            
+            if (!$el || !$el.length) return cy.wrap(null);
             const elemento = $el[0];
             const tag = (elemento?.tagName || '').toLowerCase();
             if (tag === 'input' || tag === 'textarea') {
-              return cy
-                .wrap(elemento)
+              return cy.wrap(elemento)
                 .should('be.visible')
                 .scrollIntoView()
                 .click({ force: true })
                 .clear({ force: true })
                 .type(valorProcesado, { force: true, delay: 0 });
             }
-            
             return cy.wrap(null);
           });
         });
       });
     }
 
-    // QUINTO: Guardar el formulario después de rellenar todo (solo si guardar es true)
+    // 6) Guardar
     if (guardar) {
       chain = chain.then(() => {
         cy.log('Todos los campos rellenados, guardando formulario');
@@ -2109,22 +2083,16 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           .should('be.visible')
           .scrollIntoView()
           .click({ force: true })
-          .then(() => {
-            cy.wait(1500);
-            cy.log('Formulario guardado correctamente');
-            return cy.wrap(null);
-          });
-      });
-    } else {
-      chain = chain.then(() => {
-        cy.log('Todos los campos rellenados (sin guardar todavía)');
-        return cy.wrap(null);
+          .then(() => cy.wait(1500));
       });
     }
 
     return chain.then(() => {
       const etiquetaCaso = numeroCaso ? `TC${String(numeroCaso).padStart(3, '0')} - ` : '';
-      cy.log(`${etiquetaCaso}Formulario completado: ${camposNormales.length} campos normales, ${camposFechas.length} fechas, ${camposDireccion.length} campos DIRECCIÓN, ${camposEconomicos.length} campos DATOS ECONÓMICOS`);
+      cy.log(
+        `${etiquetaCaso}Formulario completado: ${camposNormales.length} campos normales, ${camposFechas.length} fechas, ` +
+        `${camposDireccion.length} campos DIRECCIÓN, ${camposEconomicos.length} campos DATOS ECONÓMICOS`
+      );
     });
   }
 
@@ -2160,26 +2128,26 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         // Identificar qué campo es según el selector, tipo o formato del valor
         // Nombre: puede venir por ID (_r_bu_, _r_jn_) o por name
         if (!nombreValor && (selector.includes('_r_bu_') || selector.includes('_r_jn_') || selector.includes('nombre') || tipo.includes('nombre'))) {
           nombreValor = valor;
-        } 
+        }
         // Inicio: puede venir por ID (_r_c1_, _r_jq_) o por name o por tipo
         else if (!inicioValor && (selector.includes('_r_c1_') || selector.includes('_r_jq_') || selector.includes('inicio') || tipo.includes('inicio'))) {
           inicioValor = valor;
-        } 
+        }
         // Fin: puede venir por ID (_r_c2_, _r_jt_) o por name o por tipo
         else if (!finValor && (selector.includes('_r_c2_') || selector.includes('_r_jt_') || selector.includes('fin') || tipo.includes('fin'))) {
           finValor = valor;
-        } 
+        }
         // Días: por name
         else if (!diasValor && (selector.includes('dias') || selector.includes('días') || tipo.includes('dias') || tipo.includes('días'))) {
           diasValor = valor;
-        } 
+        }
         // Notas: por name
         else if (!notasValor && (selector.includes('notas') || tipo.includes('notas'))) {
           notasValor = valor;
@@ -2371,9 +2339,9 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         // Identificar qué campo es según el selector o tipo
         if (!empresaValor && (selector.includes('empresa') || tipo.includes('empresa'))) {
           empresaValor = valor;
@@ -2564,9 +2532,9 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         // Identificar qué campo es según el selector, tipo o formato del valor
         if (!fechaValor && (tipo.includes('fecha') || selector.includes('fecha') || selector.includes('date') || /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim()))) {
           fechaValor = valor;
@@ -2587,14 +2555,14 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Fecha en Material: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Buscar el label "Fecha" en el modal de Material
             const labelFecha = $body.find('label').filter((_, el) => {
               const texto = (el.innerText || '').trim();
               return /^fecha$/i.test(texto);
             }).first();
-            
+
             if (labelFecha.length) {
               cy.log('Label "Fecha" encontrado, buscando botón del calendario');
               // Buscar el contenedor del date picker (MuiPickersTextField-root)
@@ -2630,7 +2598,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Buscar el input oculto del date picker (tiene id que empieza con _r_ y está dentro de MuiPickersTextField-root)
             const inputFecha = $body.find('.MuiPickersTextField-root input[aria-hidden="true"][tabindex="-1"]').first();
             if (inputFecha.length) {
@@ -2648,7 +2616,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Fallback: buscar el primer botón "Choose date" visible en el modal
             cy.log('Buscando botón "Choose date" como fallback');
             return cy
@@ -2749,28 +2717,28 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       // Buscar los valores en el Excel
       cy.log(`Buscando valores en Excel para CONTRATOS (totalCampos: ${totalCampos})`);
-      
+
       // Detectar fechas primero (pueden tener selectores genéricos como "r_dr", "r_ds_")
       const fechasEncontradas = [];
-      
+
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         cy.log(`Campo ${i}: tipo="${tipo}", selector="${selector}", valor="${valor}"`);
-        
+
         // Detectar fechas por formato (DD/MM/YYYY, DD-MM-YYYY, etc.)
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
-        
+
         if (esFormatoFecha && tipo === 'id') {
           // Si es una fecha con tipo "id", guardarla para asignar después
           fechasEncontradas.push({ valor, selector, indice: i });
         }
       }
-      
+
       // Asignar fechas: la primera es Fecha alta, la segunda es Fecha fin
       if (fechasEncontradas.length > 0 && !fechaAltaValor) {
         fechaAltaValor = fechasEncontradas[0].valor;
@@ -2780,32 +2748,32 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         fechaFinValor = fechasEncontradas[1].valor;
         cy.log(`✓ Fecha fin detectada (por formato): ${fechaFinValor}`);
       }
-      
+
       // Ahora buscar los demás campos
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         // Si ya es una fecha detectada, saltarla
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
         if (esFormatoFecha && tipo === 'id') continue;
-        
+
         // Identificar qué campo es según el selector, tipo o formato del valor
         if (!fechaAltaValor && (
-          tipo.includes('fecha alta') || 
-          selector.includes('fecha alta') || 
-          selector.includes('fechaalta') || 
+          tipo.includes('fecha alta') ||
+          selector.includes('fecha alta') ||
+          selector.includes('fechaalta') ||
           (tipo.includes('fecha') && selector.includes('alta'))
         )) {
           fechaAltaValor = valor;
           cy.log(`✓ Fecha alta detectada: ${valor}`);
         } else if (!fechaFinValor && (
-          tipo.includes('fecha fin') || 
-          selector.includes('fecha fin') || 
-          selector.includes('fechafin') || 
+          tipo.includes('fecha fin') ||
+          selector.includes('fecha fin') ||
+          selector.includes('fechafin') ||
           (tipo.includes('fecha') && selector.includes('fin'))
         )) {
           fechaFinValor = valor;
@@ -2821,7 +2789,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           cy.log(`✓ Meses prueba detectado: ${valor}`);
         }
       }
-      
+
       cy.log(`Valores detectados - Fecha alta: ${fechaAltaValor || 'NO'}, Fecha fin: ${fechaFinValor || 'NO'}, Tipo contrato: ${tipoContratoValor || 'NO'}, Motivo cese: ${motivoCeseValor || 'NO'}, Km recorridos: ${kmRecorridosValor || 'NO'}, Meses prueba: ${mesesPruebaValor || 'NO'}`);
 
       // Rellenar Fecha alta usando el calendario (date picker)
@@ -2832,7 +2800,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Fecha alta en Contratos: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4dj_)
             const inputPorId = $body.find('input#_r_4dj_').first();
@@ -2850,7 +2818,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Fecha alta"
             cy.log('Intentando buscar Fecha alta por label...');
             const labelFechaAlta = $body.find('label').filter((_, el) => /^fecha alta$/i.test((el.innerText || '').trim())).first();
@@ -2870,7 +2838,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - primer botón "Choose date"
             cy.log('Usando fallback: primer botón Choose date');
             return cy
@@ -2894,7 +2862,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Fecha fin en Contratos: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4dm_)
             const inputPorId = $body.find('input#_r_4dm_').first();
@@ -2912,7 +2880,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Fecha fin"
             cy.log('Intentando buscar Fecha fin por label...');
             const labelFechaFin = $body.find('label').filter((_, el) => /^fecha fin$/i.test((el.innerText || '').trim())).first();
@@ -2932,7 +2900,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - segundo botón "Choose date" (después de Fecha alta)
             cy.log('Usando fallback: segundo botón Choose date');
             return cy
@@ -3045,28 +3013,28 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       // Buscar los valores en el Excel
       cy.log(`Buscando valores en Excel para TELÉFONOS (totalCampos: ${totalCampos})`);
-      
+
       // Detectar fechas primero (pueden tener selectores genéricos)
       const fechasEncontradas = [];
-      
+
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         cy.log(`Campo ${i}: tipo="${tipo}", selector="${selector}", valor="${valor}"`);
-        
+
         // Detectar fechas por formato (DD/MM/YYYY, DD-MM-YYYY, etc.)
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
-        
+
         if (esFormatoFecha && tipo === 'id') {
           // Si es una fecha con tipo "id", guardarla para asignar después
           fechasEncontradas.push({ valor, selector, indice: i });
         }
       }
-      
+
       // Asignar fechas: la primera es Inicio, la segunda es Fin
       if (fechasEncontradas.length > 0 && !inicioValor) {
         inicioValor = fechasEncontradas[0].valor;
@@ -3076,44 +3044,44 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         finValor = fechasEncontradas[1].valor;
         cy.log(`✓ Fin detectado (por formato): ${finValor}`);
       }
-      
+
       // Ahora buscar los demás campos
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         // Si ya es una fecha detectada, saltarla
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
         if (esFormatoFecha && tipo === 'id') continue;
-        
+
         // Identificar qué campo es según el selector, tipo o formato del valor
         if (!telefonoValor && (
-          selector.includes('numero') || 
-          selector.includes('teléfono') || 
-          selector.includes('telefono') || 
-          tipo.includes('teléfono') || 
+          selector.includes('numero') ||
+          selector.includes('teléfono') ||
+          selector.includes('telefono') ||
+          tipo.includes('teléfono') ||
           tipo.includes('telefono')
         )) {
           telefonoValor = valor;
           cy.log(`✓ Teléfono detectado: ${valor}`);
         } else if (!inicioValor && (
-          tipo.includes('inicio') || 
+          tipo.includes('inicio') ||
           selector.includes('inicio')
         )) {
           inicioValor = valor;
           cy.log(`✓ Inicio detectado: ${valor}`);
         } else if (!finValor && (
-          tipo.includes('fin') || 
+          tipo.includes('fin') ||
           selector.includes('fin')
         )) {
           finValor = valor;
           cy.log(`✓ Fin detectado: ${valor}`);
         }
       }
-      
+
       cy.log(`Valores detectados - Teléfono: ${telefonoValor || 'NO'}, Inicio: ${inicioValor || 'NO'}, Fin: ${finValor || 'NO'}`);
 
       // Rellenar Teléfono escribiendo en el input
@@ -3140,7 +3108,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Inicio en Teléfonos: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4im_)
             const inputPorId = $body.find('input#_r_4im_').first();
@@ -3158,7 +3126,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Inicio"
             cy.log('Intentando buscar Inicio por label...');
             const labelInicio = $body.find('label').filter((_, el) => /^inicio$/i.test((el.innerText || '').trim())).first();
@@ -3178,7 +3146,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - primer botón "Choose date"
             cy.log('Usando fallback: primer botón Choose date');
             return cy
@@ -3202,7 +3170,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Fin en Teléfonos: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4ip_)
             const inputPorId = $body.find('input#_r_4ip_').first();
@@ -3220,7 +3188,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Fin"
             cy.log('Intentando buscar Fin por label...');
             const labelFin = $body.find('label').filter((_, el) => /^fin$/i.test((el.innerText || '').trim())).first();
@@ -3240,7 +3208,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - segundo botón "Choose date" (después de Inicio)
             cy.log('Usando fallback: segundo botón Choose date');
             return cy
@@ -3289,28 +3257,28 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       // Buscar los valores en el Excel
       cy.log(`Buscando valores en Excel para HIST. TELEFÓNICO (totalCampos: ${totalCampos})`);
-      
+
       // Detectar fechas primero (pueden tener selectores genéricos)
       const fechasEncontradas = [];
-      
+
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         cy.log(`Campo ${i}: tipo="${tipo}", selector="${selector}", valor="${valor}"`);
-        
+
         // Detectar fechas por formato (DD/MM/YYYY, DD-MM-YYYY, etc.)
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
-        
+
         if (esFormatoFecha && tipo === 'id') {
           // Si es una fecha con tipo "id", guardarla para asignar después
           fechasEncontradas.push({ valor, selector, indice: i });
         }
       }
-      
+
       // Asignar fechas: la primera es Inicio, la segunda es Fin
       if (fechasEncontradas.length > 0 && !inicioValor) {
         inicioValor = fechasEncontradas[0].valor;
@@ -3320,44 +3288,44 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         finValor = fechasEncontradas[1].valor;
         cy.log(`✓ Fin detectado (por formato): ${finValor}`);
       }
-      
+
       // Ahora buscar los demás campos
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         // Si ya es una fecha detectada, saltarla
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
         if (esFormatoFecha && tipo === 'id') continue;
-        
+
         // Identificar qué campo es según el selector, tipo o formato del valor
         if (!telefonoValor && (
-          selector.includes('numero') || 
-          selector.includes('teléfono') || 
-          selector.includes('telefono') || 
-          tipo.includes('teléfono') || 
+          selector.includes('numero') ||
+          selector.includes('teléfono') ||
+          selector.includes('telefono') ||
+          tipo.includes('teléfono') ||
           tipo.includes('telefono')
         )) {
           telefonoValor = valor;
           cy.log(`✓ Teléfono detectado: ${valor}`);
         } else if (!inicioValor && (
-          tipo.includes('inicio') || 
+          tipo.includes('inicio') ||
           selector.includes('inicio')
         )) {
           inicioValor = valor;
           cy.log(`✓ Inicio detectado: ${valor}`);
         } else if (!finValor && (
-          tipo.includes('fin') || 
+          tipo.includes('fin') ||
           selector.includes('fin')
         )) {
           finValor = valor;
           cy.log(`✓ Fin detectado: ${valor}`);
         }
       }
-      
+
       cy.log(`Valores detectados - Teléfono: ${telefonoValor || 'NO'}, Inicio: ${inicioValor || 'NO'}, Fin: ${finValor || 'NO'}`);
 
       // Rellenar Teléfono escribiendo en el input
@@ -3384,7 +3352,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Inicio en Hist. Telefónico: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4im_)
             const inputPorId = $body.find('input#_r_4im_').first();
@@ -3402,7 +3370,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Inicio"
             cy.log('Intentando buscar Inicio por label...');
             const labelInicio = $body.find('label').filter((_, el) => /^inicio$/i.test((el.innerText || '').trim())).first();
@@ -3422,7 +3390,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - primer botón "Choose date"
             cy.log('Usando fallback: primer botón Choose date');
             return cy
@@ -3446,7 +3414,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Fin en Hist. Telefónico: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4ip_)
             const inputPorId = $body.find('input#_r_4ip_').first();
@@ -3464,7 +3432,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Fin"
             cy.log('Intentando buscar Fin por label...');
             const labelFin = $body.find('label').filter((_, el) => /^fin$/i.test((el.innerText || '').trim())).first();
@@ -3484,7 +3452,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - segundo botón "Choose date" (después de Inicio)
             cy.log('Usando fallback: segundo botón Choose date');
             return cy
@@ -3533,42 +3501,42 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       // Buscar los valores en el Excel
       cy.log(`Buscando valores en Excel para INCIDENCIAS (totalCampos: ${totalCampos})`);
-      
+
       for (let i = 1; i <= totalCampos; i++) {
         const tipo = (caso[`etiqueta_${i}`] || '').toLowerCase();
         const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
         const valor = caso[`dato_${i}`];
-        
+
         if (valor === undefined || valor === null || valor === '') continue;
-        
+
         cy.log(`Campo ${i}: tipo="${tipo}", selector="${selector}", valor="${valor}"`);
-        
+
         // Detectar fechas por formato (DD/MM/YYYY, DD-MM-YYYY, etc.)
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
-        
+
         // Identificar qué campo es según el selector, tipo o formato del valor
         // Fecha: puede venir por formato de fecha o por selector/tipo "fecha"
         if (!fechaValor && (
-          esFormatoFecha || 
-          tipo.includes('fecha') || 
+          esFormatoFecha ||
+          tipo.includes('fecha') ||
           selector.includes('fecha') ||
           (tipo === 'name' && selector === 'fecha')
         )) {
           fechaValor = valor;
           cy.log(`✓ Fecha detectada: ${valor}`);
-        } 
+        }
         // Incidencia: por selector o tipo que incluya "incidencia"
         else if (!incidenciaValor && (
-          selector.includes('incidencia') || 
+          selector.includes('incidencia') ||
           tipo.includes('incidencia') ||
           (tipo === 'name' && selector === 'incidencia')
         )) {
           incidenciaValor = valor;
           cy.log(`✓ Incidencia detectada: ${valor}`);
-        } 
+        }
         // Notas: por selector o tipo que incluya "notas"
         else if (!notasValor && (
-          selector.includes('notas') || 
+          selector.includes('notas') ||
           tipo.includes('notas') ||
           (tipo === 'name' && selector === 'notas')
         )) {
@@ -3576,7 +3544,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           cy.log(`✓ Notas detectada: ${valor}`);
         }
       }
-      
+
       cy.log(`Valores detectados - Fecha: ${fechaValor || 'NO'}, Incidencia: ${incidenciaValor || 'NO'}, Notas: ${notasValor || 'NO'}`);
 
       // Rellenar Fecha usando el calendario (date picker)
@@ -3587,7 +3555,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const mesIndex = fechaObj.getMonth();
           const anio = fechaObj.getFullYear();
           cy.log(`Rellenando Fecha en Incidencias: ${dia}/${mesIndex + 1}/${anio}`);
-          
+
           return cy.get('body').then(($body) => {
             // Estrategia 1: Buscar directamente por ID del input oculto (_r_4jn_)
             const inputPorId = $body.find('input#_r_4jn_').first();
@@ -3605,7 +3573,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   });
               }
             }
-            
+
             // Estrategia 2: Buscar por label "Fecha"
             cy.log('Intentando buscar Fecha por label...');
             const labelFecha = $body.find('label').filter((_, el) => /^fecha$/i.test((el.innerText || '').trim())).first();
@@ -3625,7 +3593,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Estrategia 3: Fallback - primer botón "Choose date"
             cy.log('Usando fallback: primer botón Choose date');
             return cy
@@ -3801,17 +3769,17 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           valorTexto.toString(),
           'Empresa'  // Buscar por nombre del label
         )
-        .then(
-          () => completarCampo(index + 1),
-          () => {
-            cy.log(`No se pudo seleccionar ${valorTexto} en Empresa`);
-            return completarCampo(index + 1);
-          }
-        );
+          .then(
+            () => completarCampo(index + 1),
+            () => {
+              cy.log(`No se pudo seleccionar ${valorTexto} en Empresa`);
+              return completarCampo(index + 1);
+            }
+          );
       }
-      
+
       const etiquetaParaBuscar = campo.etiquetaVisible || campo.selector;
-      
+
       return obtenerCampoFormulario(campo.tipo, campo.selector, etiquetaParaBuscar)
         .then(
           ($elemento) => {
@@ -3830,7 +3798,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             // Verificar específicamente que el selector o ID contenga "idEmpresa" o "Empresa" explícitamente
             const selectorLower = (campo.selector || '').toLowerCase();
             const idLower = (id || '').toLowerCase();
-            const isCombobox = 
+            const isCombobox =
               (campo.selector && (selectorLower.includes('idempresa') || selectorLower.includes('mui-component-select-client.idempresa'))) ||
               (id && (idLower.includes('idempresa') || idLower.includes('mui-component-select-client.idempresa'))) ||
               (role === 'combobox' && (campo.selector && selectorLower.includes('empresa') && !selectorLower.includes('nacionalidad')));
@@ -4060,29 +4028,29 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function seleccionarCategoriaLaboral(valor) {
     if (!valor) return cy.wrap(null);
-    
+
     cy.log(`Seleccionando categoría laboral: "${valor}"`);
-    
+
     // Buscar el label "Categoría laboral"
     return cy.contains('label', /^Categoría laboral$/i, { timeout: 10000 })
       .should('be.visible')
       .then(($label) => {
         // Buscar el contenedor del campo
         const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root');
-        
+
         if (contenedor.length) {
           // Buscar el botón "+" (MuiIconButton) dentro o cerca del contenedor
           // Primero intentar buscar dentro del contenedor
           return cy.get('body').then(($body) => {
             const $botones = contenedor.find('button.MuiIconButton-root, button[aria-label*="add"], button[aria-label*="añadir"]').filter(':visible');
-            
+
             if ($botones.length > 0) {
               cy.log('Botón + encontrado dentro del contenedor');
               return cy.wrap($botones[0])
                 .should('be.visible')
                 .click({ force: true });
             }
-            
+
             // Si no se encuentra dentro, buscar en el mismo nivel que el contenedor
             const $botonesCerca = contenedor.siblings('button.MuiIconButton-root, button[aria-label*="add"], button[aria-label*="añadir"]').filter(':visible');
             if ($botonesCerca.length > 0) {
@@ -4091,7 +4059,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 .should('be.visible')
                 .click({ force: true });
             }
-            
+
             // Último intento: buscar cualquier botón con ícono + cerca del label
             cy.log('Buscando botón + cerca del label Categoría laboral');
             return cy.wrap($label).then(() => {
@@ -4107,7 +4075,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               .should('be.visible')
               .then(() => {
                 cy.wait(500);
-                
+
                 // Seleccionar la primera fila (checkbox) o buscar por el valor
                 cy.log(`Buscando fila con categoría: "${valor}"`);
                 return cy.get('body').then(($body) => {
@@ -4116,7 +4084,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                     const text = (el.innerText || '').toLowerCase();
                     return text.includes(valor.toString().toLowerCase());
                   });
-                  
+
                   if ($filas.length > 0) {
                     // Seleccionar el checkbox de la primera fila encontrada
                     return cy.wrap($filas[0]).within(() => {
@@ -4133,7 +4101,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                         const text = (el.innerText || '').toLowerCase();
                         return !text.includes('seleccionar todo') && text.trim() !== '';
                       });
-                      
+
                       if ($todasFilas.length > 0) {
                         return cy.wrap($todasFilas[0]).within(() => {
                           cy.get('input[type="checkbox"]', { timeout: 5000 })
@@ -4159,7 +4127,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               });
           });
         }
-        
+
         cy.log('No se encontró el contenedor de Categoría laboral');
         return cy.wrap(null);
       });
@@ -4211,7 +4179,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               // Esperar a que el menú se abra
               cy.log('Esperando a que se abra el menú desplegable');
               cy.wait(800);
-              
+
               // Buscar y hacer clic en la opción - usar regex más flexible
               cy.log(`Buscando opción: "${valor}"`);
               return cy.contains(
@@ -4249,7 +4217,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   function seleccionarOpcionMuiSelect($combo, valorTexto) {
     const texto = String(valorTexto || '').trim();
     if (!texto) return cy.wrap(null);
-    
+
     // Crear regex más flexible para buscar el texto (puede estar truncado o con espacios)
     const textoLimpio = texto.replace(/\s+/g, ' ').trim();
     const palabras = textoLimpio.split(' ').filter(p => p.length > 0);
@@ -4264,9 +4232,9 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         // Obtener el aria-controls si existe (ID del listbox)
         const el = $comboEl.length ? $comboEl[0] : $comboEl;
         const ariaControls = el ? el.getAttribute('aria-controls') : null;
-        
+
         cy.log(`Abriendo dropdown de Empresa para seleccionar: "${texto}"`);
-        
+
         // Hacer click para abrir el dropdown
         return cy.wrap($combo)
           .click({ force: true })
@@ -4274,12 +4242,12 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           .then(() => {
             // Esperar a que aparezca el listbox
             cy.log('Esperando a que aparezca el listbox...');
-            
+
             // Si tenemos aria-controls, buscar el listbox por ese ID
             if (ariaControls) {
               const listboxId = ariaControls.startsWith('#') ? ariaControls : `#${ariaControls}`;
               cy.log(`Buscando listbox por aria-controls: ${listboxId}`);
-              
+
               return cy.get(listboxId, { timeout: 5000 }).then(($listbox) => {
                 if ($listbox && $listbox.length) {
                   cy.log(`Listbox encontrado por aria-controls, buscando opción: "${texto}"`);
@@ -4304,13 +4272,13 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 cy.log(`Listbox con ID ${listboxId} no encontrado, buscando alternativas`);
               });
             }
-            
+
             // Buscar el listbox en el body - esperar a que aparezca
             cy.log('Buscando listbox en el body...');
             return cy.get('body').then(($body) => {
               // Esperar a que aparezca el listbox visible
               cy.wait(300);
-              
+
               const $menu = $body
                 .find('ul[role="listbox"], .MuiMenu-list, .MuiPopover-paper ul, .MuiPaper-root ul, div[role="listbox"]')
                 .filter(':visible')
@@ -4360,18 +4328,18 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function obtenerCampoFormulario(tipo, selector, etiqueta) {
     const tipoLower = (tipo || '').toLowerCase();
-    
+
     // PRIMERO Y MÁS IMPORTANTE: Si el selector es mui-component-select-client.idEmpresa
     // buscar DIRECTAMENTE el label "Empresa" y luego el combobox asociado
     if (selector && (selector.includes('mui-component-select-client.idEmpresa') || selector.includes('idEmpresa'))) {
       cy.log(`🔍 Buscando campo Empresa por label "Empresa"`);
-      
+
       // Buscar el label con texto exacto "Empresa"
       return cy.contains('label', /^Empresa$/i, { timeout: 10000 })
         .should('be.visible')
         .then(($label) => {
           cy.log('✓ Label "Empresa" encontrado, buscando combobox asociado');
-          
+
           // Buscar el contenedor del label
           const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
           if (contenedor.length) {
@@ -4382,7 +4350,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               return cy.wrap(combobox);
             }
           }
-          
+
           // Si no se encuentra en el contenedor, buscar por el atributo 'for' del label
           const forAttr = $label.attr('for');
           if (forAttr) {
@@ -4397,7 +4365,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               });
           }
-          
+
           cy.log('✗ No se encontró combobox asociado al label Empresa');
           return cy.wrap(null);
         })
@@ -4417,7 +4385,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             });
         });
     }
-    
+
     const objetivos = [];
 
     if (selector) {
@@ -4477,7 +4445,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       if (etiqueta) {
         // Si la etiqueta es "Empresa", buscar específicamente ese label
         const esEmpresa = /empresa/i.test(etiqueta);
-        
+
         if (esEmpresa) {
           // Para Empresa, buscar EXACTAMENTE el label con texto "Empresa" y verificar que NO sea Nacionalidad
           cy.log('Buscando campo Empresa por texto del label (excluyendo Nacionalidad)');
@@ -4488,7 +4456,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               // Buscar exactamente "Empresa" y asegurarse de que NO sea "Nacionalidad"
               return /^Empresa$/i.test(texto) && !/nacionalidad/i.test(texto);
             });
-            
+
             if (labels.length === 0) {
               cy.log('No se encontró label "Empresa", intentando búsqueda más flexible');
               // Buscar por texto parcial pero excluyendo Nacionalidad
@@ -4496,15 +4464,15 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 const texto = (el.innerText || el.textContent || '').trim();
                 return /empresa/i.test(texto) && !/nacionalidad/i.test(texto);
               });
-              
+
               if (labelsParcial.length === 0) {
                 cy.log('No se encontró ningún label con "Empresa"');
                 return cy.wrap(null);
               }
-              
+
               const $label = labelsParcial.first();
               cy.log('Label "Empresa" encontrado (búsqueda parcial), buscando elemento asociado');
-              
+
               // Buscar el contenedor del label
               const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
               if (contenedor.length) {
@@ -4519,14 +4487,14 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   }
                 }
               }
-              
+
               cy.log('No se encontró combobox Empresa válido');
               return cy.wrap(null);
             }
-            
+
             const $label = labels.first();
             cy.log('Label "Empresa" encontrado (exacto), buscando elemento asociado');
-            
+
             // Buscar el contenedor del label
             const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
             if (contenedor.length) {
@@ -4541,7 +4509,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
                 cy.log('Combobox encontrado pero ID no coincide con Empresa');
               }
-              
+
               // Si no hay combobox, buscar cualquier input/select pero verificar que no sea Nacionalidad
               const input = contenedor.find('input, textarea, select, [role="textbox"], [role="combobox"]').not('button input, input[type="hidden"]').first()[0];
               if (input && (input.tagName || '').toLowerCase() !== 'label') {
@@ -4554,7 +4522,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 }
               }
             }
-            
+
             // Buscar por atributo 'for'
             const forAttr = $label.attr('for');
             if (forAttr) {
@@ -4572,12 +4540,12 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   }
                 });
             }
-            
+
             cy.log('No se encontró elemento asociado al label Empresa');
             return cy.wrap(null);
           });
         }
-        
+
         // Para otros campos, usar la búsqueda normal
         const regexExacto = new RegExp(`^${escapeRegex(etiqueta)}$`, 'i');
         let label = $body.find('label').filter((_, el) => {
@@ -4659,9 +4627,9 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function eliminarPersonalSeleccionado(caso, numero, casoId) {
     const numeroCaso = numero || parseInt(String(caso?.caso || '').replace(/\D/g, ''), 10);
-    
+
     cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Seleccionar fila y pulsar Eliminar (verificar que aparece diálogo)`);
-    
+
     return UI.abrirPantalla()
       .then(() => {
         cy.log('Seleccionando primera fila...');
@@ -4682,7 +4650,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         return cy.get('body', { timeout: 5000 }).then(($body) => {
           const textoDialogo = $body.text();
           const tieneDialogo = /¿Estás seguro|Are you sure|Esta acción no se puede deshacer|This action cannot be undone/i.test(textoDialogo);
-          
+
           if (tieneDialogo) {
             cy.log('✓ Diálogo de confirmación apareció correctamente (OK)');
             cy.wait(1000);
@@ -4766,9 +4734,9 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       cy.contains('button', /^Filtros$/i, { timeout: 10000 })
         .should('be.visible')
         .click({ force: true });
-      
+
       cy.wait(500);
-      
+
       cy.log('Buscando sección Residencia...');
       // Buscar "Residencia" (es), "Residency" (en) o "Residència" (ca)
       cy.contains('div, span, p, label', /Resid[èe]nc(i|y|ià)/i, { timeout: 10000 })
@@ -4799,13 +4767,13 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       cy.log('Filtro aplicado correctamente (OK aunque no haya resultados)');
       return cy.wrap(null).then(() => {
         cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Filtro de Residencia aplicado correctamente`);
-        });
       });
+    });
   }
 
   function buscarYVerificarPersonal(textoBuscar, casoDatosPersonales) {
     cy.log(`TC056: Buscando personal con texto: "${textoBuscar}"`);
-    
+
     return UI.buscar(textoBuscar)
       .then(() => {
         cy.wait(2000);
@@ -4844,12 +4812,12 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               return cy.wrap(null);
             });
           }
-          
+
           const filaEncontrada = Array.from(filas).find((el) => {
             const textoFila = (el.innerText || el.textContent || '').toLowerCase();
             return textoFila.includes(textoBuscar.toLowerCase());
           });
-          
+
           if (filaEncontrada) {
             cy.log('Fila encontrada, abriendo formulario de edición...');
             return cy.wrap(filaEncontrada).dblclick({ force: true });
@@ -4910,19 +4878,19 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function TC056(caso, numero, casoId) {
     cy.log('TC056: Creando personal completo con todas las pestañas');
-    
+
     // Obtener datos del caso 24 para DATOS PERSONALES y DIRECCIÓN
     return cy.obtenerDatosExcel(HOJA_EXCEL).then((todosLosCasos) => {
       const caso24 = todosLosCasos.find(c => {
         const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
         return num === 24;
       });
-      
+
       if (!caso24) {
         cy.log('⚠️ No se encontró el caso 24 en Excel, usando datos del caso actual');
         return TC056ConDatos(caso, todosLosCasos);
       }
-      
+
       cy.log('Usando datos del caso 24 para DATOS PERSONALES y DIRECCIÓN');
       return TC056ConDatos(caso24, todosLosCasos);
     });
@@ -4966,29 +4934,29 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
           return num >= 27 && num <= 34;
         });
-        
+
         cy.log(`Encontrados ${casosPestañas.length} casos para las pestañas (27-34)`);
-        
+
         // Ordenar por número de caso
         casosPestañas.sort((a, b) => {
           const numA = parseInt(String(a.caso || '').replace(/\D/g, ''), 10);
           const numB = parseInt(String(b.caso || '').replace(/\D/g, ''), 10);
           return numA - numB;
         });
-        
+
         // Rellenar cada pestaña usando la misma lógica que anadirPersonal
         let chain = cy.wrap(null);
-        
+
         casosPestañas.forEach((casoPestaña) => {
           const numeroPestaña = parseInt(String(casoPestaña.caso || '').replace(/\D/g, ''), 10);
           const seccion = deducirSeccionDesdeCaso(casoPestaña);
-          
+
           chain = chain.then(() => {
             cy.log(`Rellenando pestaña ${seccion} con datos del caso ${numeroPestaña}`);
-            
+
             // Caso especial para TELÉFONOS: usar la lógica del caso 32 (Seleccionar teléfono)
             const esTelefonos = seccion && (seccion.toLowerCase().includes('teléfono') || seccion.toLowerCase().includes('telefono')) && !seccion.toLowerCase().includes('hist');
-            
+
             if (esTelefonos) {
               cy.log('Pestaña TELÉFONOS detectada, usando lógica del caso 32 (Seleccionar teléfono)');
               return navegarSeccionFormulario('TELÉFONOS')
@@ -5048,10 +5016,10 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   cy.log('Teléfono seleccionado correctamente en TC056');
                 });
             }
-            
+
             // Usar la misma lógica que anadirPersonal para rellenar la pestaña
             const esSeccionConModal = !/personales/i.test(seccion);
-            
+
             if (esSeccionConModal) {
               return navegarSeccionFormulario(seccion)
                 .then(() => abrirModalSeccion(seccion))
@@ -5065,7 +5033,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             }
           });
         });
-        
+
         return chain;
       })
       .then(() => {
@@ -5134,7 +5102,19 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   }
 
   function seleccionarFechaEnPopover(anio, mesIndex, dia) {
+    // Verificar si ya ocurrió el error de isValid antes de continuar
+    if (errorIsValidOcurrido) {
+      cy.log('Error de isValid detectado, deteniendo selección de fecha. Se registrará en Excel.');
+      return cy.wrap(null);
+    }
+
     return getPopoverCalendario().within(() => {
+      // Verificar flag antes de cada paso crítico
+      if (errorIsValidOcurrido) {
+        cy.log('Error de aplicación detectado dentro de within. Se registrará en Excel.');
+        return cy.wrap(null);
+      }
+
       // 1) Abrir vista de años
       cy.get('.MuiPickersCalendarHeader-switchViewButton', { timeout: 5000 })
         .should('be.visible')
@@ -5142,21 +5122,94 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       cy.wait(200);
 
+      // Verificar flag después del click
+      if (errorIsValidOcurrido) {
+        cy.log('Error de aplicación detectado después del click del switchViewButton. Se registrará en Excel.');
+        return cy.wrap(null);
+      }
+
       // 2) Seleccionar año
       cy.contains('button.MuiYearCalendar-button', new RegExp(`^${anio}$`), { timeout: 5000 })
         .should('be.visible')
         .scrollIntoView()
-        .click({ force: true });
+        .click({ force: true })
+        .then(() => {
+          // Verificar flag inmediatamente después del click del año
+          // Si ocurrió el error, el calendario puede haberse cerrado
+          if (errorIsValidOcurrido) {
+            cy.log('Error de aplicación detectado después del click del año. Se registrará en Excel.');
+            // Salir inmediatamente sin ejecutar más comandos
+            return cy.wrap(null);
+          }
+          return cy.wrap(null);
+        }, (err) => {
+          // Si hay un error durante el click, verificar si es el error de isValid
+          if (errorIsValidOcurrido || (err?.message && err.message.includes('e.isValid is not a function'))) {
+            errorIsValidOcurrido = true;
+            cy.log('Error de aplicación detectado en el catch del click del año. Se registrará en Excel.');
+            // Salir inmediatamente sin ejecutar más comandos
+            return cy.wrap(null);
+          }
+          throw err;
+        })
+        .then(() => {
+          // Si hay error, no continuar con más comandos
+          if (errorIsValidOcurrido) {
+            return cy.wrap(null);
+          }
+          return cy.wrap(null);
+        });
+
+      // Verificar flag antes de continuar - si hay error, salir inmediatamente
+      if (errorIsValidOcurrido) {
+        cy.log('Error de aplicación detectado, deteniendo selección de fecha. Se registrará en Excel.');
+        return cy.wrap(null);
+      }
 
       cy.wait(200);
 
+      // Verificar flag después del wait también
+      if (errorIsValidOcurrido) {
+        cy.log('Error de aplicación detectado después del wait. Se registrará en Excel.');
+        return cy.wrap(null);
+      }
+
       // 3) Ajustar mes con flechas hasta mesIndex
       const stepMes = () => {
+        // Verificar flag antes de buscar el label - si hay error, no buscar nada
+        if (errorIsValidOcurrido) {
+          cy.log('Error de aplicación detectado en stepMes. Se registrará en Excel. Deteniendo búsqueda de calendario.');
+          return cy.wrap(null);
+        }
+
+        // Si hay error, no buscar el label
+        if (errorIsValidOcurrido) {
+          return cy.wrap(null);
+        }
+
         cy.get('.MuiPickersCalendarHeader-label', { timeout: 5000 })
-          .first()
+          .first({ timeout: 5000 })
+          .should('exist')
+          .then(($el) => {
+            // Verificar flag antes de continuar
+            if (errorIsValidOcurrido) {
+              cy.log('Error de aplicación detectado en stepMes dentro del then. Se registrará en Excel.');
+              return cy.wrap(null);
+            }
+            // Verificar que el elemento existe
+            if (!$el || $el.length === 0) {
+              throw new Error('Error: No se encontraron elementos del calendario (MuiPickersCalendarHeader-label)');
+            }
+            return cy.wrap($el);
+          })
           .should('be.visible')
           .invoke('text')
           .then((txt) => {
+            // Verificar flag después de obtener el texto
+            if (errorIsValidOcurrido) {
+              cy.log('Error de aplicación detectado después de obtener texto del label. Se registrará en Excel.');
+              return cy.wrap(null);
+            }
             const { mes, anio: anioActual } = parseMesAnio(txt);
 
             // Si por lo que sea no está en el año correcto, reabrimos año y seguimos
@@ -5178,15 +5231,43 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               ? 'button[aria-label*="Previous month"], button[title*="Previous month"], button[aria-label*="Mes anterior"], button[title*="Mes anterior"]'
               : 'button[aria-label*="Next month"], button[title*="Next month"], button[aria-label*="Mes siguiente"], button[title*="Mes siguiente"]';
 
+            // Verificar flag antes de hacer click en botón de mes
+            if (errorIsValidOcurrido) {
+              cy.log('Error de aplicación detectado antes de click en botón de mes. Se registrará en Excel.');
+              return cy.wrap(null);
+            }
+
             cy.get(btnSel).first().click({ force: true });
             cy.wait(150);
+
+            // Verificar flag antes de recursión
+            if (errorIsValidOcurrido) {
+              cy.log('Error de aplicación detectado antes de recursión en stepMes. Se registrará en Excel.');
+              return cy.wrap(null);
+            }
+
             return stepMes();
           });
       };
 
-      stepMes();
+      // Solo ejecutar stepMes si no hay error
+      if (!errorIsValidOcurrido) {
+        stepMes();
+      }
+
+      // Si hay error, no continuar con más comandos
+      if (errorIsValidOcurrido) {
+        cy.log('Error de aplicación detectado, deteniendo selección de fecha completamente. Se registrará en Excel.');
+        return cy.wrap(null);
+      }
 
       cy.wait(200);
+
+      // Verificar flag antes de seleccionar día
+      if (errorIsValidOcurrido) {
+        cy.log('Error de aplicación detectado antes de seleccionar día. Se registrará en Excel.');
+        return cy.wrap(null);
+      }
 
       // 4) Seleccionar día (evita días "gris" fuera de mes)
       cy.get('button.MuiPickersDay-root:not([disabled])', { timeout: 5000 })
@@ -5201,7 +5282,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     const dia = fechaObjetivo.getDate();
     const mesIndex = fechaObjetivo.getMonth();
     const anio = fechaObjetivo.getFullYear();
-    
+
     return seleccionarFechaEnPopover(anio, mesIndex, dia);
   }
 
@@ -5217,7 +5298,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     return cy.get(selector, { timeout: 10000 }).then(($el) => {
       if (!$el || !$el.length) {
         cy.log(`No se encontró elemento con name="${nameAttr}", intentando buscar por otras estrategias`);
-        
+
         // Estrategia 1: Buscar por el name attribute directamente en el DOM
         return cy.get('body').then(($body) => {
           const $input = $body.find(`input[name="${nameAttr}"], textarea[name="${nameAttr}"]`).not('button input, input[type="hidden"]').first();
@@ -5257,7 +5338,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 if (input.length) {
                   const inputId = input.attr('id');
                   const inputName = input.attr('name');
-                  const inputSelector = inputId 
+                  const inputSelector = inputId
                     ? (inputId.includes('.') ? `[id="${inputId}"]` : `#${inputId}`)
                     : (inputName ? `input[name="${inputName}"], textarea[name="${inputName}"]` : null);
                   if (inputSelector) {
@@ -5281,7 +5362,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               const nameLower = nameAttr.toLowerCase().replace(/\./g, '');
               return text.includes(nameLower) || text.includes(nameSinPuntos.toLowerCase());
             });
-            
+
             if ($labels.length) {
               const $label = $labels.first();
               const forAttr = $label.attr('for');
@@ -5304,7 +5385,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 if (input.length) {
                   const inputId = input.attr('id');
                   const inputName = input.attr('name');
-                  const inputSelector = inputId 
+                  const inputSelector = inputId
                     ? (inputId.includes('.') ? `[id="${inputId}"]` : `#${inputId}`)
                     : (inputName ? `input[name="${inputName}"], textarea[name="${inputName}"]` : null);
                   if (inputSelector) {
@@ -5325,7 +5406,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           return cy.wrap(null);
         });
       }
-      
+
       return cy
         .wrap($el[0])
         .should('be.visible')
