@@ -94,12 +94,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         }
         CASOS_EJECUTADOS.add(numero);
 
-        // Comentar casos del 1 al 42 - no ejecutarlos
-        if (numero >= 1 && numero <= 42) {
-          cy.log(`Caso ${casoId} (${numero}) comentado - se omite`);
-          return ejecutarCaso(index + 1);
-        }
-
         cy.log('───────────────────────────────────────────────');
         cy.log(`Ejecutando ${casoId} - ${nombre}`);
 

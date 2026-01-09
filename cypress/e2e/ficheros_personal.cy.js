@@ -4026,6 +4026,136 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       });
   }
 
+  function guardarModalFormulario(seccion) {
+    cy.log(`Guardando modal de ${seccion} usando botón Guardar del formulario...`);
+
+    // Esperar un momento para que el modal se renderice completamente después de rellenar
+    cy.wait(2000);
+
+    // Buscar el botón directamente usando el selector exacto en toda la página
+    // Estructura: div.sc-erZbsv > div.sc-MHKXp > button.css-1b9fx3e
+    return cy.get('body').then($body => {
+      // Estrategia 1: Buscar el botón en la estructura anidada completa
+      let boton = null;
+
+      const divErZbsv = $body.find('div.sc-erZbsv').first();
+      if (divErZbsv.length > 0) {
+        const divMHKXp = divErZbsv.find('div.sc-MHKXp').first();
+        if (divMHKXp.length > 0) {
+          boton = divMHKXp.find('button.css-1b9fx3e').filter((_, el) => {
+            const texto = (el.textContent || el.innerText || '').trim();
+            return /^Guardar$/i.test(texto);
+          }).first();
+        }
+      }
+
+      // Estrategia 2: Si no se encontró, buscar directamente el botón con clase css-1b9fx3e
+      if (!boton || boton.length === 0) {
+        boton = $body.find('button.css-1b9fx3e').filter((_, el) => {
+          const texto = (el.textContent || el.innerText || '').trim();
+          // Verificar que está dentro de un drawer/modal (no es el botón del formulario principal)
+          const $el = Cypress.$(el);
+          const estaEnDrawer = $el.closest('.MuiDrawer-root, .MuiModal-root, [role="dialog"]').length > 0;
+          return estaEnDrawer && /^Guardar$/i.test(texto);
+        }).first();
+      }
+
+      // Estrategia 3: Buscar cualquier botón "Guardar" dentro de un drawer
+      if (!boton || boton.length === 0) {
+        const drawerEl = $body.find('.MuiDrawer-root:visible, .MuiModal-root:visible, [role="dialog"]:visible').first();
+        if (drawerEl.length > 0) {
+          boton = drawerEl.find('button').filter((_, el) => {
+            const texto = (el.textContent || el.innerText || '').trim();
+            return /^Guardar$/i.test(texto);
+          }).first();
+        }
+      }
+
+      if (boton && boton.length > 0) {
+        cy.log(`✓ Botón Guardar encontrado en modal de ${seccion}`);
+        return cy.wrap(boton[0])
+          .scrollIntoView({ offset: { top: 0, left: 0 } })
+          .click({ force: true, multiple: false })
+          .then(() => {
+            cy.wait(2000);
+            cy.log(`✓ Modal de ${seccion} guardado correctamente`);
+            return cy.wrap(null);
+          });
+      }
+
+      // Si no se encontró, lanzar error con información de debug
+      cy.log(`❌ ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
+      const todosLosBotones = $body.find('button').filter((_, el) => {
+        const texto = (el.textContent || el.innerText || '').trim();
+        return /guardar/i.test(texto);
+      });
+      cy.log(`DEBUG: Total de botones "Guardar" en página: ${todosLosBotones.length}`);
+      cy.log(`DEBUG: Botones encontrados: ${todosLosBotones.map((_, el) => {
+        const $el = Cypress.$(el);
+        const estaEnDrawer = $el.closest('.MuiDrawer-root, .MuiModal-root, [role="dialog"]').length > 0;
+        return `${(el.textContent || '').trim()} (en drawer: ${estaEnDrawer})`;
+      }).get().join(', ')}`);
+
+      throw new Error(`No se pudo encontrar el botón Guardar en el modal de ${seccion}. Es crítico pulsarlo para continuar.`);
+    });
+  }
+
+  function verificarPestañaSinFilas(nombrePestaña) {
+    return cy.get('body').then($body => {
+      // Buscar específicamente en el área de la tabla de la pestaña actual
+      // Buscar la tabla MuiDataGrid o el área de contenido de la pestaña
+      const tabla = $body.find('.MuiDataGrid-root:visible, .MuiTableContainer:visible, table:visible').first();
+      
+      if (tabla.length > 0) {
+        // Verificar si la tabla tiene filas de datos
+        const filas = tabla.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible').filter((_, el) => {
+          // Excluir filas vacías o que solo contengan "Sin filas"
+          const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
+          return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos/i.test(textoFila);
+        });
+        
+        if (filas.length > 0) {
+          cy.log(`✓ La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
+          return cy.wrap(true);
+        } else {
+          // Verificar si hay mensaje "Sin filas" en la tabla
+          const mensajeSinFilas = tabla.find('*').filter((_, el) => {
+            const texto = (el.textContent || '').toLowerCase();
+            return /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
+          });
+          
+          if (mensajeSinFilas.length > 0) {
+            cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+            return cy.wrap(false);
+          } else {
+            // Si no hay filas pero tampoco hay mensaje "Sin filas", puede que la tabla esté vacía
+            cy.log(`⚠️ La pestaña ${nombrePestaña} no tiene filas visibles`);
+            return cy.wrap(false);
+          }
+        }
+      } else {
+        // Si no hay tabla visible, buscar mensaje "Sin filas" en el área de contenido de la pestaña
+        const mensajeSinFilas = $body.find('*').filter((_, el) => {
+          const texto = (el.textContent || '').toLowerCase();
+          // Buscar solo en elementos visibles y dentro del área de contenido principal
+          const $el = Cypress.$(el);
+          const estaVisible = $el.is(':visible');
+          const estaEnContenido = $el.closest('[class*="MuiPaper"], [class*="content"], [class*="tabpanel"]').length > 0;
+          return estaVisible && estaEnContenido && /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
+        });
+        
+        if (mensajeSinFilas.length > 0) {
+          cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+          return cy.wrap(false);
+        } else {
+          // Si no hay tabla ni mensaje "Sin filas", asumir que tiene datos (puede ser un formulario sin tabla)
+          cy.log(`✓ La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
+          return cy.wrap(true);
+        }
+      }
+    });
+  }
+
   function seleccionarCategoriaLaboral(valor) {
     if (!valor) return cy.wrap(null);
 
@@ -4897,6 +5027,31 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   }
 
   function TC056ConDatos(casoDatosPersonales, todosLosCasos) {
+    // Generar nombre pruebaXXX con 3 números aleatorios
+    const numeroAleatorio = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const nombrePersonal = `prueba${numeroAleatorio}`;
+    cy.log(`TC056: Nombre del personal generado: ${nombrePersonal}`);
+
+    // Modificar el caso para usar el nombre generado
+    // Buscar el campo que corresponde al nombre (probablemente dato_2 o dato_3)
+    const casoModificado = { ...casoDatosPersonales };
+    // Intentar encontrar el campo de nombre en los datos
+    for (let i = 1; i <= 20; i++) {
+      const tipo = (casoDatosPersonales[`etiqueta_${i}`] || '').toLowerCase();
+      const selector = (casoDatosPersonales[`valor_etiqueta_${i}`] || '').toLowerCase();
+      if ((tipo.includes('nombre') || selector.includes('nombre') || selector.includes('name')) && 
+          !selector.includes('empresa') && !selector.includes('company')) {
+        casoModificado[`dato_${i}`] = nombrePersonal;
+        cy.log(`Campo nombre encontrado en dato_${i}, usando: ${nombrePersonal}`);
+        break;
+      }
+    }
+    // Si no se encontró, usar dato_2 como fallback (común para nombre)
+    if (!casoModificado.dato_2 || casoModificado.dato_2 === casoDatosPersonales.dato_2) {
+      casoModificado.dato_2 = nombrePersonal;
+      cy.log(`Usando dato_2 como fallback para nombre: ${nombrePersonal}`);
+    }
+
     // Preparar pantalla limpia: login + navegación + abrir formulario
     return cy.login()
       .then(() => {
@@ -4921,11 +5076,10 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         });
       })
       .then(() => {
-        cy.log('Rellenando DATOS PERSONALES y DIRECCIÓN usando datos del caso 24...');
+        cy.log('Rellenando DATOS PERSONALES y DIRECCIÓN usando datos del caso 24 con nombre generado...');
         // Usar la misma función que el caso 24 para rellenar DATOS PERSONALES y DIRECCIÓN
-        // Esta función rellena DATOS PERSONALES y luego navega a DIRECCIÓN y rellena esos campos también
         // Pero NO guardar todavía, solo rellenar
-        return llenarFormularioDatosPersonalesDesdeExcel(casoDatosPersonales, 24, false);
+        return llenarFormularioDatosPersonalesDesdeExcel(casoModificado, 24, false);
       })
       .then(() => {
         cy.log('Rellenando todas las pestañas usando datos de los casos 27-34...');
@@ -4954,10 +5108,20 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           chain = chain.then(() => {
             cy.log(`Rellenando pestaña ${seccion} con datos del caso ${numeroPestaña}`);
 
-            // Caso especial para TELÉFONOS: usar la lógica del caso 32 (Seleccionar teléfono)
-            const esTelefonos = seccion && (seccion.toLowerCase().includes('teléfono') || seccion.toLowerCase().includes('telefono')) && !seccion.toLowerCase().includes('hist');
+            const esSeccionFormacion = /formación|formacion/i.test(seccion);
+            const esSeccionExperiencia = /experiencia/i.test(seccion);
+            const esSeccionAsistencia = /asistencia/i.test(seccion);
+            const esSeccionMaterial = /material/i.test(seccion);
+            const esSeccionContratos = /contrato/i.test(seccion);
+            const esSeccionTelefonos = (seccion && (seccion.toLowerCase().includes('teléfono') || seccion.toLowerCase().includes('telefono')) && !seccion.toLowerCase().includes('hist'));
+            const esSeccionHistTelefonico = /hist.*telef/i.test(seccion);
+            const esSeccionIncidencia = /incidencia/i.test(seccion);
+            const esSeccionConModal = esSeccionFormacion || esSeccionExperiencia || esSeccionAsistencia || 
+                                      esSeccionMaterial || esSeccionContratos || esSeccionTelefonos || 
+                                      esSeccionHistTelefonico || esSeccionIncidencia;
 
-            if (esTelefonos) {
+            // Caso especial para TELÉFONOS: usar la lógica del caso 32 (Seleccionar teléfono)
+            if (esSeccionTelefonos) {
               cy.log('Pestaña TELÉFONOS detectada, usando lógica del caso 32 (Seleccionar teléfono)');
               return navegarSeccionFormulario('TELÉFONOS')
                 .then(() => {
@@ -5017,16 +5181,19 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 });
             }
 
-            // Usar la misma lógica que anadirPersonal para rellenar la pestaña
-            const esSeccionConModal = !/personales/i.test(seccion);
-
+            // Secciones con modal: usar guardarModalFormulario para guardar dentro del formulario
             if (esSeccionConModal) {
               return navegarSeccionFormulario(seccion)
                 .then(() => abrirModalSeccion(seccion))
                 .then(() => llenarFormularioSeccion(casoPestaña, numeroPestaña, seccion))
-                .then(() => guardarModalSeccion(seccion))
+                .then(() => {
+                  // Para TC056: Guardar el modal usando el botón Guardar del formulario
+                  cy.log(`Guardando modal de ${seccion} usando botón Guardar del formulario...`);
+                  return guardarModalFormulario(seccion).then(() => cy.wait(500));
+                })
                 .then(() => cy.wait(500));
             } else {
+              // Secciones sin modal (Datos Personales, Dirección, Datos Económicos)
               return navegarSeccionFormulario(seccion)
                 .then(() => llenarCamposFormulario(casoPestaña))
                 .then(() => cy.wait(500));
@@ -5037,23 +5204,154 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         return chain;
       })
       .then(() => {
-        cy.log('Guardando formulario principal...');
-        // Guardar el formulario principal
-        return cy.contains('button, [type="submit"]', /Guardar/i, { timeout: 10000 })
-          .scrollIntoView()
-          .click({ force: true })
-          .then(() => cy.wait(2000));
+        // Verificar que estamos todavía en el formulario antes de guardar
+        return cy.url().then((urlActual) => {
+          if (!urlActual.includes('/dashboard/personnel/form')) {
+            cy.log('⚠️ Ya no estamos en el formulario, no se puede guardar');
+            return cy.wrap(null);
+          }
+
+          cy.log('Guardando formulario principal DESPUÉS de rellenar todas las pestañas...');
+          // Guardar el formulario principal (botón con tic) SOLO al final
+          return cy.get('body').then($body => {
+            // Buscar botón Guardar que tenga un icono de check/tick o esté en el header del formulario
+            const botonGuardarGeneral = $body.find('button[type="submit"], button:contains("Guardar")')
+              .filter((_, el) => {
+                const $el = Cypress.$(el);
+                // Buscar si tiene un icono de check o está en el área del formulario principal (no en modal)
+                const tieneCheck = $el.find('svg, [class*="Check"], [class*="check"]').length > 0;
+                const estaEnFormulario = $el.closest('.MuiDrawer-root, .MuiModal-root, [role="dialog"]').length === 0;
+                const texto = ($el.text() || '').trim().toLowerCase();
+                return estaEnFormulario && /guardar/i.test(texto);
+              })
+              .first();
+
+            if (botonGuardarGeneral.length > 0) {
+              return cy.wrap(botonGuardarGeneral)
+                .should('be.visible')
+                .scrollIntoView()
+                .click({ force: true })
+                .then(() => cy.wait(3000));
+            } else {
+              // Fallback: buscar cualquier botón Guardar que no esté en un modal
+              return cy.contains('button', /^Guardar$/i, { timeout: 10000 })
+                .not('.MuiDrawer-root button, .MuiModal-root button, [role="dialog"] button')
+                .scrollIntoView()
+                .click({ force: true })
+                .then(() => cy.wait(3000));
+            }
+          });
+        });
       })
       .then(() => {
-        cy.log('TC056: Formulario guardado. ERROR: Hist. telefónico no guarda los datos (se queda en blanco)');
-        // Registrar el resultado como ERROR porque "hist. telefónico" no guarda los datos
-        return registrarResultadoAutomatico(
-          56,
-          'TC056',
-          casoDatosPersonales?.nombre || 'Comprobar que se quedan guardados todos los registros',
-          'Se guarda todo menos "Histórico de teléfonos"',
-          'ERROR'
-        );
+        cy.log(`TC056: Formulario guardado. Buscando personal ${nombrePersonal}...`);
+
+        // Volver a la lista y buscar el personal por nombre
+        return cy.url().then((urlActual) => {
+          // Si todavía estamos en el formulario, navegar a la lista
+          if (urlActual.includes('/dashboard/personnel/form')) {
+            cy.log('Navegando a la lista de personal...');
+            return cy.visit(URL_PATH).then(() => cy.wait(2000));
+          }
+          return cy.wrap(null);
+        });
+      })
+      .then(() => {
+        // Esperar a que la tabla esté visible
+        return UI.esperarTabla();
+      })
+      .then(() => {
+        // Buscar el personal por nombre
+        cy.log(`Buscando personal: ${nombrePersonal}`);
+        return UI.buscar(nombrePersonal);
+      })
+      .then(() => {
+        cy.wait(1000);
+        // Buscar la fila del personal y abrirla
+        return cy.get('body').then($body => {
+          const filas = $body.find('.MuiDataGrid-row:visible');
+          if (filas.length === 0) {
+            cy.log('⚠️ No se encontraron filas en la tabla');
+            return cy.wrap(null);
+          }
+
+          // Buscar la fila que contiene el nombre del personal
+          const filaEncontrada = Array.from(filas).find((el) => {
+            const textoFila = (el.innerText || el.textContent || '').toLowerCase();
+            return textoFila.includes(nombrePersonal.toLowerCase());
+          });
+
+          if (filaEncontrada) {
+            cy.log('Personal encontrado, abriendo formulario de edición...');
+            return cy.wrap(filaEncontrada).dblclick({ force: true });
+          } else {
+            cy.log('⚠️ No se encontró la fila con el nombre del personal');
+            return cy.wrap(null);
+          }
+        });
+      })
+      .then(() => {
+        cy.wait(2000);
+        // Verificar que estamos en el formulario de edición
+        return cy.url().should('include', '/dashboard/personnel/form');
+      })
+      .then(() => {
+        cy.log('TC056: Verificando que todas las pestañas tienen datos guardados...');
+
+        // Lista de pestañas a verificar (las que tienen formularios)
+        const pestañasAVerificar = [
+          { nombre: 'Formación', tieneSubpestaña: false },
+          { nombre: 'Experiencia', tieneSubpestaña: false },
+          { nombre: 'Asistencia', tieneSubpestaña: false },
+          { nombre: 'Material', tieneSubpestaña: false },
+          { nombre: 'Contratos', tieneSubpestaña: false },
+          { nombre: 'Teléfonos', tieneSubpestaña: false },
+          { nombre: 'Hist. Telefónico', tieneSubpestaña: false },
+          { nombre: 'Incidencias', tieneSubpestaña: false },
+          { nombre: 'Dirección', tieneSubpestaña: false },
+          { nombre: 'Datos Económicos', tieneSubpestaña: false }
+        ];
+
+        // Iniciar con un array vacío y acumular errores en la cadena
+        let chainVerificacion = cy.wrap([]);
+
+        pestañasAVerificar.forEach((pestañaInfo) => {
+          chainVerificacion = chainVerificacion.then((pestañasSinDatos) => {
+            cy.log(`Verificando pestaña: ${pestañaInfo.nombre}`);
+
+            // Navegar a la pestaña
+            return navegarSeccionFormulario(pestañaInfo.nombre)
+              .then(() => cy.wait(1000))
+              .then(() => {
+                return verificarPestañaSinFilas(pestañaInfo.nombre)
+                  .then((tieneDatos) => {
+                    const nuevasPestañasSinDatos = [...pestañasSinDatos];
+                    if (!tieneDatos) {
+                      nuevasPestañasSinDatos.push(pestañaInfo.nombre);
+                    }
+                    return cy.wrap(nuevasPestañasSinDatos);
+                  });
+              });
+          });
+        });
+
+        return chainVerificacion.then((pestañasSinDatos) => {
+          cy.log('TC056: Verificación completada');
+
+          const finalStatus = pestañasSinDatos.length > 0 ? 'ERROR' : 'OK';
+          const finalObservation = pestañasSinDatos.length > 0
+            ? `Personal ${nombrePersonal} creado, pero las siguientes pestañas NO tienen datos guardados: ${pestañasSinDatos.join(', ')}`
+            : `Personal ${nombrePersonal} creado y verificado. Todas las pestañas tienen datos guardados.`;
+
+          return registrarResultadoAutomatico(
+            56,
+            'TC056',
+            casoModificado?.nombre || 'Comprobar que se guardan todos los datos',
+            finalObservation,
+            finalStatus,
+            true
+          );
+        });
       });
   }
 
