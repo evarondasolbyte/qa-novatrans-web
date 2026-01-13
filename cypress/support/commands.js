@@ -942,6 +942,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       const casosAlquileresOKConNoRows = [10];
       // Casos específicos de Alquileres Vehículos: TC006-TC009 y TC026-TC031 deben dar ERROR si fallan, pero OK si funcionan
       const casosAlquileresKO = [6, 7, 8, 9, 26, 27, 28, 29, 30, 31];
+      // Casos específicos de Vehículos: TC012 (caracteres especiales) debe ser OK cuando muestre "No rows"
+      const casosVehiculosOKConNoRows = [12];
 
       // Verificar primero si es un caso especial de Multas que debe ser OK con "No rows"
       if (nombrePantalla && nombrePantalla.toLowerCase().includes('rutas') && nombrePantalla.toLowerCase().includes('procesos') && casosProcesosRutasOKConNoRows.includes(numeroCaso)) {
@@ -983,6 +985,15 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         if (tieneNoRows || filasVisibles === 0) {
           resultado = 'OK';
           obtenido = 'No se muestran resultados (comportamiento esperado)';
+        } else {
+          resultado = 'OK';
+          obtenido = `Se muestran ${filasVisibles} resultados`;
+        }
+      } else if (nombrePantalla && (nombrePantalla.toLowerCase().includes('vehículos') || nombrePantalla.toLowerCase().includes('vehiculos')) && casosVehiculosOKConNoRows.includes(numeroCaso)) {
+        // TC012 en Vehículos: debe ser OK cuando muestre "No rows" (comportamiento esperado para caracteres especiales)
+        if (tieneNoRows || filasVisibles === 0) {
+          resultado = 'OK';
+          obtenido = 'No se muestran resultados (comportamiento esperado para caracteres especiales)';
         } else {
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados`;

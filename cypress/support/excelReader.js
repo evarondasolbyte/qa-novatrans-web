@@ -50,6 +50,7 @@ const SHEET_GIDS = {
   'PROCESOS-ORDENES DE CARGA': '817274383',
   'PROCESOS-RUTAS': '433035856',
   'FICHEROS-PERSONAL': '316490626',
+  'FICHEROS-VEHÍCULOS': '107875668',
   'Datos': '0'
 };
 
@@ -194,6 +195,12 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     /ficheros/.test(pantallaSafe) &&
     /(personal|personnel)/.test(pantallaSafe)
   ) return 'FICHEROS-PERSONAL';
+
+  // 👇 NUEVO: detectar Ficheros (Vehículos)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(veh[íi]culos|veh[íi]culo|vehicles|vehicle)/.test(pantallaSafe)
+  ) return 'FICHEROS-VEHÍCULOS';
 
   return 'Datos';
 }

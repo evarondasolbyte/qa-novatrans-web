@@ -1485,10 +1485,8 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     };
 
     // =========================
-    // ✅ NUEVO: Detector de "error de aplicación" SOLO para cortar el caso 24 y continuar suite
+    // NUEVO: Detector de "error de aplicación" SOLO para cortar el caso 24 y continuar suite
     // =========================
-    // IMPORTANTE: para que continúe con el siguiente caso, tu it() debe tener:
-    // cy.on('fail', (err) => { cy.capturarError(err, {...}); return false; });
     const detectarErrorAplicacionYAbortar = (paso) => {
       if (numeroCaso !== 24) return cy.wrap(null);
 
