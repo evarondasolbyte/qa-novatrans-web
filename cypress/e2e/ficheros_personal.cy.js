@@ -58,7 +58,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     if (fallo && esAppError && registroActual) {
       const obtenido = `Application error: ${appErrorDetectado?.message || errMsg}`;
 
-      // ✅ registra ERROR en excel (usa TU función/comando real)
+      //  registra ERROR en excel (usa TU función/comando real)
       // Si tú usas "registrarResultadoAutomatico", úsalo aquí:
       return registrarResultadoAutomatico(
         registroActual.numero,
@@ -72,7 +72,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         appErrorDetectado = null;
         registroActual = null;
 
-        // ✅ opcional: recuperar la app para que el siguiente test no empiece en la pantalla rota
+        //  opcional: recuperar la app para que el siguiente test no empiece en la pantalla rota
         // Si tu beforeEach ya hace login+abrir pantalla, puedes quitar esto.
         return cy.login().then(() => UI.abrirPantalla());
       });
@@ -862,38 +862,38 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
     // Verificar INCIDENCIAS primero (antes de otras secciones que puedan contener palabras similares)
     if (nombre.includes('incidencia') || nombre.includes('incidencias')) {
-      cy.log('✓ Sección detectada: Incidencias');
+      cy.log(' Sección detectada: Incidencias');
       return 'Incidencias';
     }
     if (nombre.includes('formación') || nombre.includes('formacion')) {
-      cy.log('✓ Sección detectada: Formación');
+      cy.log(' Sección detectada: Formación');
       return 'Formación';
     }
     if (nombre.includes('experiencia')) {
-      cy.log('✓ Sección detectada: Experiencia');
+      cy.log(' Sección detectada: Experiencia');
       return 'Experiencia';
     }
     if (nombre.includes('asistencia')) {
-      cy.log('✓ Sección detectada: Asistencia');
+      cy.log(' Sección detectada: Asistencia');
       return 'Asistencia';
     }
     if (nombre.includes('material')) {
-      cy.log('✓ Sección detectada: Material');
+      cy.log(' Sección detectada: Material');
       return 'Material';
     }
     if (nombre.includes('contrato')) {
-      cy.log('✓ Sección detectada: Contratos');
+      cy.log(' Sección detectada: Contratos');
       return 'Contratos';
     }
     if (nombre.includes('teléfono') || nombre.includes('telefono')) {
-      cy.log('✓ Sección detectada: Teléfonos');
+      cy.log(' Sección detectada: Teléfonos');
       return 'Teléfonos';
     }
     if (nombre.includes('hist. telefónico') || nombre.includes('hist telefonico')) {
-      cy.log('✓ Sección detectada: Hist. Telefónico');
+      cy.log(' Sección detectada: Hist. Telefónico');
       return 'Hist. Telefónico';
     }
-    cy.log('⚠️ No se detectó ninguna sección específica, usando: Datos Personales');
+    cy.log(' No se detectó ninguna sección específica, usando: Datos Personales');
     return 'Datos Personales';
   }
 
@@ -1725,7 +1725,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               .then(() => detectarErrorAplicacionYAbortar('rellenar Expedición')); // por si aquí cae
           }
           return escribirPorName(selector, valorTexto, selector).then(() => {
-            // ✅ SOLO TC024: si este campo corresponde a Expedición, corta si hay app error
+            //  SOLO TC024: si este campo corresponde a Expedición, corta si hay app error
             const esExpedicion =
               selectorLower.includes('expedicion') ||
               (tipo || '').toLowerCase().includes('expedicion');
@@ -1907,7 +1907,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         cy.log(`Rellenando fecha [${indiceActual}]: etiqueta="${etiquetaFecha}", valor="${valorTexto}"`);
         return escribirFechaPorClickYType(etiquetaFecha, valorTexto, tipo, selector, indiceActual)
           .then(() => {
-            // ✅ SOLO TC024: si esta fecha es "Expedición", comprobar error de aplicación y abortar
+            //  SOLO TC024: si esta fecha es "Expedición", comprobar error de aplicación y abortar
             const s = (selector || '').toLowerCase();
             const t = (tipo || '').toLowerCase();
             const esExpedicion = etiquetaFecha.toLowerCase().includes('expedicion') || s.includes('expedicion') || t.includes('expedicion');
@@ -3033,11 +3033,11 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       // Asignar fechas: la primera es Inicio, la segunda es Fin
       if (fechasEncontradas.length > 0 && !inicioValor) {
         inicioValor = fechasEncontradas[0].valor;
-        cy.log(`✓ Inicio detectado (por formato): ${inicioValor}`);
+        cy.log(` Inicio detectado (por formato): ${inicioValor}`);
       }
       if (fechasEncontradas.length > 1 && !finValor) {
         finValor = fechasEncontradas[1].valor;
-        cy.log(`✓ Fin detectado (por formato): ${finValor}`);
+        cy.log(` Fin detectado (por formato): ${finValor}`);
       }
 
       // Ahora buscar los demás campos
@@ -3518,7 +3518,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           (tipo === 'name' && selector === 'fecha')
         )) {
           fechaValor = valor;
-          cy.log(`✓ Fecha detectada: ${valor}`);
+          cy.log(` Fecha detectada: ${valor}`);
         }
         // Incidencia: por selector o tipo que incluya "incidencia"
         else if (!incidenciaValor && (
@@ -3527,7 +3527,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           (tipo === 'name' && selector === 'incidencia')
         )) {
           incidenciaValor = valor;
-          cy.log(`✓ Incidencia detectada: ${valor}`);
+          cy.log(` Incidencia detectada: ${valor}`);
         }
         // Notas: por selector o tipo que incluya "notas"
         else if (!notasValor && (
@@ -3536,7 +3536,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           (tipo === 'name' && selector === 'notas')
         )) {
           notasValor = valor;
-          cy.log(`✓ Notas detectada: ${valor}`);
+          cy.log(` Notas detectada: ${valor}`);
         }
       }
 
@@ -4067,19 +4067,19 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       }
 
       if (boton && boton.length > 0) {
-        cy.log(`✓ Botón Guardar encontrado en modal de ${seccion}`);
+        cy.log(` Botón Guardar encontrado en modal de ${seccion}`);
         return cy.wrap(boton[0])
           .scrollIntoView({ offset: { top: 0, left: 0 } })
           .click({ force: true, multiple: false })
           .then(() => {
             cy.wait(2000);
-            cy.log(`✓ Modal de ${seccion} guardado correctamente`);
+            cy.log(` Modal de ${seccion} guardado correctamente`);
             return cy.wrap(null);
           });
       }
 
       // Si no se encontró, lanzar error con información de debug
-      cy.log(`❌ ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
+      cy.log(` ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
       const todosLosBotones = $body.find('button').filter((_, el) => {
         const texto = (el.textContent || el.innerText || '').trim();
         return /guardar/i.test(texto);
@@ -4110,7 +4110,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         });
         
         if (filas.length > 0) {
-          cy.log(`✓ La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
+          cy.log(` La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
           return cy.wrap(true);
         } else {
           // Verificar si hay mensaje "Sin filas" en la tabla
@@ -4120,11 +4120,11 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           });
           
           if (mensajeSinFilas.length > 0) {
-            cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+            cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
             return cy.wrap(false);
           } else {
             // Si no hay filas pero tampoco hay mensaje "Sin filas", puede que la tabla esté vacía
-            cy.log(`⚠️ La pestaña ${nombrePestaña} no tiene filas visibles`);
+            cy.log(` La pestaña ${nombrePestaña} no tiene filas visibles`);
             return cy.wrap(false);
           }
         }
@@ -4140,11 +4140,11 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         });
         
         if (mensajeSinFilas.length > 0) {
-          cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+          cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
           return cy.wrap(false);
         } else {
           // Si no hay tabla ni mensaje "Sin filas", asumir que tiene datos (puede ser un formulario sin tabla)
-          cy.log(`✓ La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
+          cy.log(` La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
           return cy.wrap(true);
         }
       }
@@ -4457,13 +4457,13 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     // PRIMERO Y MÁS IMPORTANTE: Si el selector es mui-component-select-client.idEmpresa
     // buscar DIRECTAMENTE el label "Empresa" y luego el combobox asociado
     if (selector && (selector.includes('mui-component-select-client.idEmpresa') || selector.includes('idEmpresa'))) {
-      cy.log(`🔍 Buscando campo Empresa por label "Empresa"`);
+      cy.log(` Buscando campo Empresa por label "Empresa"`);
 
       // Buscar el label con texto exacto "Empresa"
       return cy.contains('label', /^Empresa$/i, { timeout: 10000 })
         .should('be.visible')
         .then(($label) => {
-          cy.log('✓ Label "Empresa" encontrado, buscando combobox asociado');
+          cy.log(' Label "Empresa" encontrado, buscando combobox asociado');
 
           // Buscar el contenedor del label
           const contenedor = $label.closest('.MuiFormControl-root, .MuiTextField-root, .MuiInputBase-root');
@@ -4471,7 +4471,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             // Buscar el combobox dentro del contenedor
             const combobox = contenedor.find('[role="combobox"], div[role="combobox"], .MuiSelect-select').first()[0];
             if (combobox) {
-              cy.log('✓ Combobox Empresa encontrado en contenedor');
+              cy.log(' Combobox Empresa encontrado en contenedor');
               return cy.wrap(combobox);
             }
           }
@@ -4607,7 +4607,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   // Verificar que el ID contenga "idEmpresa" o "Empresa"
                   const comboboxId = combobox.id || '';
                   if (comboboxId.includes('idEmpresa') || comboboxId.includes('Empresa')) {
-                    cy.log('✓ Combobox Empresa encontrado en contenedor');
+                    cy.log(' Combobox Empresa encontrado en contenedor');
                     return cy.wrap(combobox);
                   }
                 }
@@ -4629,7 +4629,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 // Verificar que el ID contenga "idEmpresa" para asegurarse de que es el correcto
                 const comboboxId = combobox.id || '';
                 if (comboboxId.includes('idEmpresa') || comboboxId.includes('mui-component-select-client.idEmpresa')) {
-                  cy.log('✓ Combobox Empresa encontrado en contenedor (ID verificado)');
+                  cy.log(' Combobox Empresa encontrado en contenedor (ID verificado)');
                   return cy.wrap(combobox);
                 }
                 cy.log('Combobox encontrado pero ID no coincide con Empresa');
@@ -4642,7 +4642,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                 const inputName = input.name || '';
                 // Verificar que sea Empresa y no Nacionalidad
                 if ((inputId.includes('idEmpresa') || inputName.includes('idEmpresa')) && !inputId.includes('Nacionalidad') && !inputName.includes('Nacionalidad')) {
-                  cy.log('✓ Elemento Empresa encontrado en contenedor (verificado)');
+                  cy.log(' Elemento Empresa encontrado en contenedor (verificado)');
                   return cy.wrap(input);
                 }
               }
@@ -4659,7 +4659,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   if ($el && $el.length) {
                     const elId = $el[0].id || '';
                     if (elId.includes('idEmpresa') || elId.includes('Empresa')) {
-                      cy.log('✓ Elemento Empresa encontrado por atributo for (verificado)');
+                      cy.log(' Elemento Empresa encontrado por atributo for (verificado)');
                       return cy.wrap($el[0]);
                     }
                   }
@@ -4777,11 +4777,11 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           const tieneDialogo = /¿Estás seguro|Are you sure|Esta acción no se puede deshacer|This action cannot be undone/i.test(textoDialogo);
 
           if (tieneDialogo) {
-            cy.log('✓ Diálogo de confirmación apareció correctamente (OK)');
+            cy.log(' Diálogo de confirmación apareció correctamente (OK)');
             cy.wait(1000);
             return cy.wrap(null);
           } else {
-            cy.log('⚠️ Diálogo no detectado en el texto, pero continuando...');
+            cy.log(' Diálogo no detectado en el texto, pero continuando...');
             return cy.wrap(null);
           }
         });
@@ -5012,7 +5012,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       });
 
       if (!caso24) {
-        cy.log('⚠️ No se encontró el caso 24 en Excel, usando datos del caso actual');
+        cy.log(' No se encontró el caso 24 en Excel, usando datos del caso actual');
         return TC056ConDatos(caso, todosLosCasos);
       }
 
@@ -5202,7 +5202,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         // Verificar que estamos todavía en el formulario antes de guardar
         return cy.url().then((urlActual) => {
           if (!urlActual.includes('/dashboard/personnel/form')) {
-            cy.log('⚠️ Ya no estamos en el formulario, no se puede guardar');
+            cy.log(' Ya no estamos en el formulario, no se puede guardar');
             return cy.wrap(null);
           }
 
@@ -5266,7 +5266,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         return cy.get('body').then($body => {
           const filas = $body.find('.MuiDataGrid-row:visible');
           if (filas.length === 0) {
-            cy.log('⚠️ No se encontraron filas en la tabla');
+            cy.log(' No se encontraron filas en la tabla');
             return cy.wrap(null);
           }
 
@@ -5280,7 +5280,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             cy.log('Personal encontrado, abriendo formulario de edición...');
             return cy.wrap(filaEncontrada).dblclick({ force: true });
           } else {
-            cy.log('⚠️ No se encontró la fila con el nombre del personal');
+            cy.log(' No se encontró la fila con el nombre del personal');
             return cy.wrap(null);
           }
         });

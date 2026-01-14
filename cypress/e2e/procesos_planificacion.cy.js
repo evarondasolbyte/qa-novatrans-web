@@ -681,7 +681,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
           .should('be.visible');
         cy.wait(500);
         // Simulación: no se elimina nada, solo se verifica que el botón está disponible
-        cy.log('✅ Simulación de eliminación ejecutada correctamente (sin eliminar nada)');
+        cy.log('Simulación de eliminación ejecutada correctamente (sin eliminar nada)');
         return cy.wrap(null);
       });
   }

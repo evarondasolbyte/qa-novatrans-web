@@ -1377,7 +1377,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         cy.log('TC023: Paso 2 - Navegando a VENCIMIENTOS y rellenando todos los campos');
         return navegarSeccionFormulario('VENCIMIENTOS')
           .then(() => cy.wait(1000))
-          .then(() => rellenarCamposEnPestaña(camposVencimientos, 'VENCIMIENTOS'))
+          .then(() => llenarFormularioVencimientosDesdeCampos(camposVencimientos))
           .then(() => {
             cy.wait(500);
             cy.url().should('include', '/dashboard/vehicles/form');
@@ -3798,6 +3798,190 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     return chain.then(() => {
       const etiquetaCaso = numeroCaso ? `TC${String(numeroCaso).padStart(3, '0')} - ` : '';
       cy.log(`${etiquetaCaso}Datos Generales de Vehículo rellenados desde Excel`);
+    });
+  }
+
+  // Rellenar TODOS los campos de VENCIMIENTOS desde los campos categorizados (similar a DATOS GENERALES)
+  function llenarFormularioVencimientosDesdeCampos(camposVencimientos) {
+    if (!camposVencimientos || camposVencimientos.length === 0) {
+      cy.log('No hay campos de VENCIMIENTOS para rellenar');
+      return cy.wrap(null);
+    }
+
+    cy.log(`Rellenando VENCIMIENTOS con ${camposVencimientos.length} campos`);
+
+    // Mapeo de selectores del Excel a nombres de labels para VENCIMIENTOS
+    // Los IDs del DOM son dinámicos, así que mapeamos el selector del Excel directamente al nombre del label
+    const mapeoIds = {
+      '_r_70': 'ITV',
+      'r_70': 'ITV',  // Sin guion bajo inicial
+      '_r_73': 'Tacógrafo',
+      'r_73': 'Tacógrafo',
+      '_r_7a': 'Certificado Transporte Mercancías Perecederas',
+      'r_7a': 'Certificado Transporte Mercancías Perecederas',
+      '_r_7g': 'ATP',
+      'r_7g': 'ATP',
+      '_r_7m': 'ADR',
+      'r_7m': 'ADR',
+      '_r_7s': 'O. R. Aparcamiento',
+      'r_7s': 'O. R. Aparcamiento',
+      '_r_77': 'Autorización Transporte Animales',
+      'r_77': 'Autorización Transporte Animales',
+      '_r_7d': 'Permiso Comunitario',
+      'r_7d': 'Permiso Comunitario',
+      '_r_7j': 'Emisoras',
+      'r_7j': 'Emisoras',
+      '_r_7p': 'Extintor',
+      'r_7p': 'Extintor',
+      '_r_80': 'Fecha Tipo 1',
+      'r_80': 'Fecha Tipo 1',
+      '_r_84': 'Fecha Tipo 2',
+      'r_84': 'Fecha Tipo 2',
+      '_r_88': 'Fecha Tipo 3',
+      'r_88': 'Fecha Tipo 3',
+      '_r_76': 'Nº Tarjeta Transporte',
+      'r_76': 'Nº Tarjeta Transporte'
+    };
+
+    let chain = cy.wrap(null);
+
+    // Procesar cada campo de VENCIMIENTOS secuencialmente
+    const procesarCampo = (index) => {
+      if (index >= camposVencimientos.length) {
+        return cy.wrap(null);
+      }
+
+      const campo = camposVencimientos[index];
+      const valorTexto = String(campo.valor || '').trim();
+      
+      if (!valorTexto) {
+        cy.log(`⏭ Campo ${index + 1}/${camposVencimientos.length} vacío, saltando`);
+        return procesarCampo(index + 1);
+      }
+
+      const tipoLower = (campo.tipo || '').toLowerCase();
+      const selectorLower = (campo.selector || '').toLowerCase().replace(/-label$/, '');
+      const esFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(valorTexto);
+
+      return cy.wrap(null).then(() => {
+        cy.log(`Rellenando campo ${index + 1}/${camposVencimientos.length} en VENCIMIENTOS: ${campo.selector || campo.etiquetaVisible || 'campo'}`);
+        cy.log(`  - tipo: ${campo.tipo}, selector: ${campo.selector}, valor: ${valorTexto}, esFecha: ${esFecha}`);
+
+        // 1) Campos con name attribute (expirations.0.type1, type2, type3)
+        if (tipoLower === 'name' && selectorLower.includes('expirations')) {
+          return escribirPorName(campo.selector, valorTexto, campo.etiquetaVisible || campo.selector)
+            .then(() => procesarCampo(index + 1));
+        }
+
+        // 2) Campos de fecha: buscar directamente por nombre del label (EXACTAMENTE como DATOS GENERALES)
+        // Los IDs son dinámicos, así que NO usamos mapeo de IDs, solo buscamos por el nombre del label
+        const esSelectorId = tipoLower === 'id' || tipoLower === 'aria-labelledby' || selectorLower.startsWith('_r_') || selectorLower.includes('_r_');
+        
+        if (esFecha && esSelectorId) {
+          // Normalizar el ID: selectorLower ya tiene -label removido, solo quitar # si existe
+          let idInput = selectorLower.replace(/^#/, '');
+          
+          cy.log(`DEBUG: selectorLower="${selectorLower}", idInput="${idInput}"`);
+          cy.log(`DEBUG: mapeoIds tiene 'r_70'? ${'r_70' in mapeoIds}, valor: ${mapeoIds['r_70']}`);
+          cy.log(`DEBUG: mapeoIds tiene '_r_70'? ${'_r_70' in mapeoIds}, valor: ${mapeoIds['_r_70']}`);
+          
+          // Intentar obtener el nombre del label desde el mapeo (intentar ambas variantes: con y sin guion bajo)
+          let nombreLabel = mapeoIds[idInput] || null;
+          cy.log(`DEBUG: Primera búsqueda con idInput="${idInput}": ${nombreLabel || 'NO ENCONTRADO'}`);
+          
+          // Si no está, intentar con guion bajo añadido
+          if (!nombreLabel && !idInput.startsWith('_r_') && idInput.match(/^r_/)) {
+            const idConGuion = '_' + idInput;
+            nombreLabel = mapeoIds[idConGuion] || null;
+            cy.log(`DEBUG: Segunda búsqueda con "${idConGuion}": ${nombreLabel || 'NO ENCONTRADO'}`);
+            if (nombreLabel) idInput = idConGuion;
+          }
+          
+          // Si todavía no está, intentar sin guion bajo
+          if (!nombreLabel && idInput.startsWith('_r_')) {
+            const idSinGuion = idInput.replace(/^_/, '');
+            nombreLabel = mapeoIds[idSinGuion] || null;
+            cy.log(`DEBUG: Tercera búsqueda con "${idSinGuion}": ${nombreLabel || 'NO ENCONTRADO'}`);
+          }
+          
+          // Si no está en el mapeo, saltar este campo
+          if (!nombreLabel) {
+            cy.log(`⚠ No se encontró mapeo para ID: ${selectorLower} (normalizado: ${idInput}), saltando este campo`);
+            cy.log(`DEBUG: Claves disponibles en mapeo: ${Object.keys(mapeoIds).join(', ')}`);
+            return procesarCampo(index + 1);
+          }
+          
+          // Buscar directamente por nombre del label (EXACTAMENTE como caso 22)
+          cy.log(`Buscando fecha "${nombreLabel}" por nombre del label`);
+          const fechaObj = parseFechaBasicaExcel(valorTexto);
+
+          return cy.contains('label', new RegExp(`^${escapeRegex(nombreLabel)}$`, 'i'), { timeout: 10000 })
+            .should('be.visible')
+            .parents('.MuiFormControl-root')
+            .first()
+            .within(() => {
+              cy.get('button[aria-label*="date"], button[aria-label*="calendar"]', { timeout: 10000 })
+                .should('be.visible')
+                .click({ force: true });
+            })
+            .then(() => {
+              cy.wait(500);
+              return seleccionarFechaEnCalendario(fechaObj);
+            })
+            .then(() => {
+              cy.log(`✓ Fecha "${nombreLabel}" rellenada`);
+              return procesarCampo(index + 1);
+            }, (err) => {
+              cy.log(`❌ Error al rellenar fecha "${nombreLabel}": ${err.message}`);
+              return procesarCampo(index + 1);
+            });
+        }
+
+        // 3) Campo "Nº Tarjeta Transporte" (no es fecha, es número)
+        // Puede venir como _r_76 en el Excel pero el ID real es dinámico (_r_11_, etc.)
+        // Usar el name attribute directamente si está disponible, o buscar por label
+        if ((selectorLower.includes('_r_76') || selectorLower.includes('tarjeta transporte') || selectorLower.includes('cardtransport')) && !esFecha) {
+          cy.log(`Buscando campo "Nº Tarjeta Transporte"`);
+          
+          // Intentar primero por name attribute (más confiable)
+          return cy.get('input[name="expirations.0.cardTransportNumber"]', { timeout: 10000 })
+            .then(($input) => {
+              if ($input && $input.length) {
+                cy.wrap($input).clear({ force: true }).type(valorTexto, { force: true });
+                cy.log(`✓ Campo "Nº Tarjeta Transporte" rellenado por name attribute`);
+                return procesarCampo(index + 1);
+              }
+              throw new Error('No encontrado por name');
+            }, () => {
+              // Fallback: buscar por label (más flexible con el carácter especial)
+              cy.log(`No encontrado por name, buscando por label`);
+              return cy.contains('label', /N[º°]\s*Tarjeta\s*Transporte/i, { timeout: 10000 })
+                .should('be.visible')
+                .parents('.MuiFormControl-root')
+                .first()
+                .find('input')
+                .first()
+                .then(($input) => {
+                  if ($input && $input.length) {
+                    cy.wrap($input).clear({ force: true }).type(valorTexto, { force: true });
+                    cy.log(`✓ Campo "Nº Tarjeta Transporte" rellenado por label`);
+                  }
+                  return procesarCampo(index + 1);
+                }, () => {
+                  cy.log(`❌ No se encontró el campo "Nº Tarjeta Transporte"`);
+                  return procesarCampo(index + 1);
+                });
+            });
+        }
+
+        // 4) Fallback: usar método genérico para otros campos
+        cy.log(`Campo no procesado específicamente, usando método genérico`);
+        return procesarCampo(index + 1);
+      });
+    };
+
+    return procesarCampo(0).then(() => {
+      cy.log(`✓ VENCIMIENTOS rellenados desde campos`);
     });
   }
 

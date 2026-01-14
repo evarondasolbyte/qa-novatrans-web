@@ -2051,7 +2051,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       }
 
       // Si no se encontró, lanzar error con información de debug
-      cy.log(`❌ ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
+      cy.log(` ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
       const todosLosBotones = $body.find('button').filter((_, el) => {
         const texto = (el.textContent || el.innerText || '').trim();
         return /guardar/i.test(texto);
@@ -2125,13 +2125,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                         return cy.wrap(null);
                       });
                   } else {
-                    cy.log(`⚠️ No se pudo encontrar botón Guardar en modal de ${seccion}, continuando...`);
+                    cy.log(` No se pudo encontrar botón Guardar en modal de ${seccion}, continuando...`);
                     cy.wait(300);
                     return cy.wrap(null);
                   }
                 });
             } else {
-              cy.log(`⚠️ No se encontró modal visible para ${seccion}, continuando...`);
+              cy.log(` No se encontró modal visible para ${seccion}, continuando...`);
               cy.wait(300);
               return cy.wrap(null);
             }
@@ -2248,7 +2248,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     let chain = cy.wrap(null);
 
-    // 🔹 Alta (fecha) usando calendario
+    //  Alta (fecha) usando calendario
     if (alta) {
       chain = chain.then(() => {
         const textoFecha = alta.toString();
@@ -2273,7 +2273,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Campos de texto (por name)
+    //  Campos de texto (por name)
     const camposTexto = [
       { label: 'Nombre', name: 'client.name', valor: nombre },
       { label: 'Razón Social', name: 'client.companyName', valor: razonSocial },
@@ -2301,7 +2301,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       );
     });
 
-    // 🔹 Actividad (select MUI)
+    //  Actividad (select MUI)
     if (actividad) {
       chain = chain.then(() => {
         cy.log(`Seleccionando Actividad: ${actividad}`);
@@ -2313,7 +2313,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Persona (Jurídica / Física)
+    //  Persona (Jurídica / Física)
     if (persona) {
       chain = chain.then(() => {
         cy.log(`Seleccionando Persona: ${persona}`);
@@ -2321,7 +2321,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Residencia (España / Extranjero / UE)
+    //  Residencia (España / Extranjero / UE)
     if (residencia) {
       chain = chain.then(() => {
         cy.log(`Seleccionando Residencia: ${residencia}`);
@@ -2329,7 +2329,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Dirección / Ciudad / Provincia / País (campos nuevos)
+    //  Dirección / Ciudad / Provincia / País (campos nuevos)
     const camposDireccion = [
       { label: 'Dirección', name: 'client.address', valor: direccion },
       { label: 'Ciudad', name: 'client.city', valor: ciudad },
@@ -2339,7 +2339,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     camposDireccion.forEach((campo) => {
       if (!campo.valor) {
-        cy.log(`⏭️ Campo vacío en Excel: ${campo.label}`);
+        cy.log(` Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -2542,7 +2542,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                 return seleccionarFechaEnCalendario(fechaObj);
               });
           } else {
-            cy.log('⚠️ No se pudo rellenar la fecha en Certificaciones (label no visible), continuando sin error');
+            cy.log(' No se pudo rellenar la fecha en Certificaciones (label no visible), continuando sin error');
             return cy.wrap(null);
           }
         });
@@ -2580,7 +2580,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     camposDatosAdicionales.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -2830,7 +2830,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           .should(($input) => {
             const valorActual = $input.val();
             if (valorActual !== texto) {
-              cy.log(`⚠️ Valor esperado "${texto}" pero se obtuvo "${valorActual}", continuando...`);
+              cy.log(` Valor esperado "${texto}" pero se obtuvo "${valorActual}", continuando...`);
             }
           });
       });
@@ -2890,7 +2890,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         });
         
         if (filas.length > 0) {
-          cy.log(`✓ La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
+          cy.log(` La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
           return cy.wrap(true);
         } else {
           // Verificar si hay mensaje "Sin filas" en la tabla
@@ -2900,11 +2900,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           });
           
           if (mensajeSinFilas.length > 0) {
-            cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+            cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
             return cy.wrap(false);
           } else {
             // Si no hay filas pero tampoco hay mensaje "Sin filas", puede que la tabla esté vacía
-            cy.log(`⚠️ La pestaña ${nombrePestaña} no tiene filas visibles`);
+            cy.log(` La pestaña ${nombrePestaña} no tiene filas visibles`);
             return cy.wrap(false);
           }
         }
@@ -2920,11 +2920,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         });
         
         if (mensajeSinFilas.length > 0) {
-          cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+          cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
           return cy.wrap(false);
         } else {
           // Si no hay tabla ni mensaje "Sin filas", asumir que tiene datos (puede ser un formulario sin tabla)
-          cy.log(`✓ La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
+          cy.log(` La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
           return cy.wrap(true);
         }
       }
@@ -2960,7 +2960,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
 
       if (!caso7) {
-        cy.log('⚠️ No se encontró el caso 7 en Excel, usando datos del caso actual');
+        cy.log(' No se encontró el caso 7 en Excel, usando datos del caso actual');
         return TC043ConDatos(caso, todosLosCasos);
       }
 
@@ -3136,7 +3136,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Verificar que estamos todavía en el formulario antes de guardar
         return cy.url().then((urlActual) => {
           if (!urlActual.includes('/dashboard/clients/form')) {
-            cy.log('⚠️ Ya no estamos en el formulario, no se puede guardar');
+            cy.log(' Ya no estamos en el formulario, no se puede guardar');
             return cy.wrap(null);
           }
 
@@ -3201,7 +3201,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         return cy.get('body').then($body => {
           const filas = $body.find('.MuiDataGrid-row:visible');
           if (filas.length === 0) {
-            cy.log('⚠️ No se encontraron filas en la tabla');
+            cy.log(' No se encontraron filas en la tabla');
             return cy.wrap(null);
           }
 
@@ -3215,7 +3215,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             cy.log('Cliente encontrado, abriendo formulario de edición...');
             return cy.wrap(filaEncontrada).dblclick({ force: true });
           } else {
-            cy.log('⚠️ No se encontró la fila con el nombre del cliente');
+            cy.log(' No se encontró la fila con el nombre del cliente');
             return cy.wrap(null);
           }
         });
@@ -3323,9 +3323,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           resultado = 'ERROR';
           const pestañasError = pestañasSinDatos.join(', ');
           mensaje = `Cliente ${nombreCliente} creado, pero las siguientes pestañas NO tienen datos guardados: ${pestañasError}`;
-          cy.log(`❌ ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
+          cy.log(` ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
         } else {
-          cy.log(`✓ Todas las pestañas tienen datos guardados correctamente`);
+          cy.log(` Todas las pestañas tienen datos guardados correctamente`);
         }
 
         // Registrar resultado
