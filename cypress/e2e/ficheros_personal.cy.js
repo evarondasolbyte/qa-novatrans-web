@@ -6,9 +6,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   const SUBMENU = 'Personal';
   const URL_PATH = '/dashboard/personnel';
 
-  const CASOS_INCIDENTE = new Map([]);
-  const CASOS_WARNING = new Map();
-
   const CASOS_OK_FORZADO = new Set([36, 38]);
   const CASOS_EJECUTADOS = new Set();
 

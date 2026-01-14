@@ -6,10 +6,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
   const SUBMENU = 'Vehículos';
   const URL_PATH = '/dashboard/vehicles';
 
-  const CASOS_INCIDENTE = new Map([]);
-
-  const CASOS_WARNING = new Map();
-
   before(() => {
     // Crea / recupera la sesión una sola vez
     cy.login();
@@ -561,10 +557,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     }
 
     cy.log(`Ordenando columna "${nombreColumna}" (caso ${numero})`);
-    
+
     const idCaso = casoId || `TC${String(numero).padStart(3, '0')}`;
     const nombre = caso?.nombre || `Ordenar ${nombreColumna}`;
-    
+
     // Ejecutar la ordenación
     return ordenarColumna(nombreColumna)
       .then(() => {
@@ -848,7 +844,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     // NO se pulsa Guardar durante el rellenado, solo al final después de las tres pestañas
     if (numeroCaso === 22) {
       cy.log('TC022: Rellenando tres pestañas sin guardar hasta el final');
-      
+
       return cy.url().then((urlActual) => {
         const enFormulario = urlActual.includes('/dashboard/vehicles/form');
 
@@ -871,19 +867,19 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             }))
             .then(() => rellenarTresPestañasCaso22(caso, numeroCaso));
         }
-        
+
         return rellenarTresPestañasCaso22(caso, numeroCaso);
       });
-      
+
       // IMPORTANTE: Retornar explícitamente para evitar que continúe con el resto del código
       return cy.wrap(null);
     }
-    
+
     // Caso especial 23: rellenar DATOS GENERALES, VENCIMIENTOS y MANTENIMIENTO en secuencia (TODOS los campos)
     // NO se pulsa Guardar durante el rellenado, solo al final después de las tres pestañas
     if (numeroCaso === 23) {
       cy.log('TC023: Rellenando TODOS los campos en tres pestañas sin guardar hasta el final');
-      
+
       return cy.url().then((urlActual) => {
         const enFormulario = urlActual.includes('/dashboard/vehicles/form');
 
@@ -906,12 +902,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             }))
             .then(() => rellenarTresPestañasCaso23(caso, numeroCaso));
         }
-        
+
         return rellenarTresPestañasCaso23(caso, numeroCaso);
       });
-      
-      // IMPORTANTE: Retornar explícitamente para evitar que continúe con el resto del código
-      return cy.wrap(null);
     }
 
     // Para vehículos, todas las secciones se rellenan directamente en la pestaña (sin modales)
@@ -1017,14 +1010,14 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       const tipoCampo = (caso[`etiqueta_${i}`] || '').toLowerCase();
       const selector = (caso[`valor_etiqueta_${i}`] || '').toLowerCase();
       const valor = procesarValorXXX(caso[`dato_${i}`]);
-      
+
       if (!valor || String(valor).trim() === '') continue;
 
       const etiquetaLower = tipoCampo.toLowerCase();
       const selectorLower = selector.toLowerCase();
-      
+
       cy.log(`TC022: Campo ${i} - etiqueta: "${tipoCampo}", selector: "${selector}", valor: "${valor}"`);
-      
+
       // DATOS GENERALES - Buscar por selector (value name)
       if (etiquetaLower === 'value name' || etiquetaLower.includes('value name')) {
         if (selectorLower === 'vehicle.code' || selectorLower.includes('vehicle.code')) {
@@ -1079,9 +1072,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       cy.log('TC022: Paso 1 - Rellenando DATOS GENERALES (Matrícula, Marca, Modelo, Código, Tipo de Vehículo)');
       cy.url().should('include', '/dashboard/vehicles/form');
       cy.wait(500);
-      
+
       let datosGeneralesChain = cy.wrap(null);
-      
+
       if (codigo) {
         datosGeneralesChain = datosGeneralesChain.then(() => escribirPorName('vehicle.code', codigo, 'Código'));
       }
@@ -1100,7 +1093,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       if (tipoVehiculoNombre) {
         datosGeneralesChain = datosGeneralesChain.then(() => escribirPorName('vehicle.type.name', tipoVehiculoNombre, 'Tipo de Vehículo - Nombre'));
       }
-      
+
       return datosGeneralesChain.then(() => {
         cy.wait(500);
         cy.url().should('include', '/dashboard/vehicles/form');
@@ -1238,40 +1231,40 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
   function rellenarTresPestañasCaso23(caso, numeroCaso) {
     cy.log('TC023: Iniciando rellenado de TODOS los campos en tres pestañas');
-    
+
     // Extraer todos los campos del Excel
     const totalCampos = Number(caso?.__totalCamposExcel) || 14;
     const camposDatosGenerales = [];
     const camposVencimientos = [];
     const camposMantenimiento = [];
-    
+
     for (let i = 1; i <= totalCampos; i++) {
       const tipo = caso[`etiqueta_${i}`];
       const selector = caso[`valor_etiqueta_${i}`];
       const valor = procesarValorXXX(caso[`dato_${i}`]); // Procesar XXX
-      
+
       if (!tipo || !selector || valor === undefined || valor === '') continue;
-      
+
       const etiquetaPreferida = normalizarEtiquetaTexto(tipo) || selector;
       const etiquetaLower = etiquetaPreferida.toLowerCase();
       const selectorLower = (selector || '').toLowerCase();
       const tipoLower = (tipo || '').toLowerCase();
-      
+
       const campo = {
         tipo,
         selector,
         valor,
         etiquetaVisible: etiquetaPreferida
       };
-      
+
       // Detectar si el valor es una fecha
       const esFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
-      
+
       // Categorizar campos por pestaña
       // DATOS GENERALES: vehicle.* (excepto expirations y maintenance), status, campos de fecha como Alta, F. Matriculación, Baja
       // Normalizar selector para quitar -label si existe
       const selectorNormalizado = selectorLower.replace(/-label$/, '');
-      
+
       if (selectorLower.includes('vehicle.') && !selectorLower.includes('expirations') && !selectorLower.includes('maintenance')) {
         camposDatosGenerales.push(campo);
       } else if (selectorLower.includes('mui-component-select-status') || selectorLower.includes('status')) {
@@ -1286,43 +1279,43 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         camposDatosGenerales.push(campo);
       }
       // VENCIMIENTOS: expirations.*, ITV, Tacógrafo, ATP, ADR, Extintor, Emisoras, Permiso Comunitario, Autorización Transporte Animales, Certificado Transporte Mercancías Perecederas, O. R. Aparcamiento, Nº Tarjeta Transporte, Tipo 1, Tipo 2, Tipo 3, Fecha Tipo 1, Fecha Tipo 2, Fecha Tipo 3
-      else if (selectorLower.includes('expirations') || 
-               etiquetaLower.includes('itv') || 
-               etiquetaLower.includes('tacógrafo') || 
-               etiquetaLower.includes('tacografo') ||
-               etiquetaLower.includes('atp') ||
-               etiquetaLower.includes('adr') ||
-               etiquetaLower.includes('extintor') ||
-               etiquetaLower.includes('emisoras') ||
-               etiquetaLower.includes('permiso comunitario') ||
-               etiquetaLower.includes('autorización transporte') ||
-               etiquetaLower.includes('certificado transporte') ||
-               etiquetaLower.includes('aparacamiento') ||
-               etiquetaLower.includes('tarjeta transporte') ||
-               etiquetaLower.includes('tipo 1') ||
-               etiquetaLower.includes('tipo 2') ||
-               etiquetaLower.includes('tipo 3') ||
-               etiquetaLower.includes('fecha tipo 1') ||
-               etiquetaLower.includes('fecha tipo 2') ||
-               etiquetaLower.includes('fecha tipo 3') ||
-               (tipoLower === 'id' && (esFecha || selectorLower.includes('_r_7')) && !selectorLower.includes('_r_9') && !selectorLower.includes('_r_a'))) {
+      else if (selectorLower.includes('expirations') ||
+        etiquetaLower.includes('itv') ||
+        etiquetaLower.includes('tacógrafo') ||
+        etiquetaLower.includes('tacografo') ||
+        etiquetaLower.includes('atp') ||
+        etiquetaLower.includes('adr') ||
+        etiquetaLower.includes('extintor') ||
+        etiquetaLower.includes('emisoras') ||
+        etiquetaLower.includes('permiso comunitario') ||
+        etiquetaLower.includes('autorización transporte') ||
+        etiquetaLower.includes('certificado transporte') ||
+        etiquetaLower.includes('aparacamiento') ||
+        etiquetaLower.includes('tarjeta transporte') ||
+        etiquetaLower.includes('tipo 1') ||
+        etiquetaLower.includes('tipo 2') ||
+        etiquetaLower.includes('tipo 3') ||
+        etiquetaLower.includes('fecha tipo 1') ||
+        etiquetaLower.includes('fecha tipo 2') ||
+        etiquetaLower.includes('fecha tipo 3') ||
+        (tipoLower === 'id' && (esFecha || selectorLower.includes('_r_7')) && !selectorLower.includes('_r_9') && !selectorLower.includes('_r_a'))) {
         // Campos de VENCIMIENTOS: IDs que empiezan con _r_7 (excepto los de mantenimiento que son _r_9 y _r_a)
         camposVencimientos.push(campo);
       }
       // MANTENIMIENTO: maintenance.*, Inicio, Fin, Tipo, Cada (km), Actual (km), Última (km), Cada (hour), Actual (hour), Última (hour), Próxima (hour), Última, Próxima
       else if (selectorLower.includes('maintenance') ||
-               etiquetaLower.includes('inicio') ||
-               etiquetaLower.includes('fin') ||
-               (etiquetaLower === 'tipo' && !etiquetaLower.includes('tipo 1') && !etiquetaLower.includes('tipo 2') && !etiquetaLower.includes('tipo 3') && !etiquetaLower.includes('tipo de vehículo') && !etiquetaLower.includes('tipo de vehiculo')) ||
-               etiquetaLower.includes('cada') ||
-               etiquetaLower.includes('actual') ||
-               etiquetaLower.includes('última') ||
-               etiquetaLower.includes('ultima') ||
-               etiquetaLower.includes('próxima') ||
-               etiquetaLower.includes('proxima') ||
-               (tipoLower === 'id' && (esFecha || selectorLower.includes('_r_9') || selectorLower.includes('_r_a'))) ||
-               // Campos con name attribute: every, actual, last, everyHour, actualHour, lastHour, nextHour
-               (tipoLower === 'name' && (selectorLower.includes('every') || selectorLower.includes('actual') || selectorLower.includes('last') || selectorLower.includes('everyhour') || selectorLower.includes('actualhour') || selectorLower.includes('lasthour') || selectorLower.includes('nexthour')))) {
+        etiquetaLower.includes('inicio') ||
+        etiquetaLower.includes('fin') ||
+        (etiquetaLower === 'tipo' && !etiquetaLower.includes('tipo 1') && !etiquetaLower.includes('tipo 2') && !etiquetaLower.includes('tipo 3') && !etiquetaLower.includes('tipo de vehículo') && !etiquetaLower.includes('tipo de vehiculo')) ||
+        etiquetaLower.includes('cada') ||
+        etiquetaLower.includes('actual') ||
+        etiquetaLower.includes('última') ||
+        etiquetaLower.includes('ultima') ||
+        etiquetaLower.includes('próxima') ||
+        etiquetaLower.includes('proxima') ||
+        (tipoLower === 'id' && (esFecha || selectorLower.includes('_r_9') || selectorLower.includes('_r_a'))) ||
+        // Campos con name attribute: every, actual, last, everyHour, actualHour, lastHour, nextHour
+        (tipoLower === 'name' && (selectorLower.includes('every') || selectorLower.includes('actual') || selectorLower.includes('last') || selectorLower.includes('everyhour') || selectorLower.includes('actualhour') || selectorLower.includes('lasthour') || selectorLower.includes('nexthour')))) {
         // Campos de MANTENIMIENTO: IDs que empiezan con _r_9 o _r_a, o campos con name attribute de mantenimiento
         camposMantenimiento.push(campo);
       } else {
@@ -1344,17 +1337,17 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         }
       }
     }
-    
+
     cy.log(`TC023: Campos encontrados - DATOS GENERALES: ${camposDatosGenerales.length}, VENCIMIENTOS: ${camposVencimientos.length}, MANTENIMIENTO: ${camposMantenimiento.length}`);
-    
+
     let chain = cy.wrap(null);
-    
+
     // 1) DATOS GENERALES: Todos los campos
     chain = chain.then(() => {
       cy.log('TC023: Paso 1 - Rellenando DATOS GENERALES (todos los campos)');
       cy.url().should('include', '/dashboard/vehicles/form');
       cy.wait(500);
-      
+
       return rellenarCamposEnPestaña(camposDatosGenerales, 'DATOS GENERALES')
         .then(() => {
           cy.wait(500);
@@ -1365,9 +1358,19 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           // Marcar aleatoriamente algunos checkboxes de actividades (Activo y Principal)
           cy.log('TC023: Marcando aleatoriamente checkboxes de actividades');
           return marcarCheckboxesActividadesAleatoriamente();
+        })
+        .then(() => {
+          // Asegurar que las fechas de DATOS GENERALES se rellenen después de los checkboxes
+          cy.log('TC023: Verificando y rellenando fechas de DATOS GENERALES (Alta, F. Matriculación, Baja)');
+          return rellenarFechasDatosGeneralesDesdeCampos(camposDatosGenerales);
+        })
+        .then(() => {
+          // Asegurar que Propietario se seleccione como "Propio"
+          cy.log('TC023: Seleccionando Propietario: Propio');
+          return seleccionarPropietarioPropio();
         });
     });
-    
+
     // 2) VENCIMIENTOS: Todos los campos
     chain = chain.then(() => {
       if (camposVencimientos.length > 0) {
@@ -1385,7 +1388,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         return cy.wrap(null);
       }
     });
-    
+
     // 3) MANTENIMIENTO: Todos los campos
     chain = chain.then(() => {
       if (camposMantenimiento.length > 0) {
@@ -1403,112 +1406,242 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         return cy.wrap(null);
       }
     });
-    
+
     // No guardar dentro de esta función; el guardado se realiza en anadirVehiculo
     return chain.then(() => {
       cy.log('TC023: Tres pestañas rellenadas completamente, pendiente de guardar desde anadirVehiculo');
       cy.url().should('include', '/dashboard/vehicles/form');
     });
   }
-  
-  function marcarCheckboxesActividadesAleatoriamente() {
-    cy.log('Marcando checkboxes de actividades: todos los "Activo" y algunos "Principal" aleatoriamente');
-    
-    // Marcar TODOS los checkboxes de "Activo" (.active)
-    return cy.get('input[type="checkbox"][name*=".active"]', { timeout: 10000 })
-      .then(($checkboxesActivo) => {
-        cy.log(`Encontrados ${$checkboxesActivo.length} checkboxes de "Activo"`);
-        
-        let chain = cy.wrap(null);
-        
-        // Marcar todos los checkboxes de "Activo"
-        $checkboxesActivo.each((index, checkbox) => {
-          const name = checkbox.getAttribute('name');
-          chain = chain.then(() => {
-            return cy.get(`input[type="checkbox"][name="${name}"]`, { timeout: 10000 })
-              .should('be.visible')
-              .scrollIntoView()
-              .check({ force: true })
-              .then(() => {
-                cy.wait(100);
-                cy.log(`✓ Checkbox "Activo" marcado: ${name}`);
-              }, () => {
-                cy.log(`No se pudo marcar el checkbox "Activo": ${name}`);
-              });
-          });
+
+  function rellenarFechasDatosGeneralesDesdeCampos(camposDatosGenerales) {
+    if (!camposDatosGenerales || camposDatosGenerales.length === 0) {
+      cy.log('No hay campos de DATOS GENERALES para buscar fechas');
+      return cy.wrap(null);
+    }
+
+    const encontrarFecha = (keys) => {
+      const c = camposDatosGenerales.find(x => {
+        const et = String(x.etiquetaVisible || '').toLowerCase();
+        const sel = String(x.selector || '').toLowerCase();
+        const tipo = String(x.tipo || '').toLowerCase();
+        // Buscar por etiqueta, selector o tipo
+        return keys.some(k => {
+          const kLower = k.toLowerCase();
+          return et.includes(kLower) || sel.includes(kLower) || 
+                 (tipo === 'id' && sel.includes('_r_6') && (kLower.includes('alta') || kLower.includes('baja') || kLower.includes('matriculacion')));
         });
-        
-        // Marcar aleatoriamente algunos checkboxes de "Principal" (.modificable)
-        return chain.then(() => {
-          return cy.get('input[type="checkbox"][name*=".modificable"]', { timeout: 10000 })
-            .then(($checkboxesPrincipal) => {
-              cy.log(`Encontrados ${$checkboxesPrincipal.length} checkboxes de "Principal"`);
-              
-              const checkboxesArray = Array.from($checkboxesPrincipal);
-              const checkboxesAMarcar = [];
-              
-              // 50% de probabilidad de marcar cada checkbox de "Principal"
-              checkboxesArray.forEach((checkbox) => {
-                if (Math.random() > 0.5) {
-                  checkboxesAMarcar.push(checkbox);
-                }
-              });
-              
-              // Si no se marcó ninguno, marcar al menos uno aleatoriamente
-              if (checkboxesAMarcar.length === 0 && checkboxesArray.length > 0) {
-                const indiceAleatorio = Math.floor(Math.random() * checkboxesArray.length);
-                checkboxesAMarcar.push(checkboxesArray[indiceAleatorio]);
-              }
-              
-              cy.log(`Marcando ${checkboxesAMarcar.length} checkboxes de "Principal" aleatoriamente`);
-              
-              // Marcar los checkboxes de "Principal" seleccionados
-              checkboxesAMarcar.forEach((checkbox) => {
-                const name = checkbox.getAttribute('name');
-                chain = chain.then(() => {
-                  return cy.get(`input[type="checkbox"][name="${name}"]`, { timeout: 10000 })
-                    .should('be.visible')
-                    .scrollIntoView()
-                    .check({ force: true })
-                    .then(() => {
-                      cy.wait(100);
-                      cy.log(`✓ Checkbox "Principal" marcado: ${name}`);
-                    }, () => {
-                      cy.log(`No se pudo marcar el checkbox "Principal": ${name}`);
-                    });
-                });
-              });
-              
-              return chain;
-            }, () => {
-              cy.log('No se encontraron checkboxes de "Principal", continuando...');
-              return cy.wrap(null);
-            });
-        });
-      }, () => {
-        cy.log('No se encontraron checkboxes de actividades, continuando...');
+      });
+      return c ? String(c.valor || '').trim() : null;
+    };
+
+    const alta = encontrarFecha(['alta', '_r_6f', '_r_79']);
+    const baja = encontrarFecha(['baja', '_r_6i', '_r_7c']);
+    const fMat = encontrarFecha(['matriculación', 'matricula', 'f. matriculación', 'f matriculacion', '_r_6c', '_r_76']);
+
+    cy.log(`TC023: Fechas encontradas - Alta: ${alta || 'NO'}, F. Matriculación: ${fMat || 'NO'}, Baja: ${baja || 'NO'}`);
+
+    const rellenarPorLabel = (label, fechaTexto) => {
+      if (!fechaTexto || fechaTexto.trim() === '') {
+        cy.log(`⏭ No hay fecha para ${label}, saltando...`);
         return cy.wrap(null);
+      }
+
+      const fechaObj = parseFechaBasicaExcel(fechaTexto);
+
+      return cy.contains('label', new RegExp(`^${escapeRegex(label)}$`, 'i'), { timeout: 10000 })
+        .should('be.visible')
+        .parents('.MuiFormControl-root')
+        .first()
+        .within(() => {
+          cy.get('button[aria-label*="date"], button[aria-label*="calendar"]', { timeout: 10000 })
+            .should('be.visible')
+            .click({ force: true });
+        })
+        .then(() => {
+          cy.wait(300);
+          return seleccionarFechaEnCalendario(fechaObj);
+        })
+        .then(() => {
+          cy.log(`✓ Fecha ${label} rellenada: ${fechaTexto}`);
+        }, () => {
+          cy.log(`⚠ No se pudo rellenar la fecha ${label}: ${fechaTexto}`);
+        });
+    };
+
+    // Rellenar en el orden típico del formulario
+    return cy.wrap(null)
+      .then(() => rellenarPorLabel('Alta', alta))
+      .then(() => cy.wait(200))
+      .then(() => rellenarPorLabel('F. Matriculación', fMat))
+      .then(() => cy.wait(200))
+      .then(() => rellenarPorLabel('Baja', baja));
+  }
+
+  function seleccionarPropietarioPropio() {
+    return cy.get('input[type="radio"][name="vehicle.owner"][value="own"]', { timeout: 10000 })
+      .then($radio => {
+        if (!$radio.length) return cy.wrap(null);
+
+        return cy.wrap($radio)
+          .scrollIntoView({ block: 'center' })
+          .then(() => {
+            if ($radio.is(':checked')) return cy.wrap(null);
+
+            return cy.wrap($radio)
+              .check({ force: true })
+              .then(
+                () => cy.wrap($radio).should('be.checked'),
+                () => cy.wrap($radio)
+                  .closest('span.MuiRadio-root, span.PrivateSwitchBase-root')
+                  .click({ force: true })
+                  .then(() => cy.wrap($radio).should('be.checked'))
+              );
+          });
       });
   }
-  
+
+  function marcarCheckboxesActividadesAleatoriamente() {
+    cy.log('Marcando checkboxes de actividades: TODOS "Activo" y algunos "Principal"');
+
+    // 1) Marcar TODOS los Activo (vehicle.activities.*.active)
+    const marcarActivos = () => {
+      return cy
+        .get('input[type="checkbox"][name^="vehicle.activities."][name$=".active"]', { timeout: 10000 })
+        .then($cbs => {
+          if (!$cbs.length) {
+            cy.log('No se encontraron checkboxes de "Activo"');
+            return cy.wrap(null);
+          }
+
+          cy.log(`Encontrados ${$cbs.length} checkboxes de "Activo"`);
+
+          return cy.wrap($cbs).each($cb => {
+            return cy.wrap($cb).then($el => {
+              const name = $el.attr('name');
+
+              if ($el.is(':checked')) {
+                cy.log(`⏭ Ya marcado (Activo): ${name}`);
+                return cy.wrap(null);
+              }
+
+              cy.wrap($el).scrollIntoView({ block: 'center' });
+
+              // Intento 1: check force -> si falla, fallback click en root
+              return cy.wrap($el)
+                .check({ force: true })
+                .then(
+                  () => {
+                    return cy.wrap($el)
+                      .should('be.checked')
+                      .then(() => cy.log(`✓ Marcado (Activo): ${name}`));
+                  },
+                  () => {
+                    cy.log(`Fallback click (Activo): ${name}`);
+                    return cy.wrap($el)
+                      .closest('span.MuiCheckbox-root, span.PrivateSwitchBase-root')
+                      .click({ force: true })
+                      .then(() => cy.wrap($el).should('be.checked'))
+                      .then(() => cy.log(`✓ Marcado con click (Activo): ${name}`));
+                  }
+                );
+            });
+          });
+        });
+    };
+
+    // 2) Marcar algunos Principal (vehicle.principalActivity) aleatoriamente
+    const marcarPrincipales = () => {
+      return cy
+        .get('input[type="checkbox"][name="vehicle.principalActivity"]', { timeout: 10000 })
+        .then($cbs => {
+          if (!$cbs.length) {
+            cy.log('No se encontraron checkboxes de "Principal"');
+            return cy.wrap(null);
+          }
+
+          cy.log(`Encontrados ${$cbs.length} checkboxes de "Principal"`);
+
+          const indices = [...Array($cbs.length).keys()];
+          const elegidos = indices.filter(() => Math.random() > 0.5);
+
+          // Si no salió ninguno, marca 1 seguro
+          if (elegidos.length === 0) {
+            elegidos.push(Math.floor(Math.random() * $cbs.length));
+          }
+
+          cy.log(`Marcando ${elegidos.length} checkboxes de "Principal" aleatoriamente`);
+
+          return cy.wrap(elegidos).each(i => {
+            const el = $cbs.get(i);
+
+            return cy.wrap(el).then($cb => {
+              if ($cb.is(':checked')) {
+                cy.log(`⏭ Ya marcado (Principal) idx=${i}`);
+                return cy.wrap(null);
+              }
+
+              cy.wrap($cb).scrollIntoView({ block: 'center' });
+
+              return cy.wrap($cb)
+                .check({ force: true })
+                .then(
+                  () => {
+                    return cy.wrap($cb)
+                      .should('be.checked')
+                      .then(() => cy.log(`✓ Marcado (Principal) idx=${i}`));
+                  },
+                  () => {
+                    cy.log(`Fallback click (Principal) idx=${i}`);
+                    return cy.wrap($cb)
+                      .closest('span.MuiCheckbox-root, span.PrivateSwitchBase-root')
+                      .click({ force: true })
+                      .then(() => cy.wrap($cb).should('be.checked'))
+                      .then(() => cy.log(`✓ Marcado con click (Principal) idx=${i}`));
+                  }
+                );
+            });
+          });
+        });
+    };
+
+    return cy.wrap(null)
+      .then(() => cy.wait(300))
+      .then(() => marcarActivos())
+      .then(() => cy.wait(300))
+      .then(() => marcarPrincipales());
+  }
   function rellenarCamposEnPestaña(campos, nombrePestaña) {
-    if (campos.length === 0) {
+    if (!campos || campos.length === 0) {
       cy.log(`No hay campos para rellenar en ${nombrePestaña}`);
       return cy.wrap(null);
     }
-    
+
+    const limpiarFecha = (txt) =>
+      String(txt || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
     const completarCampo = (index = 0) => {
       if (index >= campos.length) return cy.wrap(null);
+
       const campo = campos[index];
-      const valorTexto = campo.valor?.toString() || '';
+      const valorTextoRaw = campo.valor?.toString() || '';
+      const valorTexto = valorTextoRaw.trim();
+
       const etiquetaLower = (campo.etiquetaVisible || '').toLowerCase();
       const tipoLower = (campo.tipo || '').toLowerCase();
       const selectorLower = (campo.selector || '').toLowerCase();
-      
-      cy.log(`Rellenando campo ${index + 1}/${campos.length} en ${nombrePestaña}: ${campo.etiquetaVisible || campo.selector} = ${valorTexto}`);
-      
-      // Detectar si es un campo de fecha
-      const esFecha = 
+
+      cy.log(
+        `Rellenando campo ${index + 1}/${campos.length} en ${nombrePestaña}: ` +
+        `${campo.etiquetaVisible || campo.selector} = ${valorTexto}`
+      );
+
+      // =========================
+      // 1) FECHAS (como caso 22)
+      // =========================
+      const esFecha =
         etiquetaLower.includes('fecha') ||
         etiquetaLower.includes('itv') ||
         etiquetaLower.includes('tacógrafo') ||
@@ -1534,26 +1667,23 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         tipoLower.includes('fecha') ||
         tipoLower.includes('date') ||
         /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(valorTexto.trim());
-      
-      // Si es una fecha, usar el date picker (exactamente como caso 22)
+
       if (esFecha && valorTexto) {
-        const fechaObj = parseFechaBasicaExcel(valorTexto);
-        
-        // Determinar el nombre del label a buscar (exactamente como caso 22)
+        const fechaLimpia = limpiarFecha(valorTexto);
+        const fechaObj = parseFechaBasicaExcel(fechaLimpia);
+
         let nombreLabel = null;
-        
-        // Si tenemos un ID, mapear ID a nombre de label
+
         if (tipoLower === 'id' && (selectorLower.startsWith('_r_') || selectorLower.includes('-label'))) {
           const idInput = selectorLower.replace(/-label$/, '');
-          
-          // Mapeo de IDs conocidos a nombres de labels (igual que en el caso 22 se busca directamente por nombre)
+
           const mapeoIds = {
-            '_r_6c': 'F. Matriculación',  // F. Matriculación (formato alternativo)
-            '_r_76': 'F. Matriculación',  // F. Matriculación
-            '_r_6f': 'Alta',              // Alta (formato alternativo)
-            '_r_79': 'Alta',              // Alta
-            '_r_6i': 'Baja',              // Baja (formato alternativo)
-            '_r_7c': 'Baja',              // Baja
+            '_r_6c': 'F. Matriculación',
+            '_r_76': 'F. Matriculación',
+            '_r_6f': 'Alta',
+            '_r_79': 'Alta',
+            '_r_6i': 'Baja',
+            '_r_7c': 'Baja',
             '_r_70': 'ITV',
             '_r_73': 'Tacógrafo',
             '_r_7a': 'Certificado Transporte Mercancías Perecederas',
@@ -1572,66 +1702,62 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             '_r_ad': 'Última',
             '_r_ag': 'Próxima'
           };
-          
+
           nombreLabel = mapeoIds[idInput] || null;
         } else if (campo.etiquetaVisible && campo.etiquetaVisible !== campo.selector && campo.etiquetaVisible !== 'id') {
-          // Si tenemos etiqueta visible válida, usarla
           nombreLabel = campo.etiquetaVisible;
         }
-        
-        // Buscar directamente por nombre del label (exactamente como caso 22: cy.contains('label', /^ITV$/i, ...))
+
         if (nombreLabel) {
-          return cy.contains('label', new RegExp(`^${escapeRegex(nombreLabel)}$`, 'i'), { timeout: 10000 })
+          return cy
+            .contains('label', new RegExp(`^${escapeRegex(nombreLabel)}$`, 'i'), { timeout: 10000 })
             .should('be.visible')
             .parents('.MuiFormControl-root')
             .first()
             .within(() => {
-              cy.get('button[aria-label*="date"], button[aria-label*="calendar"]', { timeout: 10000 })
+              return cy
+                .get('button[aria-label*="date"], button[aria-label*="calendar"]', { timeout: 10000 })
                 .should('be.visible')
                 .click({ force: true });
             })
             .then(() => {
-              cy.wait(500);
+              cy.wait(300);
               return seleccionarFechaEnCalendario(fechaObj);
             })
-            .then(() => completarCampo(index + 1), () => {
-              cy.log(`No se pudo rellenar la fecha ${valorTexto} en ${nombreLabel}`);
-              return completarCampo(index + 1);
-            });
+            .then(
+              () => completarCampo(index + 1),
+              () => {
+                cy.log(`No se pudo rellenar la fecha ${fechaLimpia} en ${nombreLabel}`);
+                return completarCampo(index + 1);
+              }
+            );
         }
-        
-        // Si no tenemos nombre de label, saltar este campo
-        cy.log(`No se pudo determinar el nombre del label para la fecha ${valorTexto} (selector: ${campo.selector})`);
+
+        cy.log(`No se pudo determinar el nombre del label para la fecha ${fechaLimpia} (selector: ${campo.selector})`);
         return completarCampo(index + 1);
       }
-      
-      // Si el campo tiene tipo 'id' o selector especial, obtener el nombre real del label del mapeo
-      let nombreLabelReal = campo.etiquetaVisible;
-      
-      // Si el selector es mui-component-select-status, el nombre es "Estado"
+
+      // =========================
+      // 2) DEDUCIR NOMBRE LABEL REAL
+      // =========================
+      let nombreLabelReal = campo.etiquetaVisible || '';
+
       if (selectorLower.includes('mui-component-select-status') || (tipoLower === 'id' && selectorLower.includes('status'))) {
         nombreLabelReal = 'Estado';
-      }
-      // Si el selector es mui-component-select-vehicle.section, el nombre es "Sección"
-      else if (selectorLower.includes('mui-component-select-vehicle.section') || selectorLower.includes('vehicle.section')) {
+      } else if (selectorLower.includes('mui-component-select-vehicle.section') || selectorLower.includes('vehicle.section')) {
         nombreLabelReal = 'Sección';
-      }
-      // Si el selector es vehicle.owner, el nombre es "Propietario"
-      else if (selectorLower.includes('vehicle.owner')) {
+      } else if (selectorLower.includes('vehicle.owner')) {
         nombreLabelReal = 'Propietario';
-      }
-      // Si el campo tiene tipo 'id' y selector con ID (_r_...), usar mapeo de IDs
-      else if (tipoLower === 'id' && (selectorLower.startsWith('_r_') || selectorLower.includes('-label'))) {
+      } else if (tipoLower === 'id' && (selectorLower.startsWith('_r_') || selectorLower.includes('-label'))) {
         const idInput = selectorLower.replace(/-label$/, '');
-        
-        // Mapeo de IDs conocidos a nombres de labels
+
         const mapeoIds = {
-          '_r_6c': 'F. Matriculación',  // F. Matriculación (formato alternativo)
-          '_r_76': 'F. Matriculación',  // F. Matriculación
-          '_r_6f': 'Alta',              // Alta (formato alternativo)
-          '_r_79': 'Alta',              // Alta
-          '_r_6i': 'Baja',              // Baja (formato alternativo)
-          '_r_7c': 'Baja',              // Baja
+          '_r_6c': 'F. Matriculación',
+          '_r_76': 'F. Matriculación',
+          '_r_6f': 'Alta',
+          '_r_79': 'Alta',
+          '_r_6i': 'Baja',
+          '_r_7c': 'Baja',
           '_r_70': 'ITV',
           '_r_73': 'Tacógrafo',
           '_r_7a': 'Certificado Transporte Mercancías Perecederas',
@@ -1650,95 +1776,121 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           '_r_ad': 'Última',
           '_r_ag': 'Próxima'
         };
-        
-        if (mapeoIds[idInput]) {
-          nombreLabelReal = mapeoIds[idInput];
-        }
+
+        if (mapeoIds[idInput]) nombreLabelReal = mapeoIds[idInput];
       }
-      
-      // Si es Propietario (radio buttons), manejarlo específicamente
-      if (selectorLower.includes('vehicle.owner') || nombreLabelReal.toLowerCase().includes('propietario')) {
+
+      // =========================
+      // 3) PROPIETARIO (RADIO)
+      // =========================
+      if (selectorLower.includes('vehicle.owner') || String(nombreLabelReal).toLowerCase().includes('propietario')) {
         cy.log(`Seleccionando Propietario: ${valorTexto}`);
-        // Mapear valores del Excel a valores del formulario
-        let valorRadio = valorTexto.toLowerCase();
-        if (valorRadio.includes('propio')) {
-          valorRadio = 'own';
-        } else if (valorRadio.includes('tercero')) {
-          valorRadio = 'thirdParty';
-        } else if (valorRadio.includes('anexado')) {
-          valorRadio = 'annexed';
-        }
-        
-        return cy.get(`input[type="radio"][name="vehicle.owner"][value="${valorRadio}"]`, { timeout: 10000 })
-          .should('be.visible')
-          .scrollIntoView()
-          .check({ force: true })
-          .then(() => {
-            cy.wait(500);
-            cy.log(`✓ Propietario seleccionado: ${valorTexto}`);
-            return completarCampo(index + 1);
-          }, () => {
-            cy.log(`No se pudo seleccionar Propietario: ${valorTexto}`);
-            return completarCampo(index + 1);
+
+        let valorRadio = (valorTexto || '').toLowerCase();
+        if (valorRadio.includes('propio')) valorRadio = 'own';
+        else if (valorRadio.includes('tercero')) valorRadio = 'thirdParty';
+        else if (valorRadio.includes('anexado')) valorRadio = 'annexed';
+        else valorRadio = 'own';
+
+        return cy
+          .get(`input[type="radio"][name="vehicle.owner"][value="${valorRadio}"]`, { timeout: 10000 })
+          .then($radio => {
+            if (!$radio || !$radio.length) {
+              cy.log(`No se encontró radio Propietario con value="${valorRadio}"`);
+              return completarCampo(index + 1);
+            }
+
+            return cy.wrap($radio)
+              .scrollIntoView({ block: 'center' })
+              .then(() => {
+                if ($radio.is(':checked')) {
+                  cy.log(`⏭ Propietario ya seleccionado: ${valorTexto}`);
+                  return completarCampo(index + 1);
+                }
+
+                return cy.wrap($radio)
+                  .check({ force: true })
+                  .then(
+                    () => cy.wrap($radio).should('be.checked'),
+                    () => cy.wrap($radio)
+                      .closest('span.MuiRadio-root, span.PrivateSwitchBase-root')
+                      .click({ force: true })
+                      .then(() => cy.wrap($radio).should('be.checked'))
+                  )
+                  .then(() => {
+                    cy.log(`✓ Propietario seleccionado: ${valorTexto}`);
+                    return completarCampo(index + 1);
+                  });
+              });
           });
       }
-      
-      // Si es un checkbox de actividades (vehicle.activities.*.active o vehicle.activities.*.modificable)
+
+      // =========================
+      // 4) CHECKBOX ACTIVIDADES (MUI input oculto -> exist)
+      // =========================
       if (selectorLower.includes('vehicle.activities') && (selectorLower.includes('.active') || selectorLower.includes('.modificable'))) {
         cy.log(`Marcando checkbox de actividad: ${campo.selector} = ${valorTexto}`);
-        // Si el valor es "true", "1", "checked", "activo", "principal" o similar, marcar el checkbox
+
         const valorLower = valorTexto.toLowerCase().trim();
-        const debeMarcar = valorLower === 'true' || valorLower === '1' || valorLower === 'checked' || 
-                          valorLower === 'activo' || valorLower === 'principal' || valorLower === 'si' ||
-                          valorLower === 'yes' || valorLower === 'on';
-        
+        const debeMarcar =
+          valorLower === 'true' || valorLower === '1' || valorLower === 'checked' ||
+          valorLower === 'activo' || valorLower === 'principal' || valorLower === 'si' ||
+          valorLower === 'yes' || valorLower === 'on';
+
+        const selectorCb = `input[type="checkbox"][name="${campo.selector}"]`;
+
         if (debeMarcar) {
-          return cy.get(`input[type="checkbox"][name="${campo.selector}"]`, { timeout: 10000 })
-            .should('be.visible')
-            .scrollIntoView()
+          return cy.get(selectorCb, { timeout: 10000 })
+            .should('exist')
+            .scrollIntoView({ block: 'center' })
             .check({ force: true })
             .then(() => {
-              cy.wait(200);
+              cy.wait(150);
               cy.log(`✓ Checkbox ${campo.selector} marcado`);
               return completarCampo(index + 1);
             }, () => {
               cy.log(`No se pudo marcar el checkbox ${campo.selector}`);
               return completarCampo(index + 1);
             });
-        } else {
-          // Si el valor es "false", "0", "unchecked", etc., desmarcar el checkbox
-          return cy.get(`input[type="checkbox"][name="${campo.selector}"]`, { timeout: 10000 })
-            .should('be.visible')
-            .scrollIntoView()
-            .uncheck({ force: true })
-            .then(() => {
-              cy.wait(200);
-              cy.log(`✓ Checkbox ${campo.selector} desmarcado`);
-              return completarCampo(index + 1);
-            }, () => {
-              cy.log(`No se pudo desmarcar el checkbox ${campo.selector}`);
-              return completarCampo(index + 1);
-            });
         }
+
+        return cy.get(selectorCb, { timeout: 10000 })
+          .should('exist')
+          .scrollIntoView({ block: 'center' })
+          .uncheck({ force: true })
+          .then(() => {
+            cy.wait(150);
+            cy.log(`✓ Checkbox ${campo.selector} desmarcado`);
+            return completarCampo(index + 1);
+          }, () => {
+            cy.log(`No se pudo desmarcar el checkbox ${campo.selector}`);
+            return completarCampo(index + 1);
+          });
       }
-      
-      // Detectar si es un select de Material-UI (combobox)
-      const esSelectMUI = 
+
+      // =========================
+      // 5) SELECT MUI (combobox)
+      // =========================
+      const esSelectMUI =
         selectorLower.includes('mui-component-select') ||
         selectorLower.includes('maintenancetype') ||
-        (nombreLabelReal.toLowerCase() === 'tipo' && !nombreLabelReal.toLowerCase().includes('tipo 1') && !nombreLabelReal.toLowerCase().includes('tipo 2') && !nombreLabelReal.toLowerCase().includes('tipo 3') && !nombreLabelReal.toLowerCase().includes('tipo de vehículo') && !nombreLabelReal.toLowerCase().includes('tipo de vehiculo')) ||
-        nombreLabelReal.toLowerCase().includes('estado') ||
-        nombreLabelReal.toLowerCase().includes('sección') ||
-        nombreLabelReal.toLowerCase().includes('seccion');
-      
-      // Si es un select de Material-UI, usar seleccionarOpcionMaterial
+        (String(nombreLabelReal).toLowerCase() === 'tipo' &&
+          !String(nombreLabelReal).toLowerCase().includes('tipo 1') &&
+          !String(nombreLabelReal).toLowerCase().includes('tipo 2') &&
+          !String(nombreLabelReal).toLowerCase().includes('tipo 3') &&
+          !String(nombreLabelReal).toLowerCase().includes('tipo de vehículo') &&
+          !String(nombreLabelReal).toLowerCase().includes('tipo de vehiculo')) ||
+        String(nombreLabelReal).toLowerCase().includes('estado') ||
+        String(nombreLabelReal).toLowerCase().includes('sección') ||
+        String(nombreLabelReal).toLowerCase().includes('seccion');
+
       if (esSelectMUI) {
         cy.log(`Detectado select MUI para "${nombreLabelReal}"`);
-        // Manejar el caso especial del Tipo de Mantenimiento
+
         if (selectorLower.includes('maintenance.0.maintenancetype')) {
           return cy.get('[id="mui-component-select-maintenance.0.maintenanceType"]', { timeout: 10000 })
             .should('be.visible')
-            .scrollIntoView()
+            .scrollIntoView({ block: 'center' })
             .click({ force: true })
             .then(() => {
               cy.wait(500);
@@ -1748,7 +1900,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 { timeout: 10000 }
               )
                 .should('be.visible')
-                .scrollIntoView()
+                .scrollIntoView({ block: 'center' })
                 .click({ force: true });
             })
             .then(() => completarCampo(index + 1), () => {
@@ -1756,11 +1908,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               return completarCampo(index + 1);
             });
         }
-        // Si tenemos un selector específico como mui-component-select-status, usarlo directamente
+
         if (selectorLower.includes('mui-component-select-status')) {
           return cy.get('[id="mui-component-select-status"]', { timeout: 10000 })
             .should('be.visible')
-            .scrollIntoView()
+            .scrollIntoView({ block: 'center' })
             .click({ force: true })
             .then(() => {
               cy.wait(500);
@@ -1770,7 +1922,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 { timeout: 10000 }
               )
                 .should('be.visible')
-                .scrollIntoView()
+                .scrollIntoView({ block: 'center' })
                 .click({ force: true });
             })
             .then(() => completarCampo(index + 1), () => {
@@ -1778,11 +1930,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               return completarCampo(index + 1);
             });
         }
-        // Si tenemos un selector específico como mui-component-select-vehicle.section o vehicle.section, usarlo directamente
+
         if (selectorLower.includes('mui-component-select-vehicle.section') || selectorLower.includes('vehicle.section')) {
           return cy.get('[id="mui-component-select-vehicle.section"]', { timeout: 10000 })
             .should('be.visible')
-            .scrollIntoView()
+            .scrollIntoView({ block: 'center' })
             .click({ force: true })
             .then(() => {
               cy.wait(500);
@@ -1792,7 +1944,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 { timeout: 10000 }
               )
                 .should('be.visible')
-                .scrollIntoView()
+                .scrollIntoView({ block: 'center' })
                 .click({ force: true });
             })
             .then(() => completarCampo(index + 1), () => {
@@ -1800,15 +1952,24 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               return completarCampo(index + 1);
             });
         }
+
         return seleccionarOpcionMaterial(campo.selector || '', valorTexto, nombreLabelReal)
           .then(() => completarCampo(index + 1), () => {
             cy.log(`No se pudo seleccionar ${valorTexto} en ${nombreLabelReal}`);
             return completarCampo(index + 1);
           });
       }
-      
-      // Si el selector es un name attribute, intentar escribir directamente
-      if (campo.selector && (campo.selector.includes('.') || campo.selector.includes('expirations') || campo.selector.includes('maintenance') || campo.selector.includes('vehicle.'))) {
+
+      // =========================
+      // 6) ESCRIBIR POR NAME attribute (vehicle.*, expirations.*, maintenance.*)
+      // =========================
+      if (
+        campo.selector &&
+        (campo.selector.includes('.') ||
+          campo.selector.includes('expirations') ||
+          campo.selector.includes('maintenance') ||
+          campo.selector.includes('vehicle.'))
+      ) {
         const nameAttr = campo.selector;
         cy.log(`Escribiendo por name attribute: ${nameAttr} = ${valorTexto}`);
         return escribirPorName(nameAttr, valorTexto, nombreLabelReal)
@@ -1817,113 +1978,110 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             return completarCampo(index + 1);
           });
       }
-      
-      // Si el campo solo tiene ID (tipo === 'id' y selector es un ID), buscar el input por ID y obtener el texto del label asociado
+
+      // =========================
+      // 7) SI SOLO HAY ID (_r_...) -> usar mapeo y buscar por nombre del label (como DATOS GENERALES)
+      // =========================
       if (tipoLower === 'id' && (selectorLower.startsWith('_r_') || selectorLower.includes('-label'))) {
         const idInput = selectorLower.replace(/-label$/, '');
-        cy.log(`Buscando input por ID: ${idInput} para obtener el texto del label asociado`);
-        
-        // Buscar el input por ID y luego encontrar el label asociado
-        return cy.get(`#${idInput}, [id="${idInput}"]`, { timeout: 10000 })
-          .should('be.visible')
-          .then(($input) => {
-            // Buscar el label asociado por el contenedor padre
-            return cy.wrap($input)
-              .parents('.MuiFormControl-root')
-              .first()
-              .find('label')
-              .first()
-              .then(($label) => {
-                if ($label && $label.length) {
-                  const textoLabel = $label.text().trim();
-                  cy.log(`Texto del label obtenido del input ${idInput}: "${textoLabel}"`);
-                  
-                  // Buscar el campo por el texto del label
-                  return cy.contains('label', new RegExp(`^${escapeRegex(textoLabel)}$`, 'i'), { timeout: 10000 })
-                    .should('be.visible')
-                    .then(($labelEncontrado) => {
-                      // Verificar que tiene el atributo 'for'
-                      let forAttr = null;
-                      try {
-                        forAttr = $labelEncontrado.attr('for');
-                      } catch (e) {
-                        cy.log(`Error al obtener atributo 'for' del label: ${e.message}`);
-                        return null;
-                      }
-                      
-                      if (forAttr) {
-                        return cy.get(`#${forAttr}`, { timeout: 10000 })
-                          .should('be.visible')
-                          .then(($inputEncontrado) => {
-                            if (!$inputEncontrado || !$inputEncontrado.length) {
-                              cy.log(`No se encontró el input con id ${forAttr}`);
-                              return null;
-                            }
-                            const tag = ($inputEncontrado[0]?.tagName || '').toLowerCase();
-                            if (tag === 'input' || tag === 'textarea') {
-                              cy.wrap($inputEncontrado).clear({ force: true }).type(valorTexto, { force: true });
-                              return null;
-                            }
-                            return null;
-                          }, () => {
-                            cy.log(`No se pudo encontrar el input con id ${forAttr}`);
-                            return null;
-                          });
-                      }
-                      
-                      // Si no tiene 'for', buscar el input dentro del contenedor del label
-                      return cy.wrap($labelEncontrado)
-                        .parents('.MuiFormControl-root')
-                        .first()
-                        .find('input, textarea')
-                        .first()
-                        .then(($inputEncontrado) => {
-                          if ($inputEncontrado && $inputEncontrado.length) {
-                            cy.wrap($inputEncontrado).clear({ force: true }).type(valorTexto, { force: true });
-                            return null;
-                          }
-                          return null;
-                        }, () => {
-                          cy.log(`No se encontró input dentro del contenedor del label`);
-                          return null;
-                        });
-                    }, () => {
-                      cy.log(`No se pudo encontrar el label por texto "${textoLabel}"`);
-                      return null;
-                    });
-                }
-                return null;
-              }, () => {
-                cy.log(`No se encontró label asociado al input ${idInput}`);
-                return null;
-              });
+
+        const mapeoIds = {
+          '_r_6c': 'F. Matriculación',
+          '_r_76': 'F. Matriculación',
+          '_r_6f': 'Alta',
+          '_r_79': 'Alta',
+          '_r_6i': 'Baja',
+          '_r_7c': 'Baja',
+          '_r_70': 'ITV',
+          '_r_73': 'Tacógrafo',
+          '_r_7a': 'Certificado Transporte Mercancías Perecederas',
+          '_r_7g': 'ATP',
+          '_r_7m': 'ADR',
+          '_r_7s': 'O. R. Aparcamiento',
+          '_r_77': 'Autorización Transporte Animales',
+          '_r_7d': 'Permiso Comunitario',
+          '_r_7j': 'Emisoras',
+          '_r_7p': 'Extintor',
+          '_r_80': 'Fecha Tipo 1',
+          '_r_84': 'Fecha Tipo 2',
+          '_r_88': 'Fecha Tipo 3',
+          '_r_9u': 'Inicio',
+          '_r_a1': 'Fin',
+          '_r_ad': 'Última',
+          '_r_ag': 'Próxima'
+        };
+
+        const nombreLabel = mapeoIds[idInput] || null;
+
+        if (nombreLabel) {
+          cy.log(`Buscando campo por nombre del label: "${nombreLabel}" (ID: ${idInput})`);
+          
+          return cy.contains('label', new RegExp(`^${escapeRegex(nombreLabel)}$`, 'i'), { timeout: 10000 })
+            .should('be.visible')
+            .then(($labelEncontrado) => {
+              return cy.wrap($labelEncontrado)
+                .parents('.MuiFormControl-root')
+                .first()
+                .find('input, textarea')
+                .first()
+                .then(($inputEncontrado) => {
+                  if ($inputEncontrado && $inputEncontrado.length) {
+                    const tag = ($inputEncontrado[0]?.tagName || '').toLowerCase();
+                    if (tag === 'input' || tag === 'textarea') {
+                      cy.wrap($inputEncontrado).clear({ force: true }).type(valorTexto, { force: true });
+                    }
+                    return null;
+                  }
+                  cy.log(`No se encontró input/textarea para el label "${nombreLabel}"`);
+                  return null;
+                });
+            })
+            .then(() => completarCampo(index + 1), () => {
+              cy.log(`No se pudo encontrar el campo por label "${nombreLabel}" (ID: ${idInput}), intentando método genérico`);
+              return obtenerCampoFormulario(campo.tipo, campo.selector, nombreLabelReal || campo.selector)
+                .then(($elemento) => {
+                  if (!$elemento || !$elemento.length) {
+                    cy.log(`No se encontró el campo ${campo.selector || nombreLabelReal}`);
+                    return null;
+                  }
+                  const tag = ($elemento[0]?.tagName || '').toLowerCase();
+                  if (tag === 'input' || tag === 'textarea') {
+                    cy.wrap($elemento).clear({ force: true }).type(valorTexto, { force: true });
+                    return null;
+                  }
+                  cy.wrap($elemento).click({ force: true }).type(valorTexto, { force: true });
+                  return null;
+                })
+                .then(() => completarCampo(index + 1));
+            });
+        }
+
+        cy.log(`No se encontró mapeo para ID ${idInput}, intentando método genérico`);
+        return obtenerCampoFormulario(campo.tipo, campo.selector, nombreLabelReal || campo.selector)
+          .then(($elemento) => {
+            if (!$elemento || !$elemento.length) {
+              cy.log(`No se encontró el campo ${campo.selector || nombreLabelReal}`);
+              return null;
+            }
+            const tag = ($elemento[0]?.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea') {
+              cy.wrap($elemento).clear({ force: true }).type(valorTexto, { force: true });
+              return null;
+            }
+            cy.wrap($elemento).click({ force: true }).type(valorTexto, { force: true });
+            return null;
           })
-          .then(() => completarCampo(index + 1), () => {
-            cy.log(`No se pudo encontrar el input por ID ${idInput}, intentando método genérico`);
-            return obtenerCampoFormulario(campo.tipo, campo.selector, nombreLabelReal || campo.selector)
-              .then(($elemento) => {
-                if (!$elemento || !$elemento.length) {
-                  cy.log(`No se encontró el campo ${campo.selector || nombreLabelReal}`);
-                  return null;
-                }
-                const tag = ($elemento[0]?.tagName || '').toLowerCase();
-                if (tag === 'input' || tag === 'textarea') {
-                  cy.wrap($elemento).clear({ force: true }).type(valorTexto, { force: true });
-                  return null;
-                }
-                cy.wrap($elemento).click({ force: true }).type(valorTexto, { force: true });
-                return null;
-              })
-              .then(() => completarCampo(index + 1));
-          });
+          .then(() => completarCampo(index + 1));
       }
-      
-      // Si el tipo es "name", buscar directamente el input por su name attribute
+
+      // =========================
+      // 8) TIPO === "name" (input directo por name)
+      // =========================
       if (tipoLower === 'name' && campo.selector) {
         cy.log(`Buscando input por name attribute: ${campo.selector}`);
         return cy.get(`input[name="${campo.selector}"], textarea[name="${campo.selector}"]`, { timeout: 10000 })
-          .should('be.visible')
-          .scrollIntoView()
+          .should('exist')
+          .scrollIntoView({ block: 'center' })
           .clear({ force: true })
           .type(valorTexto, { force: true })
           .then(() => {
@@ -1935,27 +2093,32 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             return completarCampo(index + 1);
           });
       }
-      
-      // Método genérico: buscar por label o selector
+
+      // =========================
+      // 9) MÉTODO GENÉRICO: obtenerCampoFormulario + fallback por label
+      // =========================
       return obtenerCampoFormulario(campo.tipo, campo.selector, nombreLabelReal || campo.selector)
         .then(($elemento) => {
           if (!$elemento || !$elemento.length) {
             cy.log(`No se encontró el campo ${campo.selector || nombreLabelReal}, intentando por label`);
-            // Si el tipo es "name", no intentar buscar por label con texto "name"
+
             if (tipoLower === 'name') {
               cy.log(`Tipo "name" detectado, no se busca label con texto "name"`);
               return completarCampo(index + 1);
             }
-            return cy.contains('label', new RegExp(`^${escapeRegex(nombreLabelReal || campo.selector)}$`, 'i'), { timeout: 5000 })
+
+            return cy.contains(
+              'label',
+              new RegExp(`^${escapeRegex(nombreLabelReal || campo.selector)}$`, 'i'),
+              { timeout: 5000 }
+            )
               .should('be.visible')
               .then(($label) => {
-                // Verificar que $label es un elemento válido
                 if (!$label || !$label.length) {
                   cy.log(`Label encontrado pero no es válido para ${nombreLabelReal}`);
                   return null;
                 }
-                
-                // Verificar que tiene el método attr antes de usarlo
+
                 let forAttr = null;
                 try {
                   forAttr = $label.attr('for');
@@ -1963,10 +2126,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                   cy.log(`Error al obtener atributo 'for' del label: ${e.message}`);
                   return null;
                 }
-                
+
                 if (forAttr) {
                   return cy.get(`#${forAttr}`, { timeout: 5000 })
-                    .should('be.visible')
+                    .should('exist')
                     .then(($input) => {
                       if (!$input || !$input.length) {
                         cy.log(`No se encontró el input con id ${forAttr}`);
@@ -1975,43 +2138,39 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                       const tag = ($input[0]?.tagName || '').toLowerCase();
                       if (tag === 'input' || tag === 'textarea') {
                         cy.wrap($input).clear({ force: true }).type(valorTexto, { force: true });
-                        return null;
                       }
-                      return null;
-                    }, () => {
-                      cy.log(`No se pudo encontrar el input con id ${forAttr}`);
                       return null;
                     });
                 }
+
                 return null;
               }, () => {
                 cy.log(`No se pudo encontrar el campo por label ${campo.etiquetaVisible}`);
                 return null;
               });
           }
-          
-          const tipoInput = ($elemento[0]?.type || '').toLowerCase();
+
           const tag = ($elemento[0]?.tagName || '').toLowerCase();
-          const role = ($elemento[0]?.getAttribute('role') || '').toLowerCase();
-          
+
           if (tag === 'input' || tag === 'textarea') {
             cy.wrap($elemento).clear({ force: true }).type(valorTexto, { force: true });
             return null;
           }
-          
+
           if (tag === 'select') {
             cy.wrap($elemento).select(valorTexto, { force: true });
             return null;
           }
-          
+
           cy.wrap($elemento).click({ force: true }).type(valorTexto, { force: true });
           return null;
         }, () => {
           cy.log(`No se pudo completar el campo ${campo.selector || campo.etiquetaVisible}`);
+          return null;
         })
         .then(() => completarCampo(index + 1));
     };
-    
+
     return completarCampo(0);
   }
 
@@ -2805,7 +2964,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       const tipoLower = (campo.tipo || '').toLowerCase();
 
       // Detectar si es un campo de fecha (por etiqueta o tipo)
-      const esFecha = 
+      const esFecha =
         etiquetaLower.includes('fecha') ||
         etiquetaLower.includes('itv') ||
         etiquetaLower.includes('tacógrafo') ||
@@ -2827,7 +2986,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       if (esFecha && valorTexto) {
         const fechaObj = parseFechaBasicaExcel(valorTexto);
         cy.log(`Rellenando campo de fecha "${campo.etiquetaVisible}" con ${valorTexto}`);
-        
+
         return cy.contains('label', new RegExp(`^${escapeRegex(campo.etiquetaVisible || campo.selector)}$`, 'i'), { timeout: 10000 })
           .should('be.visible')
           .then(($label) => {
@@ -2863,7 +3022,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       }
 
       // Detectar si es un select de Material-UI (combobox)
-      const esSelectMUI = 
+      const esSelectMUI =
         etiquetaLower === 'tipo' ||
         etiquetaLower.includes('tipo mantenimiento') ||
         (campo.selector && (campo.selector.includes('mui-component-select') || campo.selector.includes('maintenanceType'))) ||
@@ -2903,7 +3062,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                   cy.log(`Label encontrado pero no es válido para ${campo.etiquetaVisible}`);
                   return null;
                 }
-                
+
                 // Verificar que tiene el método attr antes de usarlo
                 let forAttr = null;
                 try {
@@ -2912,7 +3071,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                   cy.log(`Error al obtener atributo 'for' del label: ${e.message}`);
                   return null;
                 }
-                
+
                 if (forAttr) {
                   return cy.get(`#${forAttr}`, { timeout: 5000 })
                     .should('be.visible')
@@ -3428,13 +3587,13 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
   function procesarValorXXX(valor) {
     if (valor === null || valor === undefined) return valor;
     const valorStr = String(valor).trim();
-    
+
     if (valorStr.toUpperCase() === 'XXX') {
       const numeroAleatorio = Math.floor(Math.random() * 900) + 100; // Genera número entre 100-999
       cy.log(`Valor "XXX" detectado, generando 3 números aleatorios: ${numeroAleatorio}`);
       return numeroAleatorio.toString();
     }
-    
+
     return valorStr;
   }
 
@@ -4148,7 +4307,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       // Buscar específicamente en el área de la tabla de la pestaña actual
       // Buscar la tabla MuiDataGrid o el área de contenido de la pestaña
       const tabla = $body.find('.MuiDataGrid-root:visible, .MuiTableContainer:visible, table:visible').first();
-      
+
       if (tabla.length > 0) {
         // Verificar si la tabla tiene filas de datos
         const filas = tabla.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible').filter((_, el) => {
@@ -4156,7 +4315,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
           return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos/i.test(textoFila);
         });
-        
+
         if (filas.length > 0) {
           cy.log(`✓ La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
           return cy.wrap(true);
@@ -4166,7 +4325,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             const texto = (el.textContent || '').toLowerCase();
             return /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
           });
-          
+
           if (mensajeSinFilas.length > 0) {
             cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
             return cy.wrap(false);
@@ -4186,7 +4345,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           const estaEnContenido = $el.closest('[class*="MuiPaper"], [class*="content"], [class*="tabpanel"]').length > 0;
           return estaVisible && estaEnContenido && /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
         });
-        
+
         if (mensajeSinFilas.length > 0) {
           cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
           return cy.wrap(false);
@@ -4529,7 +4688,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                               })
                               .filter(':visible')
                               .first();
-                            
+
                             if (elementoDirecciones.length > 0) {
                               return cy.wrap(elementoDirecciones[0])
                                 .scrollIntoView()
@@ -4675,7 +4834,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               .then(() => {
                 // Para secciones con modal (Seguros, Amortización, Impuestos, Tarjetas, Revisiones, Histórico Kms, Histórico Vehículo)
                 const esSeccionConModal = /seguros|amortizaci[oó]n|impuestos|tarjetas|revisiones|hist[oó]rico/i.test(seccion);
-                
+
                 if (esSeccionConModal) {
                   return abrirModalSeccion(seccion, true)
                     .then(() => llenarFormularioSeccion(casoPestaña, numeroPestaña, seccion))

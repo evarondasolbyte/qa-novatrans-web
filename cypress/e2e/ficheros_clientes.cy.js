@@ -6,10 +6,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   const SUBMENU = 'Clientes';
   const URL_PATH = '/dashboard/clients';
 
-  const CASOS_INCIDENTE = new Map([]);
-
-  const CASOS_WARNING = new Map();
-
   before(() => {
     // Crea / recupera la sesión una sola vez
     cy.login();

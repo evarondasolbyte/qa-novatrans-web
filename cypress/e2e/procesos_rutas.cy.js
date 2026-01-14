@@ -519,13 +519,13 @@ describe('PROCESOS - RUTAS - Validación completa con reporte a Excel', () => {
   function ocultarColumna(columna) {
     return UI.abrirPantalla().then(() => {
       cy.log(`Ocultando columna "${columna}" (panel columnas)`);
-      return abrirPanelColumnas()
+    return abrirPanelColumnas()
         .then(() => toggleColumnaEnPanel(columna, false))
-        .then(() => guardarPanelColumnas())
-        .then(() =>
+      .then(() => guardarPanelColumnas())
+      .then(() =>
           cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 })
             .should('not.contain.text', columna)
-        );
+      );
     });
   }
 
