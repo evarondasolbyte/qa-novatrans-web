@@ -603,8 +603,9 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     const esOrdenesCarga = nombrePantallaLower.includes('órdenes de carga') || nombrePantallaLower.includes('ordenes de carga');
     const esPlanificacion = nombrePantallaLower.includes('planificación') || nombrePantallaLower.includes('planificacion');
     const esRutas = nombrePantallaLower.includes('rutas') || nombrePantallaLower.includes('routes');
+    const esVehiculos = nombrePantallaLower.includes('vehículos') || nombrePantallaLower.includes('vehiculos');
 
-    const debeForzarOK = esTarjetas || esAlquileres || esFormasPago || esTiposVehiculo || esOrdenesCarga || esAlmacen || esPlanificacion || esRutas;
+    const debeForzarOK = esTarjetas || esAlquileres || esFormasPago || esTiposVehiculo || esOrdenesCarga || esAlmacen || esPlanificacion || esRutas || esVehiculos;
 
     // Para Tarjetas, Alquileres Vehículos, Formas de Pago, Tipos de Vehículo, Órdenes de Carga
     // y el resto de pantallas de Almacén salvo Artículos, registrar OK
