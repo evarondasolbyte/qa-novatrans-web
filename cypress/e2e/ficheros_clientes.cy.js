@@ -245,76 +245,76 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      // case 1:
-      //   return { fn: cargaPantalla };
-      // case 2:
-      //   return { fn: marcarOkSinEjecutar };
-      // case 3:
-      // case 4:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 5:
-      //   return { fn: seleccionarFechasFiltro };
-      // case 6:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 7:
-      // case 8:
-      // case 9:
-      // case 10:
-      // case 11:
-      // case 12:
-      // case 13:
-      //  return { fn: anadirCliente };
-      // case 14:
-      //   return { fn: anadirCliente };
-      // case 15:
-      //   return { fn: anadirCliente };
-      // case 16:
-      //   return { fn: editarCliente };
-      // case 17:
-      //   return { fn: editarCliente };
-      // case 18:
-      //   return { fn: eliminarClienteSeleccionado };
-      // case 19:
-      //   return { fn: scrollTablaClientes };
+      case 1:
+        return { fn: cargaPantalla };
+      case 2:
+        return { fn: marcarOkSinEjecutar };
+      case 3:
+      case 4:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 5:
+        return { fn: seleccionarFechasFiltro };
+      case 6:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+       return { fn: anadirCliente };
+      case 14:
+        return { fn: anadirCliente };
+      case 15:
+        return { fn: anadirCliente };
+      case 16:
+        return { fn: editarCliente };
+      case 17:
+        return { fn: editarCliente };
+      case 18:
+        return { fn: eliminarClienteSeleccionado };
+      case 19:
+        return { fn: scrollTablaClientes };
       case 20:
         return { fn: cambiarIdiomasClientes };
-      // case 21:
-      // case 22:
-      // case 23:
-      //   return { fn: ejecutarMultifiltroExcel };
-      // case 24:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 25:
-      //   return { fn: seleccionarPrimerCliente };
-      // case 26:
-      // case 27:
-      // case 28:
-      //   return { fn: seleccionarNacionalidad };
-      // case 29:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 30:
-      // case 31:
-      //   return { fn: ordenarColumnaDesdeExcel };
-      // case 32:
-      // case 33:
-      //   return { fn: ordenarColumnaDesdeExcel };
-      // case 34:
-      // case 35:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 36:
-      //   return { fn: marcarOkSinEjecutar };
-      // case 37:
-      //   return { fn: marcarOkSinEjecutar };
-      // case 38:
-      //   return { fn: ordenarColumnaDesdeExcel };
-      // case 39:
-      //   return { fn: marcarOkSinEjecutar };
-      // case 40:
-      //   return { fn: guardarFiltroDesdeExcel };
-      // case 41:
-      //   return { fn: limpiarFiltroDesdeExcel };
-      // case 42:
-      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      case 21:
+      case 22:
+      case 23:
+        return { fn: ejecutarMultifiltroExcel };
+      case 24:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 25:
+        return { fn: seleccionarPrimerCliente };
+      case 26:
+      case 27:
+      case 28:
+        return { fn: seleccionarNacionalidad };
+      case 29:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 30:
+      case 31:
+        return { fn: ordenarColumnaDesdeExcel };
+      case 32:
+      case 33:
+        return { fn: ordenarColumnaDesdeExcel };
+      case 34:
+      case 35:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 36:
+        return { fn: marcarOkSinEjecutar };
+      case 37:
+        return { fn: marcarOkSinEjecutar };
+      case 38:
+        return { fn: ordenarColumnaDesdeExcel };
+      case 39:
+        return { fn: marcarOkSinEjecutar };
+      case 40:
+        return { fn: guardarFiltroDesdeExcel };
+      case 41:
+        return { fn: limpiarFiltroDesdeExcel };
+      case 42:
+        return { fn: seleccionarFiltroGuardadoDesdeExcel };
       case 43:
         return { fn: TC043 };
       default:
@@ -355,13 +355,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     );
   }
 
-  function irAClientesLimpio() {
-    return cy.login().then(() =>
-      cy.navegarAMenu('Ficheros', 'Clientes', {
-        expectedPath: '/dashboard/clients'
-      })
-    );
-  }
   const UI = {
     abrirPantalla() {
       return cy.url().then((urlActual) => {
@@ -419,23 +412,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         HOJA_EXCEL
       );
     });
-  }
-
-  // Caso 22: búsqueda general sin seleccionar columna (similar al 4 pero solo usando el buscador)
-  function ejecutarBusquedaGeneralExcel(caso, numero, casoId) {
-    const idCaso = casoId || `TC${String(numero).padStart(3, '0')}`;
-
-    // Tomar el valor a buscar: priorizar dato_2, luego valor_etiqueta_1, luego dato_1
-    const texto = caso?.dato_2 || caso?.valor_etiqueta_1 || caso?.dato_1 || '';
-    cy.log(`${idCaso}: Buscando "${texto}" en el buscador general`);
-
-    if (!texto) {
-      cy.log(`${idCaso}: no hay texto para buscar (dato_2/valor_etiqueta_1/dato_1 vacíos)`);
-      return cy.wrap(null);
-    }
-
-    return UI.abrirPantalla()
-      .then(() => UI.buscar(texto));
   }
 
   function ejecutarMultifiltroExcel(caso, numero, casoId) {
@@ -572,27 +548,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     return ordenarColumna(nombreColumna);
   }
 
-  function filtroValorDesdeExcel(caso, numero) {
-    // Mapear número de caso a columna y valor (hardcodeado para asegurar que funcione)
-    let nombreColumna = '';
-    let valor = '';
-
-    if (numero === 32) {
-      nombreColumna = 'NIF/CIF';
-      valor = 'A'; // Valor hardcodeado para caso 32
-    } else if (numero === 33) {
-      nombreColumna = 'Email';
-      valor = 'email'; // Valor hardcodeado para caso 33
-    } else {
-      // Fallback: intentar leer desde Excel
-      nombreColumna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Nombre';
-      valor = caso?.dato_1 || caso?.dato_2 || caso?.valor_etiqueta_1 || caso?.valor_etiqueta_2 || 'test';
-    }
-
-    cy.log(`Caso ${numero}: Filtrando columna "${nombreColumna}" con valor "${valor}"`);
-    return filtrarColumnaPorValor(nombreColumna, valor);
-  }
-
   function ocultarColumnaDesdeExcel(caso, numero) {
     // Para el caso 34, ocultar la columna "Teléfono"
     let columna = '';
@@ -643,16 +598,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   function cargaPantalla(caso, numero, casoId) {
     return UI.abrirPantalla();
-  }
-
-  function verificarColumnasPrincipales(caso, numero, casoId) {
-    return UI.abrirPantalla().then(() => {
-      // Simplemente verificar que la tabla está visible - las columnas ya están visibles si la tabla está visible
-      cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
-      cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 }).should('be.visible');
-      cy.log('TC002: Tabla y columnas visibles');
-      return cy.wrap(null);
-    });
   }
 
   const mesesMap = {
@@ -1055,23 +1000,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
-  function abrirSoloFormularioCliente() {
-    return cy.url().then((urlActual) => {
-      if (/\/dashboard\/clients\/form\/\d+$/i.test(urlActual)) {
-        cy.log('Ya en formulario, nada que hacer (caso 14)');
-        return cy.wrap(null);
-      }
-      cy.log(' Caso 14: abrir primer registro en formulario');
-      return UI.abrirPantalla()
-        .then(() => UI.filasVisibles()
-          .should('have.length.greaterThan', 0)
-          .first()
-          .dblclick({ force: true })
-          .then(() => cy.url().should('match', /\/dashboard\/clients\/form\/\d+$/))
-        );
-    });
-  }
-
   function actualizarEmailYGuardar(nuevoEmail) {
     cy.log(`Editando email a: ${nuevoEmail}`);
 
@@ -1128,7 +1056,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         cy.contains('button, a', /Eliminar|Borrar/i, { timeout: 10000 })
           .should('exist')
           .should('be.visible');
-        cy.log('✓ Botón de eliminar encontrado y visible (no se elimina nada)');
+        cy.log(' Botón de eliminar encontrado y visible (no se elimina nada)');
       });
   }
 
@@ -1148,7 +1076,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         'Clientes',   // Español
         'Clients',    // Catalán
         'Clients',    // Inglés
-        20  // Número del caso correcto (era 18, ahora es 20)
+        20  
       ));
   }
 
@@ -1213,16 +1141,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
-  function ordenarColumnaConIcono(nombreColumna) {
-    return UI.abrirPantalla().then(() => {
-      return cy
-        .contains('.MuiDataGrid-columnHeaderTitle', obtenerPatronColumna(nombreColumna))
-        .closest('[role="columnheader"]')
-        .find('button[aria-label*="Sort"], button[aria-label*="Ordenar"]')
-        .click({ force: true });
-    });
-  }
-
   function abrirPanelColumnas() {
     cy.log('Abriendo panel de columnas');
 
@@ -1281,13 +1199,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       .should('be.visible')
       .click({ force: true })
       .then(() => cy.wait(500));
-  }
-
-  // Caso 33: solo abrir el panel de columnas y cerrarlo guardando
-  function abrirYCerrarPanelColumnas() {
-    return UI.abrirPantalla()
-      .then(() => abrirPanelColumnas())
-      .then(() => guardarPanelColumnas());
   }
 
   // Patrón multilenguaje para columnas (es/en/ca)
@@ -1494,23 +1405,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   /** ---------- Fecha / Calendario ---------- **/
 
-  function parseFechaBasicaExcel(texto) {
-    // Si ya viene como Date
-    if (texto instanceof Date) return texto;
-
-    const str = String(texto).trim();
-    // Formato esperado: DD/MM/YYYY o D/M/YYYY
-    const m = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (!m) {
-      cy.log(`No se pudo parsear la fecha "${str}", se usa hoy`);
-      return new Date();
-    }
-    const dia = Number(m[1]);
-    const mes = Number(m[2]) - 1;
-    const anio = Number(m[3]);
-    return new Date(anio, mes, dia);
-  }
-
   function seleccionarFechaEnCalendario(fechaObjetivo) {
     const dia = `${fechaObjetivo.getDate()}`;
     const regexDia = new RegExp(`^${escapeRegex(dia)}$`);
@@ -1548,18 +1442,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         archivo,
         pantalla: PANTALLA
       });
-    });
-  }
-
-  function registrarResultadoManual(numero, casoId, nombre, obtenido, resultado) {
-    cy.registrarResultados({
-      numero,
-      nombre: `${casoId} - ${nombre}`,
-      esperado: 'Comportamiento según Excel',
-      obtenido,
-      resultado,
-      archivo,
-      pantalla: PANTALLA
     });
   }
 
@@ -1623,7 +1505,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   }).filter(':visible');
                   
                   if (mensajeSinOpciones.length > 0) {
-                    cy.log(`⚠️ Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
+                    cy.log(` Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
                     // Cerrar el dropdown si está abierto
                     cy.get('body').click({ force: true });
                     return cy.wrap(null);
@@ -1632,7 +1514,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   // Verificar si hay opciones disponibles
                   const opciones = $body.find('li[role="option"], [role="option"], div[role="option"]').filter(':visible');
                   if (opciones.length === 0) {
-                    cy.log(`⚠️ Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
+                    cy.log(` Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
                     // Cerrar el dropdown si está abierto
                     cy.get('body').click({ force: true });
                     return cy.wrap(null);
@@ -1650,7 +1532,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                 }).then(null, (err) => {
                   // Si falla al buscar la opción, continuar sin error
                   const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
-                  cy.log(`⚠️ No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
+                  cy.log(` No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
                   // Cerrar el dropdown si está abierto
                   cy.get('body').click({ force: true });
                   return cy.wrap(null);
@@ -1690,7 +1572,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             }).filter(':visible');
             
             if (mensajeSinOpciones.length > 0) {
-              cy.log(`⚠️ Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
+              cy.log(` Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
               // Cerrar el dropdown si está abierto
               cy.get('body').click({ force: true });
               return cy.wrap(null);
@@ -1699,7 +1581,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             // Verificar si hay opciones disponibles
             const opciones = $body.find('li[role="option"], [role="option"], div[role="option"]').filter(':visible');
             if (opciones.length === 0) {
-              cy.log(`⚠️ Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
+              cy.log(` Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
               // Cerrar el dropdown si está abierto
               cy.get('body').click({ force: true });
               return cy.wrap(null);
@@ -1717,7 +1599,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           }            ).then(null, (err) => {
             // Si falla al buscar la opción, continuar sin error
             const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
-            cy.log(`⚠️ No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
+            cy.log(` No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
             // Cerrar el dropdown si está abierto
             cy.get('body').click({ force: true });
             return cy.wrap(null);
@@ -2139,13 +2021,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       }
 
       if (boton && boton.length > 0) {
-        cy.log(`✓ Botón Guardar encontrado en modal de ${seccion}`);
+        cy.log(` Botón Guardar encontrado en modal de ${seccion}`);
         return cy.wrap(boton[0])
           .scrollIntoView({ offset: { top: 0, left: 0 } })
           .click({ force: true, multiple: false })
           .then(() => {
             cy.wait(2000);
-            cy.log(`✓ Modal de ${seccion} guardado correctamente`);
+            cy.log(` Modal de ${seccion} guardado correctamente`);
             return cy.wrap(null);
           });
       }
@@ -2321,7 +2203,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           .click({ force: true });
       }
 
-      cy.log('⚠️ No se encontró elemento clickeable dentro del contenedor, buscando genérico en body...');
+      cy.log(' No se encontró elemento clickeable dentro del contenedor, buscando genérico en body...');
       return cy.get('[role="combobox"], [aria-haspopup="listbox"], input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 10000 })
         .first()
         .should('exist')
@@ -2353,9 +2235,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             })
             .then(() => {
               cy.wait(300);
-              cy.log(`✓ Primera opción seleccionada en "${labelTexto}"`);
+              cy.log(` Primera opción seleccionada en "${labelTexto}"`);
             }, () => {
-              cy.log(`⚠️ No se pudo seleccionar opción en listbox, continuando...`);
+              cy.log(` No se pudo seleccionar opción en listbox, continuando...`);
               cy.get('body').click({ force: true });
               return cy.wrap(null);
             });
@@ -2368,16 +2250,16 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             .should('exist')
             .click({ force: true })
             .then(() => {
-              cy.log(`✓ Primera opción seleccionada en "${labelTexto}" (fallback)`);
+              cy.log(` Primera opción seleccionada en "${labelTexto}" (fallback)`);
             }, () => {
-              cy.log(`⚠️ No se pudo hacer clic en opción, continuando...`);
+              cy.log(` No se pudo hacer clic en opción, continuando...`);
               cy.get('body').click({ force: true });
               return cy.wrap(null);
             });
         }
         
         // Si no hay opciones, simplemente continuar sin error
-        cy.log(`⚠️ Campo "${labelTexto}" no tiene opciones disponibles, continuando sin seleccionar...`);
+        cy.log(` Campo "${labelTexto}" no tiene opciones disponibles, continuando sin seleccionar...`);
         cy.get('body').click({ force: true });
         return cy.wrap(null);
       });
@@ -2395,12 +2277,12 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           return seleccionarPrimeraOpcion();
         }, () => {
           // Si no se encuentra por name o falla, continuar sin error
-          cy.log('⚠️ No se encontró "País" por name o falló al hacer clic, continuando...');
+          cy.log(' No se encontró "País" por name o falló al hacer clic, continuando...');
           return cy.wrap(null);
         })
         .then(null, () => {
           // Si todo falla, simplemente continuar sin error
-          cy.log('⚠️ No se pudo seleccionar "País", continuando sin error...');
+          cy.log(' No se pudo seleccionar "País", continuando sin error...');
           return cy.wrap(null);
         });
     }
@@ -2464,7 +2346,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         }
       }
 
-      cy.log(`⚠️ No se encontró ningún elemento para "${labelTexto}"`);
+      cy.log(` No se encontró ningún elemento para "${labelTexto}"`);
       return cy.wrap(null);
     });
   }
@@ -2557,7 +2439,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     camposTexto.forEach((campo) => {
       if (!campo.valor) {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       } // si no hay dato en Excel, saltamos
 
@@ -2691,7 +2573,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     camposContacto.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -2986,7 +2868,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     // Rellenar campos de texto normales
     camposTexto.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -2998,7 +2880,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     // Rellenar campos autocomplete
     camposAutocomplete.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
