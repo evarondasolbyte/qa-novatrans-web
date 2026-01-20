@@ -357,13 +357,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     );
   }
 
-  function irAVehiculosLimpio() {
-    return cy.login().then(() =>
-      cy.navegarAMenu('Ficheros', 'Vehículos', {
-        expectedPath: '/dashboard/vehicles'
-      })
-    );
-  }
   const UI = {
     abrirPantalla() {
       return cy.url().then((urlActual) => {
@@ -423,23 +416,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     });
   }
 
-  // Caso 22: búsqueda general sin seleccionar columna (similar al 4 pero solo usando el buscador)
-  function ejecutarBusquedaGeneralExcel(caso, numero, casoId) {
-    const idCaso = casoId || `TC${String(numero).padStart(3, '0')}`;
-
-    // Tomar el valor a buscar: priorizar dato_2, luego valor_etiqueta_1, luego dato_1
-    const texto = caso?.dato_2 || caso?.valor_etiqueta_1 || caso?.dato_1 || '';
-    cy.log(`${idCaso}: Buscando "${texto}" en el buscador general`);
-
-    if (!texto) {
-      cy.log(`${idCaso}: no hay texto para buscar (dato_2/valor_etiqueta_1/dato_1 vacíos)`);
-      return cy.wrap(null);
-    }
-
-    return UI.abrirPantalla()
-      .then(() => UI.buscar(texto));
-  }
-
   function ejecutarMultifiltroExcel(caso, numero, casoId) {
     return cy.ejecutarMultifiltro(
       numero,
@@ -448,101 +424,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       MENU,
       SUBMENU
     );
-  }
-
-  // Casos deshabilitados temporalmente, se registran como OK sin ejecutar pasos
-  function marcarOkSinEjecutar(caso, numero, casoId) {
-    const id = casoId || `TC${String(numero).padStart(3, '0')}`;
-    cy.log(`${id}: marcado como OK sin ejecución (deshabilitado temporalmente)`);
-    return registrarResultadoAutomatico(
-      numero,
-      id,
-      caso?.nombre || id,
-      'Caso deshabilitado temporalmente (OK)',
-      'OK',
-      true
-    );
-  }
-
-  function seleccionarNacionalidad(caso, numero) {
-    // Mapear número de caso a nacionalidad
-    // TC026: Nacionales, TC027: UE, TC028: Extranjeros
-    let textoBuscar = '';
-
-    if (numero === 26) {
-      // Nacionales / Nationals / Nacionals
-      textoBuscar = 'Nacionales|Nationals|Nacionals';
-    } else if (numero === 27) {
-      // UE / EU / U.E.
-      textoBuscar = 'U\\.E\\.|UE|EU';
-    } else if (numero === 28) {
-      // Extranjeros / Foreigners / Estrangers
-      textoBuscar = 'Extranjeros|Foreigners|Estrangers';
-    } else {
-      cy.log(`Caso ${numero} no tiene nacionalidad definida`);
-      return cy.wrap(null);
-    }
-
-    cy.log(`Seleccionando nacionalidad para caso ${numero}: ${textoBuscar}`);
-
-    return UI.abrirPantalla().then(() => {
-      // Abrir el panel de Filtros
-      cy.contains('button', /^Filtros$/i).click({ force: true });
-      cy.wait(1000);
-
-      // Buscar directamente el radio button de la nacionalidad y hacer clic
-      // Buscar en todo el body, no solo en la sección Residencia
-      cy.get('body').then($body => {
-        // Buscar el label o span que contiene el texto de la nacionalidad
-        const radioButton = $body.find('label, span')
-          .filter((_, el) => {
-            const texto = (el.textContent || '').trim();
-            return new RegExp(textoBuscar, 'i').test(texto);
-          })
-          .first();
-
-        if (radioButton.length > 0) {
-          cy.wrap(radioButton)
-            .scrollIntoView()
-            .click({ force: true });
-          cy.log(`Radio button "${textoBuscar}" seleccionado para caso ${numero}`);
-        } else {
-          // Fallback: usar cy.contains
-          cy.contains('label, span', new RegExp(textoBuscar, 'i'), { timeout: 10000 })
-            .scrollIntoView()
-            .click({ force: true });
-          cy.log(`Radio button "${textoBuscar}" seleccionado para caso ${numero} (fallback)`);
-        }
-      });
-
-      cy.wait(500);
-
-      // Aplicar el filtro - buscar el botón Aplicar en el panel de filtros
-      cy.get('body').then($body => {
-        const botonAplicar = $body.find('button')
-          .filter((_, el) => {
-            const texto = (el.textContent || '').trim().toLowerCase();
-            return /aplicar|apply/i.test(texto);
-          })
-          .first();
-
-        if (botonAplicar.length > 0) {
-          cy.wrap(botonAplicar)
-            .scrollIntoView()
-            .click({ force: true });
-        } else {
-          // Fallback: usar cy.contains
-          cy.contains('button', /Aplicar|Apply/i, { timeout: 10000 })
-            .scrollIntoView()
-            .click({ force: true });
-        }
-      });
-
-      cy.wait(1000);
-
-      cy.log(`Filtro de nacionalidad aplicado para caso ${numero}`);
-      return cy.wrap(null);
-    });
   }
 
   function ordenarColumnaDesdeExcel(caso, numero, casoId) {
@@ -588,27 +469,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           true
         );
       });
-  }
-
-  function filtroValorDesdeExcel(caso, numero) {
-    // Mapear número de caso a columna y valor (hardcodeado para asegurar que funcione)
-    let nombreColumna = '';
-    let valor = '';
-
-    if (numero === 32) {
-      nombreColumna = 'NIF/CIF';
-      valor = 'A'; // Valor hardcodeado para caso 32
-    } else if (numero === 33) {
-      nombreColumna = 'Email';
-      valor = 'email'; // Valor hardcodeado para caso 33
-    } else {
-      // Fallback: intentar leer desde Excel
-      nombreColumna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Nombre';
-      valor = caso?.dato_1 || caso?.dato_2 || caso?.valor_etiqueta_1 || caso?.valor_etiqueta_2 || 'test';
-    }
-
-    cy.log(`Caso ${numero}: Filtrando columna "${nombreColumna}" con valor "${valor}"`);
-    return filtrarColumnaPorValor(nombreColumna, valor);
   }
 
   function ocultarColumnaDesdeExcel(caso, numero) {
@@ -661,16 +521,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
   function cargaPantalla(caso, numero, casoId) {
     return UI.abrirPantalla();
-  }
-
-  function verificarColumnasPrincipales(caso, numero, casoId) {
-    return UI.abrirPantalla().then(() => {
-      // Simplemente verificar que la tabla está visible - las columnas ya están visibles si la tabla está visible
-      cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
-      cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 }).should('be.visible');
-      cy.log('TC002: Tabla y columnas visibles');
-      return cy.wrap(null);
-    });
   }
 
   const mesesMap = {
@@ -1367,7 +1217,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           .then(() => {
             cy.wait(500);
             cy.url().should('include', '/dashboard/vehicles/form');
-            cy.log('✓ MANTENIMIENTO rellenado (Inicio, Fin, Tipo)');
+            cy.log(' MANTENIMIENTO rellenado (Inicio, Fin, Tipo)');
           });
       } else {
         cy.log('TC022: No se encontraron campos de MANTENIMIENTO en el Excel, saltando MANTENIMIENTO');
@@ -1696,7 +1546,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         .then(() => {
           cy.log(`✓ Fecha ${label} rellenada: ${fechaTexto}`);
         }, () => {
-          cy.log(`⚠ No se pudo rellenar la fecha ${label}: ${fechaTexto}`);
+          cy.log(` No se pudo rellenar la fecha ${label}: ${fechaTexto}`);
         });
     };
 
@@ -1733,7 +1583,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       const matchR76 = (sel.includes('r_76') || sel === '_r_76' || sel === 'r_76') && !esFecha;
       const match = matchCardTransport || matchR76;
       if (match) {
-        cy.log(`TC023: ✓ Campo Nº Tarjeta Transporte encontrado: selector="${x.selector}", valor="${x.valor}", tipo="${x.tipo}"`);
+        cy.log(`TC023:  Campo Nº Tarjeta Transporte encontrado: selector="${x.selector}", valor="${x.valor}", tipo="${x.tipo}"`);
       }
       // Buscar por name attribute o por ID
       return match;
@@ -1812,9 +1662,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           return seleccionarFechaEnCalendario(fechaObj);
         })
         .then(() => {
-          cy.log(`✓ Fecha ${label} rellenada: ${fechaTexto}`);
+          cy.log(` Fecha ${label} rellenada: ${fechaTexto}`);
         }, () => {
-          cy.log(`⚠ No se pudo rellenar la fecha ${label}: ${fechaTexto}`);
+          cy.log(` No se pudo rellenar la fecha ${label}: ${fechaTexto}`);
         });
     };
 
@@ -1943,7 +1793,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 cy.log('✓ Primera empresa seleccionada correctamente');
               });
           }, (err) => {
-            cy.log(`⚠️ No se pudo seleccionar la primera empresa: ${err.message}`);
+            cy.log(` No se pudo seleccionar la primera empresa: ${err.message}`);
             return cy.wrap(null);
           });
       }
@@ -1982,7 +1832,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               cy.log('✓ Primera empresa seleccionada correctamente');
             });
         }, (err) => {
-          cy.log(`⚠️ No se pudo abrir o seleccionar empresa: ${err.message}`);
+          cy.log(` No se pudo abrir o seleccionar empresa: ${err.message}`);
           return cy.wrap(null);
         });
     });
@@ -2731,27 +2581,27 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         cy.get('body').then(($body) => {
           const hayDialogo = $body.find('[role="dialog"]:visible, .MuiDialog-root:visible, .MuiModal-root:visible').length > 0;
           if (hayDialogo) {
-            cy.log('⚠ Diálogo de confirmación detectado, cancelando para no eliminar datos...');
+            cy.log(' Diálogo de confirmación detectado, cancelando para no eliminar datos...');
             // Intentar buscar botón Cancelar
             cy.get('body').then(() => {
               cy.contains('button', /Cancelar|Cancel|Cerrar|Close/i, { timeout: 2000 })
                 .then(($btn) => {
                   if ($btn && $btn.length > 0) {
                     cy.wrap($btn).click({ force: true });
-                    cy.log('✓ Diálogo de confirmación cancelado (no se eliminaron datos)');
+                    cy.log(' Diálogo de confirmación cancelado (no se eliminaron datos)');
                   } else {
                     // Si no encuentra botón Cancelar, intentar cerrar con ESC
                     cy.get('body').type('{esc}');
-                    cy.log('✓ Diálogo cerrado con ESC (no se eliminaron datos)');
+                    cy.log(' Diálogo cerrado con ESC (no se eliminaron datos)');
                   }
                 }, () => {
                   // Si no encuentra botón Cancelar, intentar cerrar con ESC
                   cy.get('body').type('{esc}');
-                  cy.log('✓ Diálogo cerrado con ESC (no se eliminaron datos)');
+                  cy.log(' Diálogo cerrado con ESC (no se eliminaron datos)');
                 });
             });
           } else {
-            cy.log('✓ No se detectó diálogo de confirmación');
+            cy.log(' No se detectó diálogo de confirmación');
           }
         });
         cy.wait(500);
@@ -2772,10 +2622,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           if (existeBoton) {
             // Si existe el botón, verificar que no está visible
             cy.contains('button, a', /^Eliminar$|^Borrar$|^Delete$|^Papelera$/i).should('not.be.visible');
-            cy.log('✓ Botón Eliminar existe pero no está visible (comportamiento correcto)');
+            cy.log(' Botón Eliminar existe pero no está visible (comportamiento correcto)');
           } else {
             // Si no existe, está bien
-            cy.log('✓ No se encontró botón Eliminar cuando no hay fila seleccionada (comportamiento correcto)');
+            cy.log(' No se encontró botón Eliminar cuando no hay fila seleccionada (comportamiento correcto)');
           }
         });
         cy.wait(500);
@@ -2794,85 +2644,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         // Verificar que los filtros se han reseteado
         UI.abrirPantalla();
       });
-  }
-
-  function editarVehiculo(caso, numero) {
-    const nuevoEmail = caso?.dato_1 || caso?.email || 'pruebas@gmail.com';
-
-    // Si ya estamos en el formulario de edición, editar y guardar directamente
-    return cy.url().then((urlActual) => {
-      const enFormularioEdicion = /\/dashboard\/vehicles\/form\/\d+$/i.test(urlActual);
-      if (enFormularioEdicion) {
-        // Caso 16: solo abrir, no editar
-        if (numero === 16) {
-          cy.log('TC016: ya en formulario, no se edita, solo se mantiene abierto');
-          return cy.wrap(null);
-        }
-        // Caso 17: editar email y guardar
-        if (numero === 17) {
-          cy.log('TC017: ya en formulario, editando email y guardando');
-          return actualizarEmailYGuardar(nuevoEmail);
-        }
-        // Casos 14 y 15 (mantener compatibilidad)
-        if (numero === 14) {
-          cy.log('Caso 14: ya en formulario, no se edita, solo se mantiene abierto');
-          return cy.wrap(null);
-        }
-        if (numero === 15) {
-          cy.log('Caso 15: ya en formulario, editando email y guardando');
-          return actualizarEmailYGuardar(nuevoEmail);
-        }
-        cy.log('Ya en formulario de edición, editando email y guardando');
-        return actualizarEmailYGuardar(nuevoEmail);
-      }
-
-      // No estamos en el formulario: ir a la lista, abrir el primer registro y editar
-      cy.log('No estamos en formulario, navegando a lista y abriendo primer registro');
-      return UI.abrirPantalla()
-        .then(() => UI.filasVisibles()
-          .should('have.length.greaterThan', 0)
-          .first()
-          .dblclick({ force: true })
-          .then(() => cy.url().should('match', /\/dashboard\/clients\/form\/\d+$/))
-        )
-        .then(() => {
-          if (numero === 16) {
-            cy.log('TC016: formulario abierto, sin edición');
-            return cy.wrap(null);
-          }
-          if (numero === 17) {
-            cy.log('TC017: formulario abierto, editando email');
-            return actualizarEmailYGuardar(nuevoEmail);
-          }
-          // Casos 14 y 15 (mantener compatibilidad)
-          if (numero === 14) {
-            cy.log('Caso 14: formulario abierto, sin edición');
-            return cy.wrap(null);
-          }
-          if (numero === 15) {
-            cy.log('Caso 15: formulario abierto, editando email');
-            return actualizarEmailYGuardar(nuevoEmail);
-          }
-          return actualizarEmailYGuardar(nuevoEmail);
-        });
-    });
-  }
-
-  function abrirSoloFormularioCliente() {
-    return cy.url().then((urlActual) => {
-      if (/\/dashboard\/clients\/form\/\d+$/i.test(urlActual)) {
-        cy.log('Ya en formulario, nada que hacer (caso 14)');
-        return cy.wrap(null);
-      }
-      cy.log(' Caso 14: abrir primer registro en formulario');
-      return UI.abrirPantalla()
-        .then(() => UI.filasVisibles()
-          .should('have.length.greaterThan', 0)
-          .first()
-          .dblclick({ force: true })
-          .then(() => cy.url().should('match', /\/dashboard\/clients\/form\/\d+$/))
-        );
-    });
   }
 
   function actualizarEmailYGuardar(nuevoEmail) {
@@ -2994,40 +2765,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     });
   }
 
-  function ordenarColumnaDobleClick(nombreColumna) {
-    return UI.abrirPantalla().then(() => {
-      const patron = obtenerPatronColumna(nombreColumna);
-
-      cy.log(`Pulsando 2 veces en la columna "${nombreColumna}"`);
-
-      return cy.contains('.MuiDataGrid-columnHeaderTitle', patron)
-        .should('be.visible')
-        .closest('[role="columnheader"]')
-        .then(($header) => {
-          // Primer clic
-          cy.wrap($header).click({ force: true });
-          cy.wait(300);
-
-          // Segundo clic
-          cy.wrap($header).click({ force: true });
-          cy.wait(300);
-
-          // Verificar que la tabla sigue visible
-          return UI.filasVisibles().should('have.length.greaterThan', 0);
-        });
-    });
-  }
-
-  function ordenarColumnaConIcono(nombreColumna) {
-    return UI.abrirPantalla().then(() => {
-      return cy
-        .contains('.MuiDataGrid-columnHeaderTitle', obtenerPatronColumna(nombreColumna))
-        .closest('[role="columnheader"]')
-        .find('button[aria-label*="Sort"], button[aria-label*="Ordenar"]')
-        .click({ force: true });
-    });
-  }
-
   function abrirPanelColumnas() {
     cy.log('Abriendo panel de columnas');
 
@@ -3089,12 +2826,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
   }
 
   // Caso 33: solo abrir el panel de columnas y cerrarlo guardando
-  function abrirYCerrarPanelColumnas() {
-    return UI.abrirPantalla()
-      .then(() => abrirPanelColumnas())
-      .then(() => guardarPanelColumnas());
-  }
-
   // Patrón multilenguaje para columnas (es/en/ca)
   function obtenerPatronColumna(nombreColumna = '') {
     const lower = nombreColumna.toLowerCase();
@@ -3422,18 +3153,18 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
     let value = String(valor).trim();
 
-    // 🧠 NORMALIZACIÓN DEL VALOR (viene del Excel)
+    //  NORMALIZACIÓN DEL VALOR (viene del Excel)
     // Elimina posibles ids tipo _r_xx_ o _r_xx_-label
     value = value
       .replace(/_r_[a-z0-9]+_-label/gi, '')
       .replace(/_r_[a-z0-9]+_/gi, '')
       .trim();
 
-    // 🧠 Corrección automática según campo
+    //  Corrección automática según campo
     if (etiqueta.toLowerCase() === 'tipo de pago') {
       // Si por error entra "Terceros", no lo usamos aquí
       if (/terceros/i.test(value)) {
-        cy.log('⚠ Valor incorrecto para Tipo de Pago, se ignora:', value);
+        cy.log(' Valor incorrecto para Tipo de Pago, se ignora:', value);
         return cy.wrap(null);
       }
     }
@@ -3441,7 +3172,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     if (etiqueta.toLowerCase() === 'tipo') {
       // Si por error entra "Mensual", no lo usamos aquí
       if (/mensual|anual|trimestral/i.test(value)) {
-        cy.log('⚠ Valor incorrecto para Tipo, se ignora:', value);
+        cy.log(' Valor incorrecto para Tipo, se ignora:', value);
         return cy.wrap(null);
       }
     }
@@ -3452,7 +3183,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         ? /^Tipo$/i
         : new RegExp(`^${escapeRegex(etiqueta)}$`, 'i');
 
-    cy.log(`✅ Seleccionando "${value}" en "${etiqueta}"`);
+    cy.log(` Seleccionando "${value}" en "${etiqueta}"`);
 
     const escribirEnAutocomplete = ($input) => {
       return cy.wrap($input)
@@ -3479,18 +3210,18 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                       .should('be.visible')
                       .click({ force: true });
                   } else {
-                    cy.log(`⚠ No se encontró la opción "${value}" en el listbox. Continuando...`);
+                    cy.log(` No se encontró la opción "${value}" en el listbox. Continuando...`);
                     return cy.wrap(null);
                   }
                 }, (err) => {
-                  cy.log(`⚠ No se encontró la opción "${value}" en el listbox: ${err.message}. Continuando...`);
+                  cy.log(` No se encontró la opción "${value}" en el listbox: ${err.message}. Continuando...`);
                   return cy.wrap(null);
                 });
             })
             .then(() => {
-              cy.log(`✓ Opción "${value}" seleccionada desde listbox`);
+              cy.log(` Opción "${value}" seleccionada desde listbox`);
             }, (err) => {
-              cy.log(`⚠ No se encontró la opción "${value}" en el listbox: ${err.message}`);
+              cy.log(` No se encontró la opción "${value}" en el listbox: ${err.message}`);
               // Si no se encuentra en el listbox, verificar si hay opciones disponibles o si aparece "Sin opciones"
               return cy.get('body').then(($body) => {
                 // Verificar si hay opciones disponibles
@@ -3501,7 +3232,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 const sinOpciones = /sin opciones|no options|no hay opciones/i.test(textoBody);
                 
                 if (sinOpciones || !hayOpciones) {
-                  cy.log(`⚠ No hay opciones disponibles en el dropdown (${sinOpciones ? 'mensaje "Sin opciones" detectado' : 'no se encontraron opciones'}). Continuando sin seleccionar "${value}"...`);
+                  cy.log(` No hay opciones disponibles en el dropdown (${sinOpciones ? 'mensaje "Sin opciones" detectado' : 'no se encontraron opciones'}). Continuando sin seleccionar "${value}"...`);
                   return cy.wrap(null);
                 }
                 
@@ -3516,11 +3247,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                           cy.log(`✓ Opción "${value}" seleccionada directamente`);
                         });
                     } else {
-                      cy.log(`⚠ No se encontró la opción "${value}" en el dropdown. Continuando...`);
+                      cy.log(` No se encontró la opción "${value}" en el dropdown. Continuando...`);
                       return cy.wrap(null);
                     }
                   }, (err2) => {
-                    cy.log(`⚠ No se pudo seleccionar la opción "${value}": ${err2.message}. Continuando...`);
+                    cy.log(` No se pudo seleccionar la opción "${value}": ${err2.message}. Continuando...`);
                     return cy.wrap(null);
                   });
               });
@@ -3538,7 +3269,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           const sinOpciones = /sin opciones|no options|no hay opciones/i.test(textoBody);
           
           if (sinOpciones || !hayOpciones) {
-            cy.log(`⚠ No hay opciones disponibles en el dropdown (${sinOpciones ? 'mensaje "Sin opciones" detectado' : 'no se encontraron opciones'}). Continuando sin seleccionar "${value}"...`);
+            cy.log(` No hay opciones disponibles en el dropdown (${sinOpciones ? 'mensaje "Sin opciones" detectado' : 'no se encontraron opciones'}). Continuando sin seleccionar "${value}"...`);
             return cy.wrap(null);
           }
           
@@ -3553,18 +3284,18 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                     cy.log(`✓ Opción "${value}" seleccionada`);
                   });
               } else {
-                cy.log(`⚠ No se encontró la opción "${value}" en el dropdown. Continuando...`);
+                cy.log(` No se encontró la opción "${value}" en el dropdown. Continuando...`);
                 return cy.wrap(null);
               }
             }, (err) => {
-              cy.log(`⚠ No se encontró la opción "${value}" en el dropdown: ${err.message}. Continuando...`);
+              cy.log(` No se encontró la opción "${value}" en el dropdown: ${err.message}. Continuando...`);
               return cy.wrap(null);
             });
         });
       });
     };
 
-    // 🔹 CASO CON SELECTOR (id del select, como #mui-component-select-brakes)
+    //  CASO CON SELECTOR (id del select, como #mui-component-select-brakes)
     if (selector && selector.startsWith('#')) {
       cy.log(`Usando selector directo: ${selector}`);
       return cy.get(selector, { timeout: 10000 })
@@ -3576,7 +3307,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         });
     }
 
-    // 🔹 CASO CON ETIQUETA
+    //  CASO CON ETIQUETA
     if (etiqueta) {
       return cy.contains('label', regexEtiqueta, { timeout: 10000 })
         .should('exist')
@@ -3640,13 +3371,13 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                   });
               }
               
-              cy.log(`⚠ No se encontró combobox ni input dentro del FormControl para "${etiqueta}"`);
+              cy.log(` No se encontró combobox ni input dentro del FormControl para "${etiqueta}"`);
               return cy.wrap(null);
             });
         });
     }
 
-    // 🔹 SIN ETIQUETA
+    //  SIN ETIQUETA
     return cy.get(selector)
       .should('exist')
       .click({ force: true })
@@ -3660,11 +3391,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
   function normalizarEtiquetaTexto(texto = '') {
     if (!texto) return null;
     return texto.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
-  }
-
-  function normalizarTextoParaComparar(texto = '') {
-    const limpio = normalizarEtiquetaTexto(texto);
-    return limpio ? limpio.toLowerCase() : '';
   }
 
   function navegarSeccionFormulario(seccion) {
@@ -3904,7 +3630,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           
           if (esFechaHistoricoKms && !fechaHistoricoKms) {
             fechaHistoricoKms = valorTexto;
-            cy.log(`✓✓✓ Campo ${i} detectado como "Fecha" (HISTÓRICO KMS): ${valorTexto} (selector: ${selector}, tipo: ${tipo})`);
+            cy.log(`Campo ${i} detectado como "Fecha" (HISTÓRICO KMS): ${valorTexto} (selector: ${selector}, tipo: ${tipo})`);
             continue; // Saltar este campo, se procesará después
           }
         }
@@ -3927,7 +3653,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
         if (esTipoHistoricoVehiculo && !tipoHistoricoVehiculo && valorTexto && valorTexto.trim() !== '') {
           tipoHistoricoVehiculo = valorTexto;
-          cy.log(`✓✓✓ Campo ${i} detectado como "Tipo" (HISTÓRICO VEHÍCULO): ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
+          cy.log(` Campo ${i} detectado como "Tipo" (HISTÓRICO VEHÍCULO): ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
           continue; // Saltar este campo, se procesará después como combobox
         }
 
@@ -3947,7 +3673,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           
           if (esFechaHistoricoVehiculo && !fechaHistoricoVehiculo) {
             fechaHistoricoVehiculo = valorTexto;
-            cy.log(`✓✓✓ Campo ${i} detectado como "Fecha" (HISTÓRICO VEHÍCULO): ${valorTexto} (selector: ${selector}, tipo: ${tipo})`);
+            cy.log(`Campo ${i} detectado como "Fecha" (HISTÓRICO VEHÍCULO): ${valorTexto} (selector: ${selector}, tipo: ${tipo})`);
             continue; // Saltar este campo, se procesará después
           }
         }
@@ -4086,9 +3812,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             });
         })
         .then(() => {
-          cy.log(`✓ Fecha "${label}" rellenada: ${fechaTexto}`);
+          cy.log(` Fecha "${label}" rellenada: ${fechaTexto}`);
         }, (err) => {
-          cy.log(`⚠ No se pudo rellenar la fecha "${label}": ${err.message}`);
+          cy.log(` No se pudo rellenar la fecha "${label}": ${err.message}`);
           return cy.wrap(null);
         });
     };
@@ -4121,7 +3847,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       }
 
       // ==========================
-      // ✅ DETECCIÓN COMBOBOXES (ARREGLADO)
+      //  DETECCIÓN COMBOBOXES (ARREGLADO)
       // ==========================
       // Si estamos en IMPUESTOS, solo detectar "Impuesto"
       if (esSeccionImpuestos) {
@@ -4129,7 +3855,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         // El selector puede ser _r_fl_-label, _r_fl, _r_n2, _r_d9, etc.
         // O el valor puede contener "Impuesto" (como "Impuesto Circulación")
         const esImpuesto =
-          selector.includes('_r_fl') || // ID del Excel actual (_r_fl_-label)
+          selector.includes('_r_fl') || 
           selector.includes('_r_n2') ||
           selector.includes('_r_d9') ||
           (tipoLower === 'id' && selectorLower.includes('impuesto')) ||
@@ -4139,20 +3865,18 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
         if (esImpuesto && !impuestoValor && valorTexto && valorTexto.trim() !== '') {
           impuestoValor = valorTexto;
-          cy.log(`✓✓✓ Campo ${i} detectado como "Impuesto" (IMPUESTOS): ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
-          continue; // ✅ evita procesarlo como otro campo
+          cy.log(` Campo ${i} detectado como "Impuesto" (IMPUESTOS): ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
+          continue; //  evita procesarlo como otro campo
         }
       } else {
-        // IMPORTANTE: NO usar _r_ca como Tipo de Pago (eso es Tipo)
-        // Tipo de Pago suele ser Mensual/Anual/Trimestral/etc.
         const esTipoDePago =
           tipoLower.includes('tipo de pago') ||
           selectorLower.includes('tipo de pago') ||
           selectorLower.includes('pago') ||
           selector.includes('_r_5k') ||
           selector.includes('_r_1m0') ||
-          selector.includes('_r_cs') ||   // ✅ tu caso real (Mensual)
-          selector.includes('_r_ku');     // ✅ por si coincide con HTML
+          selector.includes('_r_cs') ||  
+          selector.includes('_r_ku');    
 
         const esTipo =
           // etiqueta exacta o selector que contiene "tipo" pero no pago
@@ -4161,21 +3885,21 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           (selectorLower.includes('tipo') && !selectorLower.includes('pago')) ||
           selector.includes('_r_52') ||
           selector.includes('_r_bo') ||
-          selector.includes('_r_ca') ||   // ✅ tu caso real (Terceros)
-          selector.includes('_r_kc');     // ✅ por si coincide con HTML
+          selector.includes('_r_ca') ||   
+          selector.includes('_r_kc');    
 
         // Detectar "Tipo de Pago" PRIMERO (más específico)
         if (esTipoDePago && !tipoPagoValor) {
           tipoPagoValor = valorTexto;
           cy.log(`Campo ${i} detectado como "Tipo de Pago": ${valorTexto}`);
-          continue; // ✅ evita que este campo caiga en otras lógicas de "id" / "label"
+          continue; //  evita que este campo caiga en otras lógicas de "id" / "label"
         }
 
         // Detectar "Tipo"
         if (esTipo && !tipoValor) {
           tipoValor = valorTexto;
           cy.log(`Campo ${i} detectado como "Tipo": ${valorTexto}`);
-          continue; // ✅ evita procesarlo como otro campo
+          continue; //  evita procesarlo como otro campo
         }
       }
 
@@ -4190,11 +3914,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       if (esTipoHistoricoVehiculo && !tipoHistoricoVehiculo) {
         tipoHistoricoVehiculo = valorTexto;
         cy.log(`Campo ${i} detectado como "Tipo" (HISTÓRICO VEHÍCULO): ${valorTexto}`);
-        continue; // ✅ evita procesarlo como otro campo
+        continue; //  evita procesarlo como otro campo
       }
 
       // ==========================
-      // ✅ DETECCIÓN FECHAS (TU LÓGICA ORIGINAL)
+      //  DETECCIÓN FECHAS 
       // ==========================
       const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(valorTexto);
       const esFechaPorTipo = tipoLower.includes('fecha');
@@ -4206,9 +3930,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
            selector.includes('_r_1m3') || selector.includes('_r_5e') ||
            selector.includes('_r_5n') || selector.includes('_r_c1') ||
            selector.includes('_r_c4') || selector.includes('_r_cd') ||
-           selector.includes('_r_ot') || selector.includes('_r_p0') || // AMORTIZACIÓN - Fecha Inicio y Fecha Fin (del HTML)
-           selector.includes('_r_ek_') || selector.includes('_r_ek') || // AMORTIZACIÓN - Fecha Inicio (del Excel)
-           selector.includes('_r_en_') || selector.includes('_r_en') || // AMORTIZACIÓN - Fecha Fin (del Excel)
+           selector.includes('_r_ot') || selector.includes('_r_p0') || 
+           selector.includes('_r_ek_') || selector.includes('_r_ek') || 
+           selector.includes('_r_en_') || selector.includes('_r_en') ||
            selectorLower.includes('fecha inicio') || selectorLower.includes('fecha fin') ||
            tipoLower.includes('fecha inicio') || tipoLower.includes('fecha fin') ||
            (selectorLower.includes('fecha') && !selectorLower.includes('inicio') && !selectorLower.includes('fin') && !selectorLower.includes('vigencia') && !selectorLower.includes('vencimiento'))); // IMPUESTOS - Fecha
@@ -4483,10 +4207,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           return rellenarFechaPorLabel('Fecha Inicio', fechaInicio);
         }).then(() => {
           cy.wait(300);
-          cy.log(`✓ Fecha Inicio (AMORTIZACIÓN) completada correctamente`);
+          cy.log(` Fecha Inicio (AMORTIZACIÓN) completada correctamente`);
         });
       } else {
-        cy.log(`⚠ No se detectó valor para Fecha Inicio (AMORTIZACIÓN)`);
+        cy.log(` No se detectó valor para Fecha Inicio (AMORTIZACIÓN)`);
       }
 
       if (fechaFin) {
@@ -4497,10 +4221,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           return rellenarFechaPorLabel('Fecha Fin', fechaFin);
         }).then(() => {
           cy.wait(300);
-          cy.log(`✓ Fecha Fin (AMORTIZACIÓN) completada correctamente`);
+          cy.log(` Fecha Fin (AMORTIZACIÓN) completada correctamente`);
         });
       } else {
-        cy.log(`⚠ No se detectó valor para Fecha Fin (AMORTIZACIÓN)`);
+        cy.log(` No se detectó valor para Fecha Fin (AMORTIZACIÓN)`);
       }
       
       // Cerrar el calendario después de rellenar las fechas de AMORTIZACIÓN
@@ -4548,7 +4272,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         });
       });
     } else if (esSeccionImpuestos && !fechaImpuestos) {
-      cy.log(`⚠ No se detectó valor para Fecha (IMPUESTOS)`);
+      cy.log(` No se detectó valor para Fecha (IMPUESTOS)`);
     }
 
     // HISTÓRICO KMS: Rellenar Fecha (siempre que esté detectada, independientemente de otras secciones)
@@ -4560,7 +4284,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         return rellenarFechaPorLabel('Fecha', fechaHistoricoKms);
       }).then(() => {
         cy.wait(300);
-        cy.log(`✓ Fecha (HISTÓRICO KMS) completada correctamente`);
+        cy.log(` Fecha (HISTÓRICO KMS) completada correctamente`);
       });
       
       // Cerrar el calendario después de rellenar la fecha de HISTÓRICO KMS
@@ -4579,7 +4303,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         });
       });
     } else if (esSeccionHistoricoKms && !fechaHistoricoKms) {
-      cy.log(`⚠ No se detectó valor para Fecha (HISTÓRICO KMS)`);
+      cy.log(` No se detectó valor para Fecha (HISTÓRICO KMS)`);
     }
 
     // HISTÓRICO VEHÍCULO: Rellenar Fecha (siempre que esté detectada, independientemente de otras secciones)
@@ -4610,7 +4334,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         });
       });
     } else if (esSeccionHistoricoVehiculo && !fechaHistoricoVehiculo) {
-      cy.log(`⚠ No se detectó valor para Fecha (HISTÓRICO VEHÍCULO)`);
+      cy.log(` No se detectó valor para Fecha (HISTÓRICO VEHÍCULO)`);
     }
     
     // SEGUROS: Rellenar Vigencia, Fin de vigencia, Próximo Vencimiento
@@ -4624,10 +4348,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           return rellenarFechaPorLabel('Vigencia', vigencia);
         }).then(() => {
           cy.wait(300);
-          cy.log(`✓ Vigencia completada correctamente`);
+          cy.log(` Vigencia completada correctamente`);
         });
       } else {
-        cy.log(`⚠ No se detectó valor para Vigencia`);
+        cy.log(` No se detectó valor para Vigencia`);
       }
 
       if (finVigencia) {
@@ -4638,10 +4362,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           return rellenarFechaPorLabel('Fin de vigencia', finVigencia);
         }).then(() => {
           cy.wait(300);
-          cy.log(`✓ Fin de vigencia completada correctamente`);
+          cy.log(` Fin de vigencia completada correctamente`);
         });
       } else {
-        cy.log(`⚠ No se detectó valor para Fin de vigencia`);
+        cy.log(` No se detectó valor para Fin de vigencia`);
       }
 
       if (proximoVencimiento) {
@@ -4652,10 +4376,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           return rellenarFechaPorLabel('Próximo Vencimiento', proximoVencimiento);
         }).then(() => {
           cy.wait(300);
-          cy.log(`✓ Próximo Vencimiento completada correctamente`);
+          cy.log(` Próximo Vencimiento completada correctamente`);
         });
       } else {
-        cy.log(`⚠ No se detectó valor para Próximo Vencimiento`);
+        cy.log(` No se detectó valor para Próximo Vencimiento`);
       }
     }
 
@@ -4859,9 +4583,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           tipoHistoricoVehiculo.toString(),
           'Tipo'
         ).then(() => {
-          cy.log(`✓ Tipo (HISTÓRICO VEHÍCULO) completado`);
+          cy.log(` Tipo (HISTÓRICO VEHÍCULO) completado`);
         }, (err) => {
-          cy.log(`⚠ No se encontró el combobox "Tipo" (HISTÓRICO VEHÍCULO), continuando...`);
+          cy.log(` No se encontró el combobox "Tipo" (HISTÓRICO VEHÍCULO), continuando...`);
           return cy.wrap(null);
         });
       });
@@ -4992,26 +4716,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       if (tipoValor || tipoPagoValor || impuestoValor) {
         cy.log(`Comboboxes procesados - Tipo: ${tipoValor ? '✓' : '✗'}, Tipo de Pago: ${tipoPagoValor ? '✓' : '✗'}, Impuesto: ${impuestoValor ? '✓' : '✗'}`);
       } else {
-        cy.log('⚠ No se detectaron comboboxes (Tipo, Tipo de Pago, Impuesto) en los datos del Excel');
+        cy.log(' No se detectaron comboboxes (Tipo, Tipo de Pago, Impuesto) en los datos del Excel');
       }
     });
-  }
-
-  function abrirModalContacto() {
-    cy.log('Abriendo modal de contacto');
-    return cy.contains('button, a', /\+?\s*Añadir/i)
-      .filter(':visible')
-      .first()
-      .click({ force: true })
-      .then(() => {
-        // Esperar a que el modal esté visible y tenga los campos de contacto
-        return cy.get('input[name="cp_name"]', { timeout: 10000 })
-          .should('be.visible')
-          .then(() => {
-            cy.log('Modal de contacto abierto correctamente');
-            return cy.wrap(null);
-          });
-      });
   }
 
   function abrirModalContacto() {
@@ -5307,7 +5014,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       }
 
       // Si no se encontró, lanzar error con información de debug
-      cy.log(`❌ ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
+      cy.log(` ERROR: No se pudo encontrar botón Guardar en modal de ${seccion}`);
       const todosLosBotones = $body.find('button').filter((_, el) => {
         const texto = (el.textContent || el.innerText || '').trim();
         return /guardar/i.test(texto);
@@ -5381,13 +5088,13 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                         return cy.wrap(null);
                       });
                   } else {
-                    cy.log(`⚠️ No se pudo encontrar botón Guardar en modal de ${seccion}, continuando...`);
+                    cy.log(` No se pudo encontrar botón Guardar en modal de ${seccion}, continuando...`);
                     cy.wait(300);
                     return cy.wrap(null);
                   }
                 });
             } else {
-              cy.log(`⚠️ No se encontró modal visible para ${seccion}, continuando...`);
+              cy.log(` No se encontró modal visible para ${seccion}, continuando...`);
               cy.wait(300);
               return cy.wrap(null);
             }
@@ -5518,7 +5225,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
     let chain = cy.wrap(null);
 
-    // 🔹 Campos de texto básicos (por name)
+    //  Campos de texto básicos (por name)
     const camposTexto = [
       { label: 'Código', name: 'vehicle.code', valor: codigo },
       { label: 'Matrícula', name: 'vehicle.matricula', valor: matricula },
@@ -5539,7 +5246,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       );
     });
 
-    // 🔹 Tipo de Vehículo (Código y Nombre)
+    //  Tipo de Vehículo (Código y Nombre)
     if (tipoVehiculoCodigo) {
       chain = chain.then(() => {
         cy.log(`Rellenando Tipo de Vehículo - Código: ${tipoVehiculoCodigo}`);
@@ -5554,7 +5261,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Semirremolque Tara (Código y Nombre)
+    //  Semirremolque Tara (Código y Nombre)
     if (semirremolqueCodigo) {
       chain = chain.then(() => {
         cy.log(`Rellenando Semirremolque Tara - Código: ${semirremolqueCodigo}`);
@@ -5569,7 +5276,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Estado (select MUI)
+    //  Estado (select MUI)
     if (estado) {
       chain = chain.then(() => {
         cy.log(`Seleccionando Estado: ${estado}`);
@@ -5581,7 +5288,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Sección (select MUI)
+    //  Sección (select MUI)
     if (seccion) {
       chain = chain.then(() => {
         cy.log(`Seleccionando Sección: ${seccion}`);
@@ -5593,7 +5300,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Propietario (radio buttons)
+    //  Propietario (radio buttons)
     if (propietario) {
       chain = chain.then(() => {
         cy.log(`Seleccionando Propietario: ${propietario}`);
@@ -5601,7 +5308,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // 🔹 Fechas usando calendario
+    //  Fechas usando calendario
     if (alta) {
       chain = chain.then(() => {
         const textoFecha = alta.toString();
@@ -5806,9 +5513,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                       }
                     })
                     .then(() => {
-                      cy.log(`✓ Campo "${campoTexto.label}" rellenado correctamente por label`);
+                      cy.log(` Campo "${campoTexto.label}" rellenado correctamente por label`);
                     }, (err2) => {
-                      cy.log(`⚠ No se pudo rellenar "${campoTexto.label}": ${err2.message}. Continuando...`);
+                      cy.log(` No se pudo rellenar "${campoTexto.label}": ${err2.message}. Continuando...`);
                       return cy.wrap(null);
                     });
                 }
@@ -5975,9 +5682,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             cy.log(`Escribiendo por name (detectado por label): ${campoTextoPorLabel.name} = ${valorTexto} (label: ${campoTextoPorLabel.label})`);
             return escribirPorName(campoTextoPorLabel.name, valorTexto, campoTextoPorLabel.label)
               .then(() => {
-                cy.log(`✓ Campo "${campoTextoPorLabel.label}" rellenado correctamente`);
+                cy.log(` Campo "${campoTextoPorLabel.label}" rellenado correctamente`);
               }, (err) => {
-                cy.log(`⚠ Error al rellenar "${campoTextoPorLabel.label}" por name: ${err.message}. Intentando por label...`);
+                cy.log(` Error al rellenar "${campoTextoPorLabel.label}" por name: ${err.message}. Intentando por label...`);
                 // Si falla por name, buscar directamente por label (especialmente para Altura, Largo, Ancho, m3)
                 return cy.contains('label', new RegExp(`^${escapeRegex(campoTextoPorLabel.label)}$`, 'i'), { timeout: 10000 })
                   .should('be.visible')
@@ -6002,9 +5709,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                     }
                   })
                   .then(() => {
-                    cy.log(`✓ Campo "${campoTextoPorLabel.label}" rellenado correctamente por label`);
+                    cy.log(` Campo "${campoTextoPorLabel.label}" rellenado correctamente por label`);
                   }, (err2) => {
-                    cy.log(`⚠ No se pudo rellenar "${campoTextoPorLabel.label}": ${err2.message}. Continuando...`);
+                    cy.log(` No se pudo rellenar "${campoTextoPorLabel.label}": ${err2.message}. Continuando...`);
                     return cy.wrap(null);
                   });
               });
@@ -6057,9 +5764,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               }
             })
             .then(() => {
-              cy.log(`✓ Campo "${nombreLabel}" rellenado correctamente`);
+              cy.log(` Campo "${nombreLabel}" rellenado correctamente`);
             }, (err) => {
-              cy.log(`⚠ Error al rellenar "${nombreLabel}": ${err.message}. Intentando búsqueda alternativa...`);
+              cy.log(` Error al rellenar "${nombreLabel}": ${err.message}. Intentando búsqueda alternativa...`);
               // Si falla, intentar búsqueda más flexible
               return cy.contains('label', new RegExp(escapeRegex(nombreLabel), 'i'), { timeout: 5000 })
                 .should('be.visible')
@@ -6084,9 +5791,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                   }
                 })
                 .then(() => {
-                  cy.log(`✓ Campo "${nombreLabel}" rellenado correctamente (búsqueda alternativa)`);
+                  cy.log(` Campo "${nombreLabel}" rellenado correctamente (búsqueda alternativa)`);
                 }, (err2) => {
-                  cy.log(`⚠ No se pudo rellenar "${nombreLabel}": ${err2.message}. Continuando con siguiente campo...`);
+                  cy.log(` No se pudo rellenar "${nombreLabel}": ${err2.message}. Continuando con siguiente campo...`);
                   return cy.wrap(null); // Continuar aunque falle
                 });
             });
@@ -6148,7 +5855,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
       if (esImpuesto && !impuestoValor) {
         impuestoValor = valorTexto;
-        cy.log(`✓ Impuesto detectado: ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
+        cy.log(` Impuesto detectado: ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
         continue;
       }
 
@@ -6165,7 +5872,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
       if (esFechaImpuestos && !fechaImpuestos) {
         fechaImpuestos = valorTexto;
-        cy.log(`✓ Fecha detectada: ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
+        cy.log(` Fecha detectada: ${valorTexto} (tipo: ${tipo}, selector: ${selector})`);
         continue;
       }
     }
@@ -6510,9 +6217,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             cy.log(`Escribiendo por name: ${campoTexto.name} = ${valorTexto} (label: ${campoTexto.label})`);
             return escribirPorName(campoTexto.name, valorTexto, campoTexto.label)
               .then(() => {
-                cy.log(`✓ Campo "${campoTexto.label}" rellenado correctamente`);
+                cy.log(` Campo "${campoTexto.label}" rellenado correctamente`);
               }, (err) => {
-                cy.log(`⚠ Error al rellenar "${campoTexto.label}": ${err.message}. Continuando...`);
+                cy.log(` Error al rellenar "${campoTexto.label}": ${err.message}. Continuando...`);
                 return cy.wrap(null);
               });
           });
@@ -6550,9 +6257,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             cy.log(`Escribiendo por name (detectado por label): ${campoTextoPorLabel.name} = ${valorTexto}`);
             return escribirPorName(campoTextoPorLabel.name, valorTexto, campoTextoPorLabel.label)
               .then(() => {
-                cy.log(`✓ Campo "${campoTextoPorLabel.label}" rellenado correctamente`);
+                cy.log(` Campo "${campoTextoPorLabel.label}" rellenado correctamente`);
               }, (err) => {
-                cy.log(`⚠ Error al rellenar "${campoTextoPorLabel.label}": ${err.message}. Continuando...`);
+                cy.log(` Error al rellenar "${campoTextoPorLabel.label}": ${err.message}. Continuando...`);
                 return cy.wrap(null);
               });
           });
@@ -6637,7 +6344,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       const valorTexto = String(campo.valor || '').trim();
 
       if (!valorTexto) {
-        cy.log(`⏭ Campo ${index + 1}/${camposVencimientos.length} vacío, saltando`);
+        cy.log(` Campo ${index + 1}/${camposVencimientos.length} vacío, saltando`);
         return procesarCampo(index + 1);
       }
 
@@ -6688,7 +6395,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
           // Si no está en el mapeo, saltar este campo
           if (!nombreLabel) {
-            cy.log(`⚠ No se encontró mapeo para ID: ${selectorLower} (normalizado: ${idInput}), saltando este campo`);
+            cy.log(` No se encontró mapeo para ID: ${selectorLower} (normalizado: ${idInput}), saltando este campo`);
             cy.log(`DEBUG: Claves disponibles en mapeo: ${Object.keys(mapeoIds).join(', ')}`);
             return procesarCampo(index + 1);
           }
@@ -6711,10 +6418,10 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
               return seleccionarFechaEnCalendario(fechaObj);
             })
             .then(() => {
-              cy.log(`✓ Fecha "${nombreLabel}" rellenada`);
+              cy.log(` Fecha "${nombreLabel}" rellenada`);
               return procesarCampo(index + 1);
             }, (err) => {
-              cy.log(`❌ Error al rellenar fecha "${nombreLabel}": ${err.message}`);
+              cy.log(` Error al rellenar fecha "${nombreLabel}": ${err.message}`);
               return procesarCampo(index + 1);
             });
         }
@@ -6730,7 +6437,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             .then(($input) => {
               if ($input && $input.length) {
                 cy.wrap($input).clear({ force: true }).type(valorTexto, { force: true });
-                cy.log(`✓ Campo "Nº Tarjeta Transporte" rellenado por name attribute`);
+                cy.log(` Campo "Nº Tarjeta Transporte" rellenado por name attribute`);
                 return procesarCampo(index + 1);
               }
               throw new Error('No encontrado por name');
@@ -6746,11 +6453,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 .then(($input) => {
                   if ($input && $input.length) {
                     cy.wrap($input).clear({ force: true }).type(valorTexto, { force: true });
-                    cy.log(`✓ Campo "Nº Tarjeta Transporte" rellenado por label`);
+                    cy.log(` Campo "Nº Tarjeta Transporte" rellenado por label`);
                   }
                   return procesarCampo(index + 1);
                 }, () => {
-                  cy.log(`❌ No se encontró el campo "Nº Tarjeta Transporte"`);
+                  cy.log(` No se encontró el campo "Nº Tarjeta Transporte"`);
                   return procesarCampo(index + 1);
                 });
             });
@@ -6763,7 +6470,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     };
 
     return procesarCampo(0).then(() => {
-      cy.log(`✓ VENCIMIENTOS rellenados desde campos`);
+      cy.log(` VENCIMIENTOS rellenados desde campos`);
     });
   }
 
@@ -6819,7 +6526,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
 
     camposContacto.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -6935,7 +6642,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                 return seleccionarFechaEnCalendario(fechaObj);
               });
           } else {
-            cy.log('⚠️ No se pudo rellenar la fecha en Certificaciones (label no visible), continuando sin error');
+            cy.log(' No se pudo rellenar la fecha en Certificaciones (label no visible), continuando sin error');
             return cy.wrap(null);
           }
         });
@@ -7112,7 +6819,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     // Rellenar campos de texto normales
     camposTexto.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -7124,7 +6831,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
     // Rellenar campos autocomplete
     camposAutocomplete.forEach((campo) => {
       if (!campo.valor || campo.valor === '') {
-        cy.log(`⏭Campo vacío en Excel: ${campo.label}`);
+        cy.log(`Campo vacío en Excel: ${campo.label}`);
         return;
       }
 
@@ -7223,7 +6930,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           .should(($input) => {
             const valorActual = $input.val();
             if (valorActual !== texto) {
-              cy.log(`⚠️ Valor esperado "${texto}" pero se obtuvo "${valorActual}", continuando...`);
+              cy.log(` Valor esperado "${texto}" pero se obtuvo "${valorActual}", continuando...`);
             }
           });
       });
@@ -7283,7 +6990,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         });
 
         if (filas.length > 0) {
-          cy.log(`✓ La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
+          cy.log(` La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
           return cy.wrap(true);
         } else {
           // Verificar si hay mensaje "Sin filas" en la tabla
@@ -7293,11 +7000,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           });
 
           if (mensajeSinFilas.length > 0) {
-            cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+            cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
             return cy.wrap(false);
           } else {
             // Si no hay filas pero tampoco hay mensaje "Sin filas", puede que la tabla esté vacía
-            cy.log(`⚠️ La pestaña ${nombrePestaña} no tiene filas visibles`);
+            cy.log(` La pestaña ${nombrePestaña} no tiene filas visibles`);
             return cy.wrap(false);
           }
         }
@@ -7313,11 +7020,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         });
 
         if (mensajeSinFilas.length > 0) {
-          cy.log(`❌ ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+          cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
           return cy.wrap(false);
         } else {
           // Si no hay tabla ni mensaje "Sin filas", asumir que tiene datos (puede ser un formulario sin tabla)
-          cy.log(`✓ La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
+          cy.log(` La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
           return cy.wrap(true);
         }
       }
@@ -7353,7 +7060,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
 
       if (!caso7) {
-        cy.log('⚠️ No se encontró el caso 7 en Excel, usando datos del caso actual');
+        cy.log(' No se encontró el caso 7 en Excel, usando datos del caso actual');
         return TC043ConDatos(caso, todosLosCasos);
       }
 
@@ -7518,7 +7225,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         // Verificar que estamos todavía en el formulario antes de guardar
         return cy.url().then((urlActual) => {
           if (!urlActual.includes('/dashboard/clients/form')) {
-            cy.log('⚠️ Ya no estamos en el formulario, no se puede guardar');
+            cy.log(' Ya no estamos en el formulario, no se puede guardar');
             return cy.wrap(null);
           }
 
@@ -7583,7 +7290,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         return cy.get('body').then($body => {
           const filas = $body.find('.MuiDataGrid-row:visible');
           if (filas.length === 0) {
-            cy.log('⚠️ No se encontraron filas en la tabla');
+            cy.log(' No se encontraron filas en la tabla');
             return cy.wrap(null);
           }
 
@@ -7597,7 +7304,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             cy.log('Vehículo encontrado, abriendo formulario de edición...');
             return cy.wrap(filaEncontrada).dblclick({ force: true });
           } else {
-            cy.log('⚠️ No se encontró la fila con el código del vehículo');
+            cy.log(' No se encontró la fila con el código del vehículo');
             return cy.wrap(null);
           }
         });
@@ -7705,9 +7412,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           resultado = 'ERROR';
           const pestañasError = pestañasSinDatos.join(', ');
           mensaje = `Vehículo ${nombreCliente} creado, pero las siguientes pestañas NO tienen datos guardados: ${pestañasError}`;
-          cy.log(`❌ ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
+          cy.log(` ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
         } else {
-          cy.log(`✓ Todas las pestañas tienen datos guardados correctamente`);
+          cy.log(` Todas las pestañas tienen datos guardados correctamente`);
         }
 
         // Registrar resultado
@@ -7733,7 +7440,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
       });
 
       if (!caso23) {
-        cy.log('⚠️ No se encontró el caso 23 en Excel, usando datos del caso actual');
+        cy.log(' No se encontró el caso 23 en Excel, usando datos del caso actual');
         return TC051ConDatos(caso, todosLosCasos);
       }
 
@@ -7796,7 +7503,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             });
 
             if (!casoPestaña) {
-              cy.log(`⚠️ No se encontró caso para ${pestañaInfo.nombre}, saltando...`);
+              cy.log(` No se encontró caso para ${pestañaInfo.nombre}, saltando...`);
               return cy.wrap(null);
             }
 
@@ -7912,7 +7619,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         // Verificar que estamos todavía en el formulario antes de guardar
         return cy.url().then((urlActual) => {
           if (!urlActual.includes('/dashboard/vehicles/form')) {
-            cy.log('⚠️ Ya no estamos en el formulario, no se puede guardar');
+            cy.log(' Ya no estamos en el formulario, no se puede guardar');
             return cy.wrap(null);
           }
 
@@ -7931,11 +7638,11 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                   if (selectEmpresa.length > 0) {
                     const valorEmpresa = selectEmpresa.val();
                     if (!valorEmpresa || valorEmpresa === '' || valorEmpresa === 'null' || valorEmpresa === 'undefined') {
-                      cy.log('⚠️ No hay empresa seleccionada, intentando seleccionar la primera...');
+                      cy.log(' No hay empresa seleccionada, intentando seleccionar la primera...');
                       return seleccionarPrimeraEmpresa()
                         .then(() => cy.wait(1000));
                     } else {
-                      cy.log(`✓ Empresa ya está seleccionada: ${valorEmpresa}`);
+                      cy.log(` Empresa ya está seleccionada: ${valorEmpresa}`);
                     }
                   }
                 }
@@ -7989,7 +7696,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                                           }).length > 0;
 
                       if (tieneError500) {
-                        cy.log('⚠️ Error 500 detectado después de guardar');
+                        cy.log(' Error 500 detectado después de guardar');
                         // Registrar como WARNING y continuar
                         return cy.wrap('WARNING_500');
                       }
@@ -8009,7 +7716,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
                                                       return texto.includes('500') || texto.includes('error');
                                                     }).length > 0;
                             if (tieneError500_2) {
-                              cy.log('⚠️ Error 500 detectado (segunda verificación)');
+                              cy.log(' Error 500 detectado (segunda verificación)');
                               return cy.wrap('WARNING_500');
                             }
                             return cy.wrap('OK');
@@ -8087,7 +7794,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
         return cy.get('body').then($body => {
           const filas = $body.find('.MuiDataGrid-row:visible');
           if (filas.length === 0) {
-            cy.log('⚠️ No se encontraron filas en la tabla');
+            cy.log(' No se encontraron filas en la tabla');
             return cy.wrap(null);
           }
 
@@ -8100,7 +7807,7 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
             cy.log('Vehículo encontrado, abriendo formulario de edición...');
             return cy.wrap(filaEncontrada).dblclick({ force: true });
           } else {
-            cy.log('⚠️ No se encontró la fila con el código del vehículo');
+            cy.log(' No se encontró la fila con el código del vehículo');
             return cy.wrap(null);
           }
         });
@@ -8176,9 +7883,9 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
           resultado = 'ERROR';
           const pestañasError = pestañasSinDatos.join(', ');
           mensaje = `Vehículo ${codigoVehiculo} creado, pero las siguientes pestañas NO tienen datos guardados: ${pestañasError}`;
-          cy.log(`❌ ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
+          cy.log(` ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
         } else {
-          cy.log(`✓ Todas las pestañas tienen datos guardados correctamente`);
+          cy.log(` Todas las pestañas tienen datos guardados correctamente`);
         }
 
         // Registrar resultado
@@ -8194,104 +7901,6 @@ describe('FICHEROS (VEHÍCULOS) - Validación dinámica desde Excel', () => {
   }
 
   // Función para rellenar DATOS GENERALES igual que el caso 23
-  function rellenarDatosGeneralesIgualCaso23(caso) {
-    cy.log('TC051: Rellenando DATOS GENERALES igual que TC023');
-
-    // Extraer campos de DATOS GENERALES del Excel (igual que caso 23)
-    const totalCampos = Number(caso?.__totalCamposExcel) || 14;
-    const camposDatosGenerales = [];
-
-    for (let i = 1; i <= totalCampos; i++) {
-      const tipo = caso[`etiqueta_${i}`];
-      const selector = caso[`valor_etiqueta_${i}`];
-      const valor = procesarValorXXX(caso[`dato_${i}`]); // Procesar XXX
-
-      if (!tipo || !selector || valor === undefined || valor === '') continue;
-
-      const etiquetaPreferida = normalizarEtiquetaTexto(tipo) || selector;
-      const etiquetaLower = etiquetaPreferida.toLowerCase();
-      const selectorLower = (selector || '').toLowerCase();
-      const tipoLower = (tipo || '').toLowerCase();
-
-      const campo = {
-        tipo,
-        selector,
-        valor,
-        etiquetaVisible: etiquetaPreferida
-      };
-
-      // Detectar si el valor es una fecha
-      const esFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
-
-      // Categorizar campos de DATOS GENERALES (igual que caso 23)
-      const selectorNormalizado = selectorLower.replace(/-label$/, '');
-
-      // Excluir campos de otras pestañas explícitamente
-      const esCampoMantenimiento = tipoLower === 'name' && (
-        selectorLower === 'every' || selectorLower === 'actual' || selectorLower === 'last' ||
-        selectorLower === 'everyhour' || selectorLower === 'actualhour' || selectorLower === 'lasthour' || selectorLower === 'nexthour' ||
-        selectorLower.includes('maintenance')
-      );
-      const esCampoVencimientos = selectorLower.includes('expirations') || selectorLower.includes('expiration') || 
-        selectorLower.includes('cardtransport') || selectorLower.includes('type1') || selectorLower.includes('type2') || selectorLower.includes('type3');
-      const esCampoOtraPestaña = esCampoMantenimiento || esCampoVencimientos;
-
-      if (esCampoOtraPestaña) {
-        // No incluir en DATOS GENERALES
-        continue;
-      }
-
-      if (selectorLower.includes('vehicle.') && !selectorLower.includes('expirations') && !selectorLower.includes('maintenance')) {
-        camposDatosGenerales.push(campo);
-      } else if (selectorLower.includes('mui-component-select-status') || selectorLower.includes('status')) {
-        camposDatosGenerales.push(campo);
-      } else if (etiquetaLower.includes('alta') || etiquetaLower.includes('matriculación') || etiquetaLower.includes('matricula') || etiquetaLower.includes('baja')) {
-        camposDatosGenerales.push(campo);
-      } else if (tipoLower === 'id' && esFecha && (selectorNormalizado.includes('_r_6c') || selectorNormalizado.includes('_r_6f') || selectorNormalizado.includes('_r_6i') || selectorNormalizado.includes('_r_76') || selectorNormalizado.includes('_r_79') || selectorNormalizado.includes('_r_7c'))) {
-        camposDatosGenerales.push(campo);
-      } else if (tipoLower === 'id' && esFecha && (selectorNormalizado.includes('_r_6') || selectorNormalizado.includes('_r_7') || selectorNormalizado.includes('_r_8')) && !selectorNormalizado.includes('_r_70') && !selectorNormalizado.includes('_r_73') && !selectorNormalizado.includes('_r_7a') && !selectorNormalizado.includes('_r_7g') && !selectorNormalizado.includes('_r_7m') && !selectorNormalizado.includes('_r_7s') && !selectorNormalizado.includes('_r_77') && !selectorNormalizado.includes('_r_7d') && !selectorNormalizado.includes('_r_7j') && !selectorNormalizado.includes('_r_7p') && !selectorNormalizado.includes('_r_80') && !selectorNormalizado.includes('_r_84') && !selectorNormalizado.includes('_r_88')) {
-        camposDatosGenerales.push(campo);
-      } else if (tipoLower === 'id' && (selectorNormalizado.includes('_r_9') || selectorNormalizado.includes('_r_a'))) {
-        // Campos de MANTENIMIENTO (IDs _r_9 y _r_a), no incluir
-        continue;
-      } else if (tipoLower === 'id' && esFecha && (selectorNormalizado.includes('_r_70') || selectorNormalizado.includes('_r_73') || selectorNormalizado.includes('_r_7a') || selectorNormalizado.includes('_r_7g') || selectorNormalizado.includes('_r_7m') || selectorNormalizado.includes('_r_7s') || selectorNormalizado.includes('_r_77') || selectorNormalizado.includes('_r_7d') || selectorNormalizado.includes('_r_7j') || selectorNormalizado.includes('_r_7p') || selectorNormalizado.includes('_r_80') || selectorNormalizado.includes('_r_84') || selectorNormalizado.includes('_r_88'))) {
-        // Campos de VENCIMIENTOS, no incluir
-        continue;
-      } else if (tipoLower === 'name' && selectorLower.includes('vehicle.')) {
-        // Campos con name="vehicle.*" son de DATOS GENERALES
-        camposDatosGenerales.push(campo);
-      } else if (!esFecha && !selectorLower.includes('expirations') && !selectorLower.includes('expiration') && !selectorLower.includes('maintenance') && !esCampoMantenimiento && tipoLower !== 'name') {
-        // Si no es fecha, no es name, y no es de otras pestañas, probablemente es DATOS GENERALES
-        camposDatosGenerales.push(campo);
-      }
-    }
-
-    cy.log(`TC051: Campos de DATOS GENERALES encontrados: ${camposDatosGenerales.length}`);
-
-    // Rellenar DATOS GENERALES igual que caso 23
-    return rellenarCamposEnPestaña(camposDatosGenerales, 'DATOS GENERALES')
-      .then(() => {
-        cy.wait(500);
-        cy.url().should('include', '/dashboard/vehicles/form');
-        cy.log('✓ DATOS GENERALES rellenados completamente, NO se pulsa Guardar');
-      })
-      .then(() => {
-        // Marcar aleatoriamente algunos checkboxes de actividades (Activo y Principal)
-        cy.log('TC051: Marcando aleatoriamente checkboxes de actividades');
-        return marcarCheckboxesActividadesAleatoriamente();
-      })
-      .then(() => {
-        // Asegurar que las fechas de DATOS GENERALES se rellenen después de los checkboxes
-        cy.log('TC051: Verificando y rellenando fechas de DATOS GENERALES (Alta, F. Matriculación, Baja)');
-        return rellenarFechasDatosGeneralesDesdeCampos(camposDatosGenerales);
-      })
-      .then(() => {
-        // Asegurar que Propietario se seleccione como "Propio"
-        cy.log('TC051: Seleccionando Propietario: Propio');
-        return seleccionarPropietarioPropio();
-      });
-  }
-
   // CASO 30: Seleccionar tarjeta
   // =========================
   function seleccionarTarjeta(caso, numero, casoId) {

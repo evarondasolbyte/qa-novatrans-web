@@ -409,8 +409,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      // Casos 1-22 comentados - no se ejecutan
-      /*
       case 1:
         return { fn: cargaPantalla };
       case 2:
@@ -441,7 +439,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         return { fn: mostrarColumnaDesdeExcel };
       case 23:
         return { fn: eliminarPersonalSeleccionado };
-      */
       case 24:
       case 25:
       case 26:
@@ -1087,85 +1084,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   // =========================
   // CASO 32: Seleccionar teléfono
   // =========================
-  function seleccionarTelefono(caso, numero, casoId) {
-    const numeroCaso = numero || parseInt(String(caso?.caso || '').replace(/\D/g, ''), 10);
-
-    cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Seleccionar teléfono`);
-
-    return cy.url()
-      .then((urlActual) => {
-        const enFormulario = urlActual.includes('/dashboard/personnel/form');
-
-        if (!enFormulario) {
-          cy.log('No estamos en el formulario, abriendo...');
-          return UI.abrirPantalla()
-            .then(() => UI.esperarTabla())
-            .then(() => abrirFormularioNuevoPersonal())
-            .then(() => cy.url().should('include', '/dashboard/personnel/form'));
-        }
-        return cy.wrap(null);
-      })
-      .then(() => {
-        // Navegar a la pestaña TELÉFONOS
-        cy.log('Navegando a la pestaña TELÉFONOS...');
-        return navegarSeccionFormulario('TELÉFONOS').then(() => {
-          cy.wait(500);
-          cy.log('Navegación a TELÉFONOS completada');
-          return cy.wrap(null);
-        });
-      })
-      .then(() => {
-        // Hacer clic en "Seleccionar teléfono"
-        cy.log('Buscando botón "Seleccionar teléfono"...');
-        return cy
-          .contains('button', /seleccionar teléfono/i, { timeout: 10000 })
-          .should('be.visible')
-          .scrollIntoView()
-          .click({ force: true })
-          .then(() => {
-            cy.wait(500);
-            cy.log('Botón "Seleccionar teléfono" clickeado');
-            return cy.wrap(null);
-          });
-      })
-      .then(() => {
-        // Esperar a que aparezca la lista/modal de teléfonos y esté completamente cargada
-        cy.log('Esperando a que aparezca la lista de teléfonos...');
-        return cy
-          .get('.MuiDataGrid-root, [role="dialog"] .MuiDataGrid-root', { timeout: 10000 })
-          .should('be.visible')
-          .then(() => {
-            cy.wait(1000); // Esperar a que se carguen los datos
-            cy.log('Modal de teléfonos cargado');
-            return cy.wrap(null);
-          });
-      })
-      .then(() => {
-        // Hacer doble clic en la primera celda de la primera fila visible
-        cy.log('Buscando la primera celda de la tabla para hacer doble clic...');
-        return cy
-          .get('.MuiDataGrid-cell[data-field="number"], .MuiDataGrid-cell:first-child', { timeout: 10000 })
-          .first()
-          .should('exist')
-          .then(($cell) => {
-            cy.log('Primera celda encontrada, haciendo doble clic...');
-            return cy
-              .wrap($cell)
-              .scrollIntoView({ offset: { top: 100, left: 0 } })
-              .should('be.visible')
-              .dblclick({ force: true })
-              .then(() => {
-                cy.wait(500);
-                cy.log('Doble clic en la primera celda realizado');
-                return cy.wrap(null);
-              });
-          });
-      })
-      .then(() => {
-        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Teléfono seleccionado correctamente`);
-      });
-  }
-
   // =========================
   // FECHAS: escribir directamente en input (como en Acciones de clientes)
   // =========================
@@ -2089,11 +2007,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         `${camposDireccion.length} campos DIRECCIÓN, ${camposEconomicos.length} campos DATOS ECONÓMICOS`
       );
     });
-  }
-
-  function llenarFormularioDatosPersonalesDesdeExcelSinGuardar(caso, numeroCaso) {
-    // Esta función es un wrapper que llama a llenarFormularioDatosPersonalesDesdeExcel sin guardar
-    return llenarFormularioDatosPersonalesDesdeExcel(caso, numeroCaso, false);
   }
 
   function llenarFormularioSeccion(caso, numeroCaso, seccion) {
@@ -4724,32 +4637,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     });
   }
 
-  function editarPersonal(caso, numero) {
-    return cy.url().then((urlActual) => {
-      const enFormularioEdicion = /\/dashboard\/personnel\/form\/\d+$/i.test(urlActual);
-      if (enFormularioEdicion) {
-        if (numero === 35) {
-          cy.log('Caso 35: ya en formulario, no se edita, solo se mantiene abierto');
-          return cy.wrap(null);
-        }
-        cy.log('Ya en formulario de edición');
-        return cy.wrap(null);
-      }
-
-      cy.log('No estamos en formulario, navegando a lista y abriendo primer registro');
-      return UI.abrirPantalla()
-        .then(() => UI.filasVisibles().should('have.length.greaterThan', 0).first().dblclick({ force: true }))
-        .then(() => cy.url().should('match', /\/dashboard\/personnel\/form\/\d+$/))
-        .then(() => {
-          if (numero === 35) {
-            cy.log('Caso 35: formulario abierto, sin edición');
-            return cy.wrap(null);
-          }
-          return cy.wrap(null);
-        });
-    });
-  }
-
   function eliminarPersonalSeleccionado(caso, numero, casoId) {
     const numeroCaso = numero || parseInt(String(caso?.caso || '').replace(/\D/g, ''), 10);
 
@@ -5348,21 +5235,6 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           );
         });
       });
-  }
-
-  function parseFechaBasicaExcel(texto) {
-    if (texto instanceof Date) return texto;
-
-    const str = String(texto).trim();
-    const m = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (!m) {
-      cy.log(`No se pudo parsear la fecha "${str}", se usa hoy`);
-      return new Date();
-    }
-    const dia = Number(m[1]);
-    const mes = Number(m[2]) - 1;
-    const anio = Number(m[3]);
-    return new Date(anio, mes, dia);
   }
 
   function parseMesAnio(labelText) {
