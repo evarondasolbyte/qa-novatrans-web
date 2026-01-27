@@ -263,7 +263,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       case 11:
       case 12:
       case 13:
-       return { fn: anadirCliente };
+        return { fn: anadirCliente };
       case 14:
         return { fn: anadirCliente };
       case 15:
@@ -1485,9 +1485,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                 const clickSeguro = () => {
                   if (selPorId) {
                     return cy.get(selPorId, { timeout: 10000 })
-                      .scrollIntoView()
-                      .should('be.visible')
-                      .click({ force: true });
+                  .scrollIntoView()
+                  .should('be.visible')
+                  .click({ force: true });
                   }
                   return cy.wrap(el)
                     .scrollIntoView()
@@ -1555,14 +1555,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   }
                   
                   // Si hay opciones, intentar seleccionar la que coincida
-                  return cy.contains(
-                    'li[role="option"], [role="option"], div[role="option"]',
-                    new RegExp(`^${escapeRegex(valor)}$`, 'i'),
-                    { timeout: 10000 }
-                  )
-                    .scrollIntoView()
-                    .should('be.visible')
-                    .click({ force: true });
+              return cy.contains(
+                'li[role="option"], [role="option"], div[role="option"]',
+                new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+                { timeout: 10000 }
+              )
+                .scrollIntoView()
+                .should('be.visible')
+                .click({ force: true });
                 }).then(null, (err) => {
                   // Si falla al buscar la opción, continuar sin error
                   const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
@@ -1622,14 +1622,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             }
             
             // Si hay opciones, intentar seleccionar la que coincida
-            return cy.contains(
-              'li[role="option"], [role="option"], div[role="option"]',
-              new RegExp(`^${escapeRegex(valor)}$`, 'i'),
-              { timeout: 10000 }
-            )
-              .scrollIntoView()
-              .should('be.visible')
-              .click({ force: true });
+        return cy.contains(
+          'li[role="option"], [role="option"], div[role="option"]',
+          new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+          { timeout: 10000 }
+        )
+          .scrollIntoView()
+          .should('be.visible')
+          .click({ force: true });
           }            ).then(null, (err) => {
             // Si falla al buscar la opción, continuar sin error
             const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
@@ -3794,21 +3794,21 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Reintentar la búsqueda una vez si no se encuentra la fila
         let intentos = 0;
         const buscarFila = () => {
-          return cy.get('body').then($body => {
-            const filas = $body.find('.MuiDataGrid-row:visible');
-            if (filas.length === 0) {
+        return cy.get('body').then($body => {
+          const filas = $body.find('.MuiDataGrid-row:visible');
+          if (filas.length === 0) {
               cy.log(' No se encontraron filas en la tabla');
-              return cy.wrap(null);
-            }
+            return cy.wrap(null);
+          }
 
-            const filaEncontrada = Array.from(filas).find((el) => {
-              const textoFila = (el.innerText || el.textContent || '').toLowerCase();
-              return textoFila.includes(nombreCliente.toLowerCase());
-            });
+          const filaEncontrada = Array.from(filas).find((el) => {
+            const textoFila = (el.innerText || el.textContent || '').toLowerCase();
+            return textoFila.includes(nombreCliente.toLowerCase());
+          });
 
-            if (filaEncontrada) {
-              cy.log('Cliente encontrado, abriendo formulario de edición...');
-              return cy.wrap(filaEncontrada).dblclick({ force: true });
+          if (filaEncontrada) {
+            cy.log('Cliente encontrado, abriendo formulario de edición...');
+            return cy.wrap(filaEncontrada).dblclick({ force: true });
             }
 
             // Si no se encuentra y aún no hemos reintentado, volver a buscar
