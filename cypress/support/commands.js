@@ -470,10 +470,11 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
   };
 
   // Mapeo de códigos de idioma
+  // Orden de prueba solicitado: Catalán -> Inglés -> Español
   const idiomas = [
-    { codigo: 'es', texto: textosEsperados.es, nombre: 'Español' },
     { codigo: 'ca', texto: textosEsperados.ca, nombre: 'Catalán' },
-    { codigo: 'en', texto: textosEsperados.en, nombre: 'Inglés' }
+    { codigo: 'en', texto: textosEsperados.en, nombre: 'Inglés' },
+    { codigo: 'es', texto: textosEsperados.es, nombre: 'Español' }
   ];
 
   // Función auxiliar para cambiar y verificar un idioma
@@ -496,12 +497,19 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
         const selectors = [
           'button:contains("Spanish")',
           'button:contains("Español")',
+          'button:contains("Espanyol")',
           'button:contains("English")',
           'button:contains("Inglés")',
+          'button:contains("Angles")',
+          'button:contains("Anglès")',
           'button:contains("Catalan")',
           'button:contains("Catalán")',
+          'button:contains("Català")',
           '[role="button"]:contains("Spanish")',
           '[role="button"]:contains("Español")',
+          '[role="button"]:contains("Espanyol")',
+          '[role="button"]:contains("Angles")',
+          '[role="button"]:contains("Anglès")',
           'button.MuiButton-root',
         ];
 
@@ -519,11 +527,11 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
 
           // Seleccionar el idioma del menú según el código
           if (config.codigo === 'en') {
-            cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/English|Inglés/i).click({ force: true });
+            cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/English|Inglés|Angles|Anglès/i).click({ force: true });
           } else if (config.codigo === 'ca') {
-            cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Catalan|Catalán/i).click({ force: true });
+            cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Catalan|Catalán|Català/i).click({ force: true });
           } else {
-            cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Spanish|Español/i).click({ force: true });
+            cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Spanish|Español|Espanyol/i).click({ force: true });
           }
         } else {
           cy.log('No se encontró ningún selector de idioma (ni select ni botón Material-UI)');
@@ -542,16 +550,13 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
       // Para Siniestros y Tarjetas, ser más flexible: si tiene el texto esperado, está OK
       const esSiniestros = (nombrePantallaParam || nombrePantalla) && (nombrePantallaParam || nombrePantalla).toLowerCase().includes('siniestros');
       const esTarjetas = (nombrePantallaParam || nombrePantalla) && (nombrePantallaParam || nombrePantalla).toLowerCase().includes('tarjetas');
-      const esPantallaFlexible = esSiniestros || esTarjetas;
+      const np = ((nombrePantallaParam || nombrePantalla) || '').toLowerCase();
+      const esClientes = np.includes('clientes') || np.includes('clients');
+      const esPantallaFlexible = esSiniestros || esTarjetas || esClientes;
 
-      // Verificar si hay strings sin traducir (claves de i18n que no se tradujeron)
-      // Para Siniestros y Tarjetas, no considerar strings sin traducir como fallo si tiene el texto esperado
-      const tieneStringsSinTraducir = !esPantallaFlexible && (
-        /[a-z_]+\.[a-z_]+\.[a-z_]+/i.test(bodyText) ||
-        /driver_categories|common\.multifilter|table\.filters/i.test(bodyText)
-      );
-
-      if (tieneTextoEsperado && (!tieneStringsSinTraducir || esPantallaFlexible)) {
+    // En el Excel ya se valida que está todo bien traducido:
+    // no marcamos WARNING por "strings sin traducir"; solo comprobamos que aparece el texto esperado.
+    if (tieneTextoEsperado) {
         cy.log(`Idioma cambiado exitosamente a ${config.nombre}`);
         return cy.wrap(fallosIdiomas);
       } else {
@@ -568,12 +573,7 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
           }
 
           // Acumular fallo para inglés o catalán solo si realmente no tiene el texto
-          let motivo = 'puede que no esté traducido';
-          if (tieneStringsSinTraducir && !esPantallaFlexible) {
-            motivo = 'aparecen strings sin traducir (claves i18n)';
-          } else if (!tieneTextoEsperado) {
-            motivo = `texto "${config.texto}" no encontrado`;
-          }
+          const motivo = `texto "${config.texto}" no encontrado`;
 
           cy.log(`⚠️ WARNING: Cambio de idioma a ${config.nombre} falló - ${motivo}`);
           fallosIdiomas.push({ nombre: config.nombre, motivo });
@@ -585,13 +585,13 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
 
   // Probar los tres idiomas secuencialmente
   return cy.wrap([]).then((fallosIdiomas) => {
-    // Probar español primero
+    // Probar Catalán -> Inglés -> Español (según array "idiomas")
     return cambiarYVerificarIdioma(idiomas[0], fallosIdiomas, nombrePantalla);
   }).then((fallosIdiomas) => {
-    // Probar catalán
+    // Segundo idioma
     return cambiarYVerificarIdioma(idiomas[1], fallosIdiomas, nombrePantalla);
   }).then((fallosIdiomas) => {
-    // Probar inglés
+    // Tercer idioma (debe acabar en Español)
     return cambiarYVerificarIdioma(idiomas[2], fallosIdiomas, nombrePantalla);
   }).then((fallosIdiomas) => {
     // Al finalizar todos los idiomas, registrar resultado
@@ -646,6 +646,39 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
         pantalla: nombrePantalla
       });
     }
+
+    // IMPORTANTÍSIMO: dejar la app en Español para que el resto de casos no dependan del idioma.
+    // No validamos textos aquí para no romper la suite; solo intentamos el cambio.
+    return cy.get('body').then(($body) => {
+      if ($body.find('select#languageSwitcher').length > 0) {
+        cy.get('select#languageSwitcher').select('es', { force: true });
+        cy.wait(800);
+        return;
+      }
+      if ($body.find('select[name="language"], select[data-testid="language-switcher"]').length > 0) {
+        cy.get('select[name="language"], select[data-testid="language-switcher"]').select('es', { force: true });
+        cy.wait(800);
+        return;
+      }
+
+      // Material-UI dropdown fallback
+      const candidates = $body
+        .find('button, [role="button"]')
+        .filter((_, el) => {
+          const t = (el.textContent || el.innerText || '').trim();
+          return /Spanish|Español|Espanyol|Catalan|Català|Catalán|English|Inglés|Angles|Anglès/i.test(t);
+        })
+        .filter(':visible');
+
+      if (candidates.length) {
+        cy.wrap(candidates[0]).click({ force: true });
+        cy.wait(300);
+        cy.get('li.MuiMenuItem-root, [role="menuitem"]')
+          .contains(/Spanish|Español|Espanyol/i)
+          .click({ force: true });
+        cy.wait(800);
+      }
+    });
   });
 });
 

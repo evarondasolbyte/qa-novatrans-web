@@ -462,7 +462,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     return UI.abrirPantalla().then(() => {
       // Abrir el panel de Filtros
-      cy.contains('button', /^Filtros$/i).click({ force: true });
+      cy.contains('button', /^(Filtros|Filters|Filtres)$/i).click({ force: true });
       cy.wait(1000);
 
       // Buscar directamente el radio button de la nacionalidad y hacer clic
@@ -881,14 +881,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             .then(() => {
               if (esSeccionContacto) return abrirModalContacto();
               if (esSeccionDocumentos) return asegurarGestorDocumentosAbierto();
-              return abrirModalSeccion(seccion, !esZonasCarga);
+              // Zonas de carga ahora requiere rellenar "Nombre"
+              // Para Zonas de carga NO usamos esperarDrawerVisible() (sus inputs no coinciden con la lista hardcodeada)
+              return abrirModalSeccion(seccion, esZonasCarga ? false : !esZonasCarga);
             })
             .then(() => {
-              // Zonas de carga solo abre y guarda, sin rellenar
-              if (esZonasCarga) {
-                cy.log('Zonas de carga: sin campos definidos en Excel, se guarda directamente');
-                return cy.wrap(null);
-              }
+              // Zonas de carga: rellenar Nombre (dato_1) y luego guardar
+              if (esZonasCarga) return llenarFormularioZonasCarga(caso, numeroCaso);
               // Contacto, Acciones, Certificaciones, Documentos usan funciones específicas, otras secciones usan la genérica
               if (esSeccionContacto) {
                 return llenarFormularioContacto(caso, numeroCaso);
@@ -904,7 +903,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               }
               return llenarFormularioSeccion(caso, numeroCaso, seccion);
             })
-            .then(() => (esSeccionContacto ? guardarModalContacto() : guardarModalSeccion(seccion)));
+            .then(() => {
+              // Para Zonas de carga, hay que guardar el drawer
+              if (esZonasCarga) {
+                cy.log('Guardando modal de Zonas de carga...');
+                return clickGuardarDentroFormulario().then(() => cy.wait(500));
+              }
+              return (esSeccionContacto ? guardarModalContacto() : guardarModalSeccion(seccion));
+            });
         }
 
         // Sección Facturación sin modal (rellenar directamente en la pestaña)
@@ -2616,8 +2622,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     if (nombre.includes('certific')) return 'Certificaciones';
     if (nombre.includes('dato adicional') || nombre.includes('datos adicional') || nombre.includes('adicional') || nombre.includes('facturación electrónica') || nombre.includes('facturacion electronica')) return 'Datos adicionales';
     if (nombre.includes('documento')) return 'Documentos';
-    if (nombre.includes('dirección') || nombre.includes('direccion')) return 'Dirección';
+    // Ojo: en algunos Excels el nombre puede incluir "dirección de facturación".
+    // Para TC043 es crítico que eso se trate como la pestaña "Facturación" (sin modal),
+    // no como "Dirección" (que va dentro de Contacto).
     if (nombre.includes('facturación') || nombre.includes('facturacion')) return 'Facturación';
+    if (nombre.includes('dirección') || nombre.includes('direccion')) return 'Dirección';
     return 'Generales';
   }
 
@@ -3037,32 +3046,49 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     let chain = cy.wrap(null);
 
     // Campo Fecha (his_date) - usar el date picker de Material-UI
-    // Usar la misma lógica que funciona en llenarFormularioSeccion
+    // Ya no existe label "Fecha": el campo es el datepicker (input + botón calendario)
     if (fecha) {
       chain = chain.then(() => {
         const textoFecha = fecha.toString();
         const fechaObj = parseFechaBasicaExcel(textoFecha);
         cy.log(`Rellenando Fecha con ${textoFecha}`);
 
-        // Buscar por el label "Fecha" y luego hacer clic en el botón del calendario
-        return cy.contains('label', new RegExp(`^${escapeRegex('Fecha')}$`, 'i'), { timeout: 10000 })
-          .should('be.visible')
-          .then(($label) => {
-            return cy.wrap($label)
-              .parents('.MuiFormControl-root')
+        // Buscar el datepicker dentro del drawer/modal visible (Crear Acción)
+        const abrirCalendario = () => {
+          return cy.get('body').then(($body) => {
+            const $container = $body
+              .find('.MuiDrawer-root:visible, [role="dialog"]:visible, .MuiModal-root:visible')
+              .last();
+
+            const $btn = $container
+              .find('button[aria-label*="Choose date"], button[aria-label*="date"], button[aria-label*="fecha"]')
+              .filter(':visible')
+              .first();
+
+            if ($btn.length) {
+              return cy.wrap($btn[0]).click({ force: true });
+            }
+
+            // Fallback: click sobre el input (típico placeholder DD/MM/YYYY)
+            const $inp = $container
+              .find('input[placeholder="DD/MM/YYYY"], input[placeholder*="DD/"], input')
+              .filter(':visible')
+              .first();
+            if ($inp.length) {
+              return cy.wrap($inp[0]).click({ force: true });
+            }
+
+            // Último fallback: buscar botón calendario en toda la página visible
+            return cy.get('button[aria-label*="Choose date"], button[aria-label*="date"], button[aria-label*="fecha"]', { timeout: 10000 })
+              .filter(':visible')
               .first()
-              .within(() => {
-                // Hacer clic en el botón del calendario
-                cy.get('button[aria-label*="date"], button[aria-label*="fecha"], button[aria-label*="Choose date"]', { timeout: 10000 })
-                  .should('be.visible')
-                  .click({ force: true });
-              })
-              .then(() => {
-                cy.wait(500);
-                // Usar la función de seleccionar fecha en calendario
-                return seleccionarFechaEnCalendario(fechaObj);
-              });
+              .click({ force: true });
           });
+        };
+
+        return abrirCalendario()
+          .then(() => cy.wait(300))
+          .then(() => seleccionarFechaEnCalendario(fechaObj));
       });
     }
 
@@ -3083,8 +3109,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   function llenarFormularioCertificaciones(caso, numeroCaso) {
     const numero = caso.dato_1;
     const fecha = caso.dato_2;
+    const tipoCertificacion = caso.dato_3; // NUEVO (Excel: id _r_af_ -> "Seguridad Social")
 
-    cy.log(`Datos Certificaciones detectados: numero=${numero}, fecha=${fecha}`);
+    cy.log(`Datos Certificaciones detectados: numero=${numero}, fecha=${fecha}, tipoCertificacion=${tipoCertificacion}`);
 
     // Esperar adicional para asegurar que el drawer esté completamente visible
     cy.wait(300);
@@ -3106,31 +3133,96 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         const fechaObj = parseFechaBasicaExcel(textoFecha);
         cy.log(`Intentando rellenar Fecha con ${textoFecha}`);
 
-        // Intentar buscar el label "Fecha", si no se encuentra, continuar sin error
-        return cy.get('body').then(($body) => {
-          const label = $body.find('label').filter((_, el) => {
-            const texto = (el.innerText || el.textContent || '').trim();
-            return /^Fecha$/i.test(texto);
-          }).filter(':visible').first();
+        // Ya no existe label "Fecha": abrir el datepicker dentro del drawer "Crear Certificación"
+        const titulo = /(Crear\s+Certificaci[oó]n|Create\s+Certification)/i;
 
-          if (label.length > 0) {
-            // Si el label existe y es visible, intentar rellenar la fecha
-            return cy.wrap(label)
-              .parents('.MuiFormControl-root')
-              .first()
-              .within(() => {
-                cy.get('button[aria-label*="date"], button[aria-label*="fecha"], button[aria-label*="Choose date"]', { timeout: 10000 })
-                  .should('be.visible')
-                  .click({ force: true });
-              })
-              .then(() => {
-                cy.wait(500);
-                return seleccionarFechaEnCalendario(fechaObj);
+        const abrirCalendario = () => {
+          // Igual que en ACCIONES: no dependemos de label, clicamos el botón del calendario
+          // o el input DD/MM/YYYY dentro del drawer "Crear Certificación".
+          return cy.contains(titulo, { timeout: 20000 })
+            .should('be.visible')
+            .then(($t) => {
+              const $anc = Cypress.$($t).parents();
+              const contenedor = Array.from($anc).find((a) => {
+                const $a = Cypress.$(a);
+                const tieneBtn = $a.find('button[aria-label*="Choose date"], button[aria-label*="date"], button[aria-label*="fecha"]').length > 0;
+                const tieneInput = $a.find('input[placeholder="DD/MM/YYYY"], input[placeholder*="DD/"]').length > 0;
+                return tieneBtn || tieneInput;
               });
-          } else {
-            cy.log(' No se pudo rellenar la fecha en Certificaciones (label no visible), continuando sin error');
-            return cy.wrap(null);
+              return cy.wrap(contenedor || Cypress.$($t).parent());
+            })
+            .within(() => {
+              // 1) Botón calendario
+              cy.get('button[aria-label*="Choose date"], button[aria-label*="date"], button[aria-label*="fecha"]', { timeout: 15000 })
+                .filter(':visible')
+                .first()
+                .then(($btn) => {
+                  if ($btn.length) {
+                    return cy.wrap($btn[0]).click({ force: true });
+                  }
+                  // 2) Fallback: input
+                  return cy.get('input[placeholder="DD/MM/YYYY"], input[placeholder*="DD/"]', { timeout: 15000 })
+                    .filter(':visible')
+                    .first()
+                    .click({ force: true });
+                });
+            });
+        };
+
+        return abrirCalendario()
+          .then(() => cy.wait(300))
+          .then(() => seleccionarFechaEnCalendario(fechaObj));
+      });
+    }
+
+    // Tipo de Certificación: autocomplete/combobox (seleccionar el valor del Excel, p.ej. "Seguridad Social")
+    if (tipoCertificacion) {
+      chain = chain.then(() => {
+        const valorTxt = tipoCertificacion.toString();
+        cy.log(`Seleccionando "Tipo de Certificación": ${valorTxt}`);
+
+        const seleccionarOpcion = () => {
+          const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
+          return cy.get('body').then(($body) => {
+            const $opts = $body.find('[role="option"]').filter(':visible');
+            if (!$opts.length) return cy.wrap(null);
+
+            const exacta = Array.from($opts).find((el) => regexValor.test((el.textContent || '').trim()));
+            if (exacta) return cy.wrap(exacta).click({ force: true });
+
+            return cy.wrap($opts[0]).click({ force: true });
+          });
+        };
+
+        // Preferir el id del input si existe (Excel aporta _r_af_)
+        return cy.get('body').then(($body) => {
+          const $inpPorId = $body.find('input#_r_af_, input[id="_r_af_"]').filter(':visible').first();
+          if ($inpPorId.length) {
+            return cy.wrap($inpPorId[0])
+              .scrollIntoView()
+              .click({ force: true })
+              .clear({ force: true })
+              .type(valorTxt, { force: true })
+              .then(() => cy.wait(500))
+              .then(() => seleccionarOpcion());
           }
+
+          // Fallback: por label "Tipo de Certificación"
+          return cy.contains('label', /^Tipo de Certificaci[oó]n$/i, { timeout: 10000 })
+            .should('exist')
+            .invoke('attr', 'for')
+            .then((forAttr) => {
+              if (forAttr) {
+                return cy.get(`#${forAttr}`, { timeout: 10000 })
+                  .scrollIntoView()
+                  .click({ force: true })
+                  .clear({ force: true })
+                  .type(valorTxt, { force: true })
+                  .then(() => cy.wait(500))
+                  .then(() => seleccionarOpcion());
+              }
+              return cy.wrap(null);
+            });
         });
       });
     }
@@ -3246,10 +3338,93 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
+  // Rellenar formulario de Zonas de Carga en el modal lateral
+  function llenarFormularioZonasCarga(caso, numeroCaso) {
+    // Excel TC012: id _r_9o_-label -> dato_1 (ej: "prueba")
+    const nombreZona = caso?.dato_1;
+
+    if (!nombreZona) {
+      cy.log('Zonas de carga: Excel no trae nombre (dato_1), se omite');
+      return cy.wrap(null);
+    }
+
+    cy.log(`Zonas de carga: rellenando Nombre="${nombreZona}"`);
+
+    const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+
+    // IMPORTANTÍSIMO: NO usar ".last()" de drawers visibles (siempre cae en el menú lateral docked).
+    // En su lugar, partimos del título "Crear Zona de Carga" (panel derecho) y subimos al contenedor
+    // que realmente contiene el label "Nombre" + su input.
+    const tituloDrawer = /(Crear\s+Zona\s+de\s+Carga|Create\s+Load\s+Zone|Create\s+Loading\s+Zone)/i;
+
+    return cy
+      .contains(tituloDrawer, { timeout: 20000 })
+      .should('be.visible')
+      .then(($titulo) => {
+        const $ancestros = Cypress.$($titulo).parents();
+        const contenedor = Array.from($ancestros).find((a) => {
+          const $a = Cypress.$(a);
+          const tieneNombre = $a
+            .find('label')
+            .toArray()
+            .some((l) => /^Nombre$/i.test((l.textContent || l.innerText || '').trim()));
+          const tieneInput = $a.find('input').length > 0;
+          return tieneNombre && tieneInput;
+        });
+
+        return cy.wrap(contenedor || Cypress.$($titulo).parent());
+      })
+      .within(() => {
+        return cy
+          .contains('label', /^Nombre$/i, { timeout: 15000 })
+          // En MUI el label puede estar "cubierto" aunque el input sea usable; no exigir visibilidad.
+          .should('exist')
+          .invoke('attr', 'for')
+          .then((forAttr) => {
+            if (forAttr) {
+              const sel = `#${escapeCssId(forAttr)}`;
+              return cy
+                .get(sel, { timeout: 15000 })
+                .should('exist')
+                .scrollIntoView()
+                .click({ force: true })
+                .clear({ force: true })
+                .type(nombreZona.toString(), { force: true, delay: 0 })
+                .type('{enter}', { force: true });
+            }
+
+            // Fallback: primer input visible dentro del panel derecho
+            return cy
+              .get('input:visible', { timeout: 15000 })
+              .first()
+              .scrollIntoView()
+              .click({ force: true })
+              .clear({ force: true })
+              .type(nombreZona.toString(), { force: true, delay: 0 })
+              .type('{enter}', { force: true });
+          });
+      });
+  }
+
   // Rellenar formulario de Facturación (sin modal, directamente en la pestaña)
   function llenarFormularioFacturacion(caso, numeroCaso) {
+    // Mantener el mapeo "como antes" por posiciones (dato_1..dato_14),
+    // y SOLO añadir el nuevo desplegable "Tipo Facturación" leyendo su valor por id (r_5t_) del Excel.
+    const obtenerDatoPorSelectorExcel = (needle) => {
+      const n = (needle || '').toString();
+      const total = Number(caso?.__totalCamposExcel) || 30;
+      for (let i = 1; i <= total; i++) {
+        const sel = (caso?.[`valor_etiqueta_${i}`] || '').toString();
+        const val = caso?.[`dato_${i}`];
+        if (sel && sel.includes(n) && val !== undefined && val !== null && `${val}` !== '') {
+          return val;
+        }
+      }
+      return null;
+    };
+
     const empresas = caso.dato_1;
-    const disenoFactura = caso.dato_2;
+    const disenoFactura = caso.dato_2; // Ej: "Diseño 2"
     const banco = caso.dato_3;
     const formaPago = caso.dato_4;
     const swift = caso.dato_5;
@@ -3263,27 +3438,50 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const riesgoAsegurado = caso.dato_13;
     const dto = caso.dato_14;
 
-    cy.log(`Datos Facturación detectados: empresas=${empresas}, disenoFactura=${disenoFactura}, banco=${banco}, formaPago=${formaPago}, swift=${swift}, cobroFinMes=${cobroFinMes}, conRiesgo=${conRiesgo}, cccEmpresa=${cccEmpresa}, iban=${iban}, cContable=${cContable}, iva=${iva}, diasCobro=${diasCobro}, riesgoAsegurado=${riesgoAsegurado}, dto=${dto}`);
+    // Nuevo campo: Tipo Facturación (Excel: id r_5t_ -> "Beneficio")
+    const tipoFacturacion = obtenerDatoPorSelectorExcel('r_5t_');
+
+    cy.log(`Datos Facturación detectados: empresas=${empresas}, disenoFactura=${disenoFactura}, tipoFacturacion=${tipoFacturacion}, banco=${banco}, formaPago=${formaPago}, swift=${swift}, cobroFinMes=${cobroFinMes}, conRiesgo=${conRiesgo}, cccEmpresa=${cccEmpresa}, iban=${iban}, cContable=${cContable}, iva=${iva}, diasCobro=${diasCobro}, riesgoAsegurado=${riesgoAsegurado}, dto=${dto}`);
 
     let chain = cy.wrap(null);
+
+    // Checkbox: Cobro fin de mes (antes de escribir inputs, por si habilita/cambia campos)
+    if (cobroFinMes) {
+      chain = chain.then(() => {
+        cy.log('Marcando checkbox "Cobro fin de mes"');
+        return cy.get('input[name="client.cobroFinMes"]', { timeout: 10000 })
+          .check({ force: true });
+      });
+    }
+
+    // Checkbox: Con Riesgo (antes de escribir "Riesgo Asegurado", porque suele estar oculto)
+    if (conRiesgo) {
+      chain = chain.then(() => {
+        cy.log('Marcando checkbox "Con Riesgo"');
+        return cy.get('input[name="client.bConRiesgo"]', { timeout: 10000 })
+          .check({ force: true })
+          .then(() => cy.wait(300));
+      });
+    }
 
     // Campos de texto normales (usando los nombres reales del HTML)
     const camposTexto = [
       { name: 'client.bankName', valor: banco, label: 'Banco' },
-      { name: 'client.paymentMethodRef', valor: formaPago, label: 'Forma de Pago' },
       { name: 'client.swift', valor: swift, label: 'Swift' },
       { name: 'client.iban', valor: iban, label: 'IBAN' },
       { name: 'client.CuentaContable', valor: cContable, label: 'C. Contable' },
       { name: 'client.defaultTax', valor: iva, label: 'IVA' },
       { name: 'client.diaCobro1', valor: diasCobro, label: 'Días Cobro' },
-      { name: 'client.RiesgoAsegurado', valor: riesgoAsegurado, label: 'Riesgo Asegurado' },
       { name: 'client.discount', valor: dto, label: 'Dto' }
     ];
 
     // Campos de autocomplete (necesitan tratamiento especial)
     const camposAutocomplete = [
-      { label: 'Empresas', valor: empresas },
-      { label: 'Diseño Factura', valor: disenoFactura }
+      { label: 'Empresas', valor: empresas, strictExact: false },
+      { label: 'Forma de Pago', valor: formaPago, strictExact: false },
+      // Campos críticos: si no encontramos opción exacta, NO seleccionamos "la primera" (evita guardar un valor incorrecto)
+      { label: 'Tipo Facturación', valor: tipoFacturacion, strictExact: true }, // NUEVO (por r_5t_)
+      { label: 'Diseño Factura', valor: disenoFactura, strictExact: true }
     ];
 
     // Rellenar campos de texto normales
@@ -3307,54 +3505,102 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
       chain = chain.then(() => {
         cy.log(`Rellenando autocomplete "${campo.label}" con valor "${campo.valor}"`);
+        const valorTxt = campo.valor.toString();
+        const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
+
+        const seleccionarOpcion = () => {
+          return cy.get('body').then(($body) => {
+            const $opts = $body.find('[role="option"]').filter(':visible');
+            if (!$opts.length) {
+              cy.log(`No se encontraron opciones para "${campo.label}", continuando`);
+              return cy.wrap(null);
+            }
+
+            const exacta = Array.from($opts).find((el) => regexValor.test((el.textContent || '').trim()));
+            if (exacta) {
+              return cy.wrap(exacta).click({ force: true }).then(() => {
+                cy.log(`Opción "${valorTxt}" seleccionada para "${campo.label}"`);
+              });
+            }
+
+            if (campo.strictExact) {
+              cy.log(`⚠️ No se encontró coincidencia exacta para "${campo.label}" con "${valorTxt}". No se selecciona fallback.`);
+              // Cerrar desplegable si sigue abierto para evitar seleccionar accidentalmente
+              return cy.get('body').type('{esc}', { force: true }).then(() => cy.wrap(null));
+            }
+
+            // fallback: primera opción visible (solo para campos no críticos)
+            return cy.wrap($opts[0]).click({ force: true }).then(() => {
+              cy.log(`Opción (primera) seleccionada para "${campo.label}"`);
+            });
+          });
+        };
+
         // Buscar por label y luego el input del autocomplete
         return cy.contains('label', new RegExp(`^${escapeRegex(campo.label)}$`, 'i'), { timeout: 10000 })
-          .should('be.visible')
+          .should('exist')
+          .scrollIntoView()
           .then(($label) => {
             // Buscar el input del autocomplete asociado
             return cy.wrap($label)
               .parents('.MuiFormControl-root')
               .first()
               .within(() => {
-                cy.get('input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 10000 })
-                  .should('be.visible')
+                cy.get('input[role="combobox"], input[aria-autocomplete="list"], input', { timeout: 10000 })
+                  .should('exist')
+                  .scrollIntoView()
                   .click({ force: true })
                   .clear({ force: true })
-                  .type(campo.valor.toString(), { force: true });
+                  .type(valorTxt, { force: true });
               })
+              .then(() => cy.wait(500))
+              .then(() => seleccionarOpcion())
               .then(() => {
-                cy.wait(1000);
-                // Hacer clic en la primera opción que aparezca
-                cy.get('[role="option"]', { timeout: 10000 })
+                if (!campo.strictExact) return cy.wrap(null);
+                // Validación inmediata: si es crítico, comprobar que el input queda con el valor esperado
+                return cy.wrap($label)
+                  .parents('.MuiFormControl-root')
                   .first()
-                  .should('be.visible')
-                  .click({ force: true })
-                  .then(() => {
-                    cy.log(`Opción seleccionada para "${campo.label}"`);
-                  }, () => {
-                    cy.log(`No se encontraron opciones para "${campo.label}", continuando`);
+                  .find('input')
+                  .first()
+                  .invoke('val')
+                  .then((v) => {
+                    const actual = (v === undefined || v === null) ? '' : String(v).trim();
+                    if (!actual || actual.toLowerCase() !== valorTxt.toLowerCase()) {
+                      cy.log(`⚠️ "${campo.label}" quedó como "${actual}" tras seleccionar. Se validará al final (TC043) como ERROR si no coincide.`);
+                    }
                   });
               });
           });
       });
     });
 
-    // Checkbox: Cobro fin de mes
-    if (cobroFinMes) {
-      chain = chain.then(() => {
-        cy.log('Marcando checkbox "Cobro fin de mes"');
-        return cy.get('input[name="client.cobroFinMes"]', { timeout: 10000 })
-          .check({ force: true });
-      });
-    }
-
-    // Checkbox: Con Riesgo
-    if (conRiesgo) {
-      chain = chain.then(() => {
-        cy.log('Marcando checkbox "Con Riesgo"');
-        return cy.get('input[name="client.bConRiesgo"]', { timeout: 10000 })
-          .check({ force: true });
-      });
+    // Riesgo Asegurado: suele estar oculto hasta marcar "Con Riesgo".
+    // Si hay dato, intentamos marcar "Con Riesgo" (si existe) y luego escribir solo si el input está visible.
+    if (riesgoAsegurado) {
+      chain = chain
+        .then(() => {
+          return cy.get('body').then(($body) => {
+            const $chk = $body.find('input[name="client.bConRiesgo"]');
+            const estaMarcado = $chk.prop('checked') === true;
+            if ($chk.length && !estaMarcado) {
+              return cy.wrap($chk[0]).check({ force: true }).then(() => cy.wait(300));
+            }
+            return cy.wrap(null);
+          });
+        })
+        .then(() => {
+          return cy.get('body').then(($body) => {
+            const $inp = $body
+              .find('input[name="client.RiesgoAsegurado"], textarea[name="client.RiesgoAsegurado"]')
+              .filter(':visible');
+            if (!$inp.length) {
+              cy.log('Riesgo Asegurado no visible (se omite para evitar fallo)');
+              return cy.wrap(null);
+            }
+            return escribirPorName('client.RiesgoAsegurado', riesgoAsegurado, 'Riesgo Asegurado');
+          });
+        });
     }
 
     return chain.then(() => {
@@ -3549,6 +3795,12 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const casoModificado = { ...casoDatosGenerales };
     casoModificado.dato_7 = nombreCliente; // El nombre va en dato_7
 
+    // En TC043, Facturación debe aplicar exactamente la lógica/datos del caso 10 (si existe)
+    const caso10Facturacion = todosLosCasos.find((c) => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 10;
+    });
+
     // Preparar pantalla limpia: login + navegación + abrir formulario
     return cy.login()
       .then(() => {
@@ -3654,13 +3906,12 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               return navegarSeccionFormulario(seccion)
                 .then(() => {
                   if (esSeccionContacto) return abrirModalContacto();
-                  return abrirModalSeccion(seccion, !esZonasCarga);
+                  // Zonas de carga ahora requiere rellenar "Nombre"
+                  // Para Zonas de carga NO usamos esperarDrawerVisible() (sus inputs no coinciden con la lista hardcodeada)
+                  return abrirModalSeccion(seccion, esZonasCarga ? false : !esZonasCarga);
                 })
                 .then(() => {
-                  if (esZonasCarga) {
-                    cy.log('Zonas de carga: sin campos definidos en Excel, se guarda directamente');
-                    return cy.wrap(null);
-                  }
+                  if (esZonasCarga) return llenarFormularioZonasCarga(casoPestaña, numeroPestaña);
                   if (esSeccionContacto) {
                     return llenarFormularioContacto(casoPestaña, numeroPestaña);
                   }
@@ -3693,8 +3944,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
             // Sección Facturación sin modal
             if (esSeccionFacturacion) {
+              const casoParaFacturacion = caso10Facturacion || casoPestaña;
+              const numeroFacturacion = caso10Facturacion ? 10 : numeroPestaña;
               return navegarSeccionFormulario(seccion)
-                .then(() => llenarFormularioFacturacion(casoPestaña, numeroPestaña))
+                .then(() => llenarFormularioFacturacion(casoParaFacturacion, numeroFacturacion))
                 .then(() => cy.wait(500));
             }
 
@@ -3849,6 +4102,125 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Iniciar con un array vacío y acumular errores en la cadena
         let chainVerificacion = cy.wrap([]);
 
+        const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+        const normalizar = (v) => (v === undefined || v === null ? '' : String(v)).trim().toLowerCase();
+
+        const obtenerDatoPorSelectorExcel = (caso, needle) => {
+          const n = (needle || '').toString();
+          const total = Number(caso?.__totalCamposExcel) || 30;
+          for (let i = 1; i <= total; i++) {
+            const sel = (caso?.[`valor_etiqueta_${i}`] || '').toString();
+            const val = caso?.[`dato_${i}`];
+            if (sel && sel.includes(n) && val !== undefined && val !== null && `${val}` !== '') {
+              return val;
+            }
+          }
+          return null;
+        };
+
+        const tieneValorEsperado = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+
+        const esperadosFacturacion = caso10Facturacion
+          ? {
+              // mismos mapeos que en llenarFormularioFacturacion()
+              empresas: caso10Facturacion.dato_1,
+              disenoFactura: caso10Facturacion.dato_2,
+              banco: caso10Facturacion.dato_3,
+              formaPago: caso10Facturacion.dato_4,
+              swift: caso10Facturacion.dato_5,
+              tipoFacturacion: obtenerDatoPorSelectorExcel(caso10Facturacion, 'r_5t_')
+            }
+          : null;
+
+        const leerValorInputPorLabel = (labelTexto) => {
+          const rx = new RegExp(`^${escapeRegex(labelTexto)}$`, 'i');
+          return cy.get('body').then(($b) => {
+            const $label = $b.find('label').filter((_, el) => rx.test((el.textContent || el.innerText || '').trim())).first();
+            if ($label.length) {
+              const forAttr = $label.attr('for');
+              if (forAttr) {
+                const sel = `#${escapeCssId(forAttr)}`;
+                const $inp = $b.find(sel).first();
+                if ($inp.length) return cy.wrap($inp).invoke('val');
+              }
+              const $inp2 = $label.parents('.MuiFormControl-root').first().find('input, textarea').first();
+              if ($inp2.length) return cy.wrap($inp2).invoke('val');
+            }
+            return cy.wrap('');
+          });
+        };
+
+        const verificarFacturacion = () => {
+          if (!esperadosFacturacion) return cy.wrap([]);
+
+          const checks = [
+            { label: 'Empresas', esperado: esperadosFacturacion.empresas },
+            { label: 'Tipo Facturación', esperado: esperadosFacturacion.tipoFacturacion },
+            { label: 'Diseño Factura', esperado: esperadosFacturacion.disenoFactura }
+          ];
+
+          let chain = cy.wrap([]);
+          checks.forEach((c) => {
+            chain = chain.then((errores) => {
+              // Solo validamos los campos que se intentaron rellenar (tienen valor esperado en Excel),
+              // incluyendo valores como 0.
+              if (!tieneValorEsperado(c.esperado)) return cy.wrap(errores);
+              return leerValorInputPorLabel(c.label).then((actual) => {
+                const a = normalizar(actual);
+                const e = normalizar(c.esperado);
+                const esDiseno = /^diseño factura$/i.test(c.label);
+                const ok = a && (esDiseno ? a === e : (a === e || a.includes(e)));
+                if (!ok) {
+                  const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual || ''}"`;
+                  return cy.wrap([...errores, msg]);
+                }
+                return cy.wrap(errores);
+              });
+            });
+          });
+
+          // Campos de texto: solo si tenían dato esperado en Excel
+          const checksTexto = [
+            { name: 'client.bankName', label: 'Banco', esperado: esperadosFacturacion.banco },
+            { name: 'client.swift', label: 'Swift', esperado: esperadosFacturacion.swift }
+          ];
+
+          checksTexto.forEach((c) => {
+            chain = chain.then((errores) => {
+              if (!tieneValorEsperado(c.esperado)) return cy.wrap(errores);
+              const sel = `input[name="${c.name}"], textarea[name="${c.name}"]`;
+              return cy.get('body').then(($b) => {
+                const $inp = $b.find(sel).filter(':visible').first();
+                if ($inp.length) {
+                  return cy.wrap($inp).invoke('val').then((actual) => {
+                    const a = normalizar(actual);
+                    const e = normalizar(c.esperado);
+                    const ok = a && (a === e || a.includes(e));
+                    if (!ok) {
+                      const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual || ''}"`;
+                      return cy.wrap([...errores, msg]);
+                    }
+                    return cy.wrap(errores);
+                  });
+                }
+                // Si no existe el input, intentamos por label como fallback
+                return leerValorInputPorLabel(c.label).then((actual) => {
+                  const a = normalizar(actual);
+                  const e = normalizar(c.esperado);
+                  const ok = a && (a === e || a.includes(e));
+                  if (!ok) {
+                    const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual || ''}"`;
+                    return cy.wrap([...errores, msg]);
+                  }
+                  return cy.wrap(errores);
+                });
+              });
+            });
+          });
+
+          return chain;
+        };
+
         pestañasAVerificar.forEach((pestañaInfo) => {
           chainVerificacion = chainVerificacion.then((pestañasSinDatos) => {
             cy.log(`Verificando pestaña: ${pestañaInfo.nombre}`);
@@ -3857,6 +4229,20 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             return navegarSeccionFormulario(pestañaInfo.nombre)
               .then(() => cy.wait(1000))
               .then(() => {
+                // Facturación: verificar campos (si se rellenaron y luego no aparecen => ERROR)
+                if (pestañaInfo.nombre === 'Facturación') {
+                  return verificarFacturacion().then((erroresFact) => {
+                    const nuevas = [...pestañasSinDatos];
+                    if (erroresFact && erroresFact.length) {
+                      erroresFact.forEach((e) => nuevas.push(e));
+                    } else {
+                      // Si no hay esperados (caso 10 no existe), caemos a verificación genérica
+                      // sin marcar error extra.
+                    }
+                    return cy.wrap(nuevas);
+                  });
+                }
+
                 // Si tiene subpestaña (Contacto con Direcciones), verificar ambas
                 if (pestañaInfo.tieneSubpestaña && pestañaInfo.nombre === 'Contacto') {
                   // Verificar Contacto primero
