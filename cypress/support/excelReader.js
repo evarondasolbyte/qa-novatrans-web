@@ -32,6 +32,7 @@ const SHEET_GIDS = {
   'LOGIN': '1766248160',
   'CONFIGURACIÓN-PERFILES': '1896958952',
   'FICHEROS-CLIENTES': '520599147',
+  'FICHEROS-PROVEEDORES': '1258242411',
   'PROCESOS-PRESUPUESTOS': '1905879024',
   'PROCESOS-PLANIFICACION': '357769061',
   'TALLER Y GASTOS-REPOSTAJES': '431734268',      
@@ -100,6 +101,11 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
   if (pantallaSafe === 'login') return 'LOGIN';
   if (/(configuración|configuracion).*\(perfiles\)/.test(pantallaSafe) || pantallaSafe === 'configuración-perfiles') return 'CONFIGURACIÓN-PERFILES';
   if (pantallaSafe.includes('ficheros') && (pantallaSafe.includes('clientes') || pantallaSafe === 'ficheros-clientes')) return 'FICHEROS-CLIENTES';
+  // 👇 NUEVO: detectar Ficheros (Proveedores)
+  if (
+    /ficheros/.test(pantallaSafe) &&
+    /(proveedores|proveedor|suppliers|supplier)/.test(pantallaSafe)
+  ) return 'FICHEROS-PROVEEDORES';
   if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('presupuestos') || pantallaSafe === 'procesos-presupuestos')) return 'PROCESOS-PRESUPUESTOS';
   if (pantallaSafe.includes('procesos') && (pantallaSafe.includes('planificación') || pantallaSafe.includes('planificacion') || pantallaSafe === 'procesos-planificacion')) return 'PROCESOS-PLANIFICACION';
   if (
