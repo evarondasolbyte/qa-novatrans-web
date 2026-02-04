@@ -180,7 +180,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       // case 34:
       // case 35:
       // case 36:
-      //   return { fn: anadirProveedor };
+      // return { fn: anadirProveedor };
       // case 37:
       //   return { fn: editarConFilaSeleccionada };
       // case 38:
