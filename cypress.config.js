@@ -417,6 +417,91 @@ Start-Sleep -Milliseconds 200
           return 'OK';
         },
 
+        /**
+         * leerDatosGoogleSheetsAPI
+         * Lee datos de Google Sheets usando la API directamente (más confiable que CSV export)
+         */
+        async leerDatosGoogleSheetsAPI({ hoja = 'Datos' }) {
+          try {
+            const spreadsheetId = process.env.GS_SPREADSHEET_ID || '1m3B_HFT8fJduBxloh8Kj36bVr0hwnj5TioUHAq5O7Zs';
+            
+            // Mapa de GIDs por hoja (mismo que en excelReader.js)
+            const SHEET_GIDS = {
+              'LOGIN': '1766248160',
+              'CONFIGURACIÓN-PERFILES': '1896958952',
+              'FICHEROS-CLIENTES': '520599147',
+              'FICHEROS-PROVEEDORES': '1258242411',
+              'PROCESOS-PRESUPUESTOS': '1905879024',
+              'PROCESOS-PLANIFICACION': '357769061',
+              'TALLER Y GASTOS-REPOSTAJES': '431734268',
+              'FICHEROS-TIPOS DE VEHÍCULO': '299624855',
+              'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',
+              'FICHEROS-MULTAS': '523458683',
+              'FICHEROS-SINIESTROS': '1011892651',
+              'FICHEROS-TARJETAS': '1774716711',
+              'FICHEROS-TELEFONOS': '77961009',
+              'FICHEROS-CATEGORIAS': '1927208168',
+              'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',
+              'FICHEROS-FORMAS DE PAGO': '756254621',
+              'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES': '96321178',
+              'ALMACEN-ARTICULOS': '934160481',
+              'ALMACEN-PEDIDOS': '1704715399',
+              'PROCESOS-ORDENES DE CARGA': '817274383',
+              'PROCESOS-RUTAS': '433035856',
+              'FICHEROS-PERSONAL': '316490626',
+              'FICHEROS-VEHÍCULOS': '107875668',
+              'Datos': '0'
+            };
+
+            // Obtener token de autenticación
+            const auth = new GoogleAuth({
+              credentials: {
+                client_email: process.env.GS_CLIENT_EMAIL,
+                private_key: (process.env.GS_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+              },
+              scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+            });
+            const client = await auth.getClient();
+            const { token } = await client.getAccessToken();
+            if (!token) throw new Error('No se pudo obtener access token');
+
+            // Obtener el GID de la hoja
+            const gid = SHEET_GIDS[hoja] || '0';
+            
+            // Leer datos usando la API de Google Sheets
+            // Usamos un rango amplio para asegurar que leemos todas las columnas
+            const range = `${hoja}!A1:CV1000`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?majorDimension=ROWS`;
+            
+            const res = await fetchCompat(url, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(`Error leyendo Google Sheets (${res.status}): ${errorText}`);
+            }
+
+            const json = await res.json();
+            const rows = json.values || [];
+            
+            // Normalizar el ancho de todas las filas
+            const maxCols = rows.reduce((max, row) => Math.max(max, row ? row.length : 0), 0);
+            const normalized = rows.map(row => {
+              const normalizedRow = Array.from(row || []);
+              while (normalizedRow.length < maxCols) normalizedRow.push('');
+              return normalizedRow;
+            });
+
+            return normalized;
+          } catch (error) {
+            console.error('[leerDatosGoogleSheetsAPI] Error:', error);
+            throw error;
+          }
+        },
+
 
       });
     },

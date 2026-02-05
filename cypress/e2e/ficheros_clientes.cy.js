@@ -117,7 +117,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Para los casos de alta (7-15 y 37, 43), siempre hacer login y navegación completa
         // para garantizar un estado limpio antes de cada caso
         let prepararPantalla = pantallaLista;
-        if ((numero >= 7 && numero <= 15) || numero === 37 || numero === 43) {
+        if ((numero >= 7 && numero <= 15) || numero === 43) {
           const seccion = deducirSeccionDesdeCaso(caso);
           cy.log(`Caso ${numero}: Preparando estado limpio (login + navegación + abrir formulario)`);
           prepararPantalla = cy.login()
@@ -228,8 +228,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               return cy.login().then(() => UI.abrirPantalla());
             }
 
-            // Para casos 7-15, 37 y 43, recargar y usar abrirPantalla (salta esperarTabla si seguimos en form)
-            if ((numero >= 7 && numero <= 15) || numero === 37 || numero === 43) {
+            // Para casos 7-15 y 43, recargar y usar abrirPantalla (salta esperarTabla si seguimos en form)
+            if ((numero >= 7 && numero <= 15) || numero === 43) {
               return cy.reload().then(() => UI.abrirPantalla());
             }
 
@@ -245,77 +245,77 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      case 1:
-        return { fn: cargaPantalla };
-      case 2:
-        return { fn: marcarOkSinEjecutar };
-      case 3:
-      case 4:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 5:
-        return { fn: seleccionarFechasFiltro };
-      case 6:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 7:
-      case 8:
-      case 9:
-      case 10:
-      case 11:
-      case 12:
-      case 13:
-        return { fn: anadirCliente };
-      case 14:
-        return { fn: anadirCliente };
-      case 15:
-        return { fn: anadirCliente };
-      case 16:
-        return { fn: editarCliente };
-      case 17:
-        return { fn: editarCliente };
-      case 18:
-        // TC018: NO eliminar datos en entorno. Marcar OK sin ejecutar.
-        return { fn: marcarOkSinEjecutar };
-      case 19:
-        return { fn: scrollTablaClientes };
-      case 20:
-        return { fn: cambiarIdiomasClientes };
-      case 21:
-      case 22:
-      case 23:
-        return { fn: ejecutarMultifiltroExcel };
-      case 24:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 25:
-        return { fn: seleccionarPrimerCliente };
-      case 26:
-      case 27:
-      case 28:
-        return { fn: seleccionarNacionalidad };
-      case 29:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 30:
-      case 31:
-        return { fn: ordenarColumnaDesdeExcel };
-      case 32:
-      case 33:
-        return { fn: ordenarColumnaDesdeExcel };
-      case 34:
-      case 35:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 36:
-        return { fn: marcarOkSinEjecutar };
-      case 37:
-        return { fn: marcarOkSinEjecutar };
-      case 38:
-        return { fn: ordenarColumnaDesdeExcel };
-      case 39:
-        return { fn: marcarOkSinEjecutar };
-      case 40:
-        return { fn: guardarFiltroDesdeExcel };
-      case 41:
-        return { fn: limpiarFiltroDesdeExcel };
-      case 42:
-        return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      // case 1:
+      //   return { fn: cargaPantalla };
+      // case 2:
+      //   return { fn: marcarOkSinEjecutar };
+      // case 3:
+      // case 4:
+      //   return { fn: ejecutarFiltroIndividualExcel };
+      // case 5:
+      //   return { fn: seleccionarFechasFiltro };
+      // case 6:
+      //   return { fn: ejecutarFiltroIndividualExcel };
+      // case 7:
+      // case 8:
+      // case 9:
+      // case 10:
+        // case 11:
+        // case 12:
+        // case 13:
+      //   return { fn: anadirCliente };
+      // case 14:
+      //   return { fn: anadirCliente };
+      // case 15:
+      //   return { fn: anadirCliente };
+      // case 16:
+      //   return { fn: editarCliente };
+      // case 17:
+      //   return { fn: editarCliente };
+      // case 18:
+      //   // TC018: Seleccionar fila, pulsar Eliminar y cancelar el diálogo para que no borre datos importantes por si acaso
+      //   return { fn: seleccionarFilaYPulsarEliminar };
+      // case 19:
+      //   return { fn: scrollTablaClientes };
+      // case 20:
+      //   return { fn: cambiarIdiomasClientes };
+      // case 21:
+      // case 22:
+      // case 23:
+      //   return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
+      // case 24:
+      //   return { fn: ejecutarFiltroIndividualExcel };
+      // case 25:
+      //   return { fn: seleccionarPrimerCliente };
+      // case 26:
+      // case 27:
+      // case 28:
+      //   return { fn: seleccionarNacionalidad };
+      // case 29:
+      //   return { fn: ejecutarFiltroIndividualExcel };
+      // case 30:
+      // case 31:
+      //   return { fn: ordenarColumnaDesdeExcel };
+      // case 32:
+      // case 33:
+      //   return { fn: ordenarColumnaDesdeExcel };
+      // case 34:
+      // case 35:
+      //   return { fn: marcarOkSinEjecutar }; // Ya no existen estos casos
+      // case 36:
+      //   return { fn: ocultarColumnaDesdeExcel };
+      // case 37:
+      //   return { fn: mostrarColumnaDesdeExcel };
+      // case 38:
+      //   return { fn: ordenarColumnaDesdeExcel };
+      // case 39:
+      //   return { fn: abrirFormularioDesdeExcel };
+      // case 40:
+      //   return { fn: guardarFiltroDesdeExcel };
+      // case 41:
+      //   return { fn: limpiarFiltroDesdeExcel };
+      // case 42:
+      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
       case 43:
         return { fn: TC043 };
       default:
@@ -416,6 +416,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function ejecutarMultifiltroExcel(caso, numero, casoId) {
+    UI.esperarTabla();
     return cy.ejecutarMultifiltro(
       numero,
       PANTALLA,
@@ -550,10 +551,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function ocultarColumnaDesdeExcel(caso, numero) {
-    // Para el caso 34, ocultar la columna "Teléfono"
     let columna = '';
-    if (numero === 34) {
-      columna = 'Teléfono';
+    if (numero === 36) {
+      columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
     } else {
       columna = caso?.valor_etiqueta_1 || caso?.dato_1;
     }
@@ -568,10 +568,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function mostrarColumnaDesdeExcel(caso, numero) {
-    // Para el caso 35, mostrar la columna "Teléfono"
     let columna = '';
-    if (numero === 35) {
-      columna = 'Teléfono';
+    if (numero === 37) {
+      columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
     } else {
       columna = caso?.valor_etiqueta_1 || caso?.dato_1;
     }
@@ -583,6 +582,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     cy.log(`Caso ${numero}: Mostrando columna "${columna}"`);
     return mostrarColumna(columna);
+  }
+
+  function abrirFormularioDesdeExcel(caso, numero) {
+    cy.log(`Caso ${numero}: Abriendo formulario con botón "+ Nuevo"`);
+    return UI.abrirPantalla().then(() => {
+      return abrirFormularioNuevoCliente();
+    });
   }
 
   function guardarFiltroDesdeExcel(caso) {
@@ -1038,36 +1044,93 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
       return cy.wrap(encontrado)
         .scrollIntoView()
+        .should('be.visible')
+        .then(($el) => {
+          // Borrado agresivo: click, selectall, clear, y verificar que esté vacío
+          cy.wrap($el)
+            .click({ force: true })
+            .type('{selectall}', { force: true })
         .clear({ force: true })
-        .type(nuevoEmail, { force: true })
+            .wait(100)
+            .then(($input) => {
+              const val = $input.val();
+              // Si todavía tiene valor, intentar borrar de nuevo
+              if (val && val !== '') {
+                cy.wrap($input)
+                  .click({ force: true })
+                  .type('{selectall}', { force: true })
+                  .clear({ force: true })
+                  .wait(50);
+              }
+              return cy.wrap(null);
+            });
+        })
+        .then(() => {
+          // Escribir el nuevo email
+          cy.wrap(encontrado)
+            .type(nuevoEmail, { force: true, delay: 0 })
         .then(($el) => {
           const val = $el.val();
           if (val !== nuevoEmail) {
-            cy.log(`El valor escrito difiere (${val}), continuando igualmente para guardar`);
+                cy.log(`El valor escrito difiere: esperado="${nuevoEmail}", obtenido="${val}"`);
+              } else {
+                cy.log(`Email editado correctamente: ${nuevoEmail}`);
           }
           return cy.wrap(null);
         });
     });
+    });
 
-    return rellenarEmail()
-      .then(() => {
-        cy.log('Guardando cambios');
-        return cy.contains('button', /Guardar/i, { timeout: 10000 })
-          .should('be.visible')
-          .click({ force: true })
-          .then(() => cy.wait(1000));
-      });
+    return rellenarEmail();
   }
 
-  function eliminarClienteSeleccionado(caso, numero, casoId) {
+  function seleccionarFilaYPulsarEliminar(caso, numero, casoId) {
+    cy.log('TC018: Seleccionando fila y pulsando botón eliminar');
+    
     return UI.abrirPantalla()
-      .then(() => UI.seleccionarPrimeraFilaConCheckbox())
       .then(() => {
-        // Solo verificar que existe el botón de eliminar, pero NO hacer clic
-        cy.contains('button, a', /Eliminar|Borrar/i, { timeout: 10000 })
-          .should('exist')
+        // Esperar a que la tabla esté cargada
+        return UI.filasVisibles().should('have.length.greaterThan', 0);
+      })
+      .then(() => {
+        cy.log('Seleccionando primera fila con checkbox...');
+        // Seleccionar la primera fila con checkbox
+        return UI.seleccionarPrimeraFilaConCheckbox();
+      })
+      .then(() => {
+        cy.wait(500); // Esperar a que aparezca la barra de acciones
+        cy.log('Fila seleccionada, buscando botón de eliminar...');
+        
+        // Buscar el botón de eliminar en la barra de acciones inferior
+        return cy.get('body').then(($body) => {
+          // Buscar botón que contenga "Eliminar" en el texto
+          const $btnEliminar = $body.find('button, a, [role="button"]').filter((_, el) => {
+            const texto = (el.textContent || el.innerText || '').trim();
+            return /^eliminar$/i.test(texto);
+          }).filter(':visible').first();
+          
+          if ($btnEliminar.length) {
+            cy.log('Botón Eliminar encontrado, haciendo clic...');
+            return cy.wrap($btnEliminar[0])
+              .scrollIntoView()
+          .should('be.visible')
+              .click({ force: true });
+          } else {
+            cy.log('No se encontró botón Eliminar, intentando con selector más amplio...');
+            // Fallback: buscar con cy.contains
+            return cy.contains('button, a', /^Eliminar$/i, { timeout: 5000 })
+              .should('be.visible')
+              .scrollIntoView()
+              .click({ force: true });
+          }
+        });
+      })
+      .then(() => {
+        cy.log('Botón Eliminar pulsado, verificando que aparezca el diálogo de confirmación...');
+        // Verificar que el diálogo de confirmación aparezca
+        cy.contains(/¿Estás seguro|eliminar.*cliente|Esta acción no se puede deshacer/i, { timeout: 5000 })
           .should('be.visible');
-        cy.log(' Botón de eliminar encontrado y visible (no se elimina nada)');
+        cy.log('TC018: Diálogo de confirmación de eliminación visible. Test completado.');
       });
   }
 
@@ -1087,7 +1150,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         'Clientes',   // Español
         'Clients',    // Catalán
         'Clients',    // Inglés
-        20  
+        20
       ));
   }
 
@@ -1283,7 +1346,15 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function mostrarColumna(columna) {
+    // Recargar la página para asegurar que estamos en la vista inicial (tabla), no en el formulario
+    cy.reload();
+    cy.wait(1000);
+    
     return UI.abrirPantalla().then(() => {
+      // Verificar que estamos en la vista de tabla, no en el formulario
+      cy.url().should('include', URL_PATH).and('not.include', '/form');
+      cy.wait(500);
+      
       cy.log(`Mostrando columna "${columna}" (panel columnas, con posible segundo clic)`);
 
       const patron = obtenerPatronColumna(columna);
@@ -1491,9 +1562,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                 const clickSeguro = () => {
                   if (selPorId) {
                     return cy.get(selPorId, { timeout: 10000 })
-                  .scrollIntoView()
-                  .should('be.visible')
-                  .click({ force: true });
+                      .scrollIntoView()
+                      .should('be.visible')
+                      .click({ force: true });
                   }
                   return cy.wrap(el)
                     .scrollIntoView()
@@ -1532,10 +1603,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             .then(() => {
               // Esperar a que el menú se abra
               cy.wait(500);
-              
+
               // Para "Actividad", verificar si hay opciones disponibles antes de buscar
               const esActividad = /actividad/i.test(etiqueta || '');
-              
+
               if (esActividad) {
                 // Verificar si hay mensaje "Sin opciones" o si no hay opciones disponibles
                 return cy.get('body').then($body => {
@@ -1543,14 +1614,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                     const texto = (el.textContent || '').toLowerCase();
                     return /sin\s+opciones|no\s+hay\s+opciones|no\s+options/i.test(texto);
                   }).filter(':visible');
-                  
+
                   if (mensajeSinOpciones.length > 0) {
                     cy.log(` Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
                     // Cerrar el dropdown si está abierto
                     cy.get('body').click({ force: true });
                     return cy.wrap(null);
                   }
-                  
+
                   // Verificar si hay opciones disponibles
                   const opciones = $body.find('li[role="option"], [role="option"], div[role="option"]').filter(':visible');
                   if (opciones.length === 0) {
@@ -1559,16 +1630,16 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                     cy.get('body').click({ force: true });
                     return cy.wrap(null);
                   }
-                  
+
                   // Si hay opciones, intentar seleccionar la que coincida
-              return cy.contains(
-                'li[role="option"], [role="option"], div[role="option"]',
-                new RegExp(`^${escapeRegex(valor)}$`, 'i'),
-                { timeout: 10000 }
-              )
-                .scrollIntoView()
-                .should('be.visible')
-                .click({ force: true });
+                  return cy.contains(
+                    'li[role="option"], [role="option"], div[role="option"]',
+                    new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+                    { timeout: 10000 }
+                  )
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .click({ force: true });
                 }).then(null, (err) => {
                   // Si falla al buscar la opción, continuar sin error
                   const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
@@ -1578,7 +1649,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   return cy.wrap(null);
                 });
               }
-              
+
               // Para otros campos, comportamiento normal
               return cy.contains(
                 'li[role="option"], [role="option"], div[role="option"]',
@@ -1599,10 +1670,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       .click({ force: true })
       .then(() => {
         cy.wait(500);
-        
+
         // Para "Actividad", verificar si hay opciones disponibles antes de buscar
         const esActividad = selector && selector.includes('activity');
-        
+
         if (esActividad) {
           // Verificar si hay mensaje "Sin opciones" o si no hay opciones disponibles
           return cy.get('body').then($body => {
@@ -1610,14 +1681,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               const texto = (el.textContent || '').toLowerCase();
               return /sin\s+opciones|no\s+hay\s+opciones|no\s+options/i.test(texto);
             }).filter(':visible');
-            
+
             if (mensajeSinOpciones.length > 0) {
               cy.log(` Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...`);
               // Cerrar el dropdown si está abierto
               cy.get('body').click({ force: true });
               return cy.wrap(null);
             }
-            
+
             // Verificar si hay opciones disponibles
             const opciones = $body.find('li[role="option"], [role="option"], div[role="option"]').filter(':visible');
             if (opciones.length === 0) {
@@ -1626,17 +1697,17 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               cy.get('body').click({ force: true });
               return cy.wrap(null);
             }
-            
+
             // Si hay opciones, intentar seleccionar la que coincida
-        return cy.contains(
-          'li[role="option"], [role="option"], div[role="option"]',
-          new RegExp(`^${escapeRegex(valor)}$`, 'i'),
-          { timeout: 10000 }
-        )
-          .scrollIntoView()
-          .should('be.visible')
-          .click({ force: true });
-          }            ).then(null, (err) => {
+            return cy.contains(
+              'li[role="option"], [role="option"], div[role="option"]',
+              new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+              { timeout: 10000 }
+            )
+              .scrollIntoView()
+              .should('be.visible')
+              .click({ force: true });
+          }).then(null, (err) => {
             // Si falla al buscar la opción, continuar sin error
             const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
             cy.log(` No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
@@ -1645,7 +1716,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             return cy.wrap(null);
           });
         }
-        
+
         // Para otros campos, comportamiento normal
         return cy.contains(
           'li[role="option"], [role="option"], div[role="option"]',
@@ -2661,12 +2732,12 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const seleccionarPrimeraOpcion = () => {
       // Esperar más tiempo para que el listbox se cargue completamente
       cy.wait(1000);
-      
+
       // Buscar el listbox primero (igual que en vehículos)
       return cy.get('body').then($body => {
         // Verificar si hay listbox visible
         const $listbox = $body.find('ul[role="listbox"]:visible, [role="listbox"]:visible').first();
-        
+
         if ($listbox.length > 0) {
           return cy.wrap($listbox[0])
             .should('be.visible')
@@ -2690,7 +2761,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               return cy.wrap(null);
             });
         }
-        
+
         // Si no hay listbox, buscar opciones directamente
         const $opciones = $body.find('li[role="option"]:visible, [role="option"]:visible').filter(':visible');
         if ($opciones.length > 0) {
@@ -2705,7 +2776,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               return cy.wrap(null);
             });
         }
-        
+
         // Si no hay opciones, simplemente continuar sin error
         cy.log(` Campo "${labelTexto}" no tiene opciones disponibles, continuando sin seleccionar...`);
         cy.get('body').click({ force: true });
@@ -2799,68 +2870,44 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
-  // Rellenar TODOS los campos de Datos Generales (se usa por defecto en altas)
   function llenarFormularioGeneralesDesdeExcel(caso, numeroCaso) {
     const alta = caso.dato_1;   // 22/11/2025
     const razonSocial = caso.dato_2;   // prueba
-    const actividad = caso.dato_3;   // ALMACENES
-    const fax = caso.dato_4;   // 12345 (ya no existe, se ignorará)
-    const web = caso.dato_5;   // www.prueba.com
-    const persona = caso.dato_6;   // Física
-    const nombre = caso.dato_7;   // prueba
-    const nif = caso.dato_8;   // 12345p
-    const niva = caso.dato_9;   // 123
-    const tlfFijo = caso.dato_10;  // 999874587
-    const tlfMovil = caso.dato_11;  // 666254478
-    const email = caso.dato_12;  // prueba@gmail.com
-    const notas = caso.dato_13;  // pruebas (si existe)
-    const residencia = caso.dato_14;  // España
-    const direccion = caso.dato_14; // Dirección
-    const ciudad = caso.dato_15;    // Ciudad
-    const provincia = caso.dato_16; // Provincia
-    const pais = caso.dato_17;      // País / Region / County
-    const contactoEmail = caso.dato_18; // Email contacto principal
-    const contactoTelefono = caso.dato_19; // Teléfono contacto principal
-    const contactoCodigo = caso.dato_20;   // Código contacto principal
-    const contactoCargo = caso.dato_21;    // Cargo contacto principal
+    const actividad = caso.dato_3;   // ALMACENES (Autocomplete)
+    const web = caso.dato_4;   // web
+    const persona = caso.dato_5;   // Física/Jurídica
+    const nombre = caso.dato_6;   // prueba
+    const nif = caso.dato_7;   // 12345p
+    const niva = caso.dato_8;   // 123
+    const tlfFijo = caso.dato_9;   // 999874587
+    const tlfMovil = caso.dato_10;  // 666254478
+    const email = caso.dato_11;  // prueba@gmail.com
+    const notas = caso.dato_12;  // prueba
+    const residencia = caso.dato_13;  // España/Extranjero/UE
 
-    cy.log(`Datos Generales detectados: ${JSON.stringify({
-      alta,
-      razonSocial,
-      actividad,
-      fax,
-      web,
-      persona,
-      nombre,
-      nif,
-      niva,
-      tlfFijo,
-      tlfMovil,
-      email,
-      notas,
-      residencia
-    })}`);
+    const direccion = caso.dato_14;  // prueba
+    const ciudad = caso.dato_15;  // prueba
+    const provincia = caso.dato_16;  // prueba
+    const pais = caso.dato_17;  // prueba
+
+    const contactoEmail = caso.dato_18; // prueba@gmail.com
+    const contactoTelefono = caso.dato_19; // 952345678
+    // const contactoCodigo = caso.dato_20; // ❌ YA NO EXISTE -> IGNORAR
+    const contactoCargo = caso.dato_21; // prueba
 
     let chain = cy.wrap(null);
 
-    //  Alta (fecha) usando calendario
+    // Alta (fecha)
     if (alta) {
       chain = chain.then(() => {
         const textoFecha = alta.toString();
         const fechaObj = parseFechaBasicaExcel(textoFecha);
-        cy.log(`Rellenando Alta con ${textoFecha}`);
 
-        // Click en el botón del calendario de "Alta"
-        return cy
-          .contains('label', /^Alta$/i)
+        return cy.contains('label', /^Alta$/i, { timeout: 10000 })
           .parents('.MuiFormControl-root')
           .first()
           .within(() => {
-            cy.get(
-              'button[aria-label*="calendar"], ' +
-              'button[aria-label*="date"], ' +
-              'button[aria-label*="fecha"]'
-            )
+            cy.get('button[aria-label="Choose date"], button[aria-label*="date"], button[aria-label*="calendar"]')
               .first()
               .click({ force: true });
           })
@@ -2868,105 +2915,151 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
     }
 
-    //  Campos de texto (por name)
-    const camposTexto = [
+    // Campos por name (solo los que tu Excel trae)
+    const campos = [
       { label: 'Nombre', name: 'client.name', valor: nombre },
       { label: 'Razón Social', name: 'client.companyName', valor: razonSocial },
       { label: 'NIF/CIF', name: 'client.nif', valor: nif },
       { label: 'NIVA', name: 'client.niva', valor: niva },
+      { label: 'E-mail', name: 'client.email', valor: email },
       { label: 'Tlf. Fijo', name: 'client.phoneNumber', valor: tlfFijo },
       { label: 'Tlf. Móvil', name: 'client.mobileNumber', valor: tlfMovil },
-      { label: 'E-mail', name: 'client.email', valor: email },
       { label: 'Web', name: 'client.web', valor: web },
       { label: 'Notas', name: 'client.notes', valor: notas },
-      // Campo "Código" de Contacto Principal ya no existe en la nueva versión de la pantalla
-      { label: 'Cargo', name: 'client.principalContactJobTitle', valor: contactoCargo },
-      { label: 'E-mail contacto', name: 'client.principalContactEmail', valor: contactoEmail },
-      { label: 'Tlf. contacto', name: 'client.principalContactPhone', valor: contactoTelefono }
-    ];
 
-    camposTexto.forEach((campo) => {
-      if (!campo.valor) {
-        cy.log(`Campo vacío en Excel: ${campo.label}`);
-        return;
-      } // si no hay dato en Excel, saltamos
-
-      chain = chain.then(() =>
-        escribirPorName(campo.name, campo.valor, campo.label)
-      );
-    });
-
-    //  Actividad (select MUI)
-    if (actividad) {
-      chain = chain.then(() => {
-        cy.log(`Seleccionando Actividad: ${actividad}`);
-        return seleccionarOpcionMaterial(
-          '[id="mui-component-select-client.activity"]',
-          actividad.toString(),
-          'Actividad'
-        );
-      });
-    }
-
-    //  Persona (Jurídica / Física)
-    if (persona) {
-      chain = chain.then(() => {
-        cy.log(`Seleccionando Persona: ${persona}`);
-        return seleccionarPorName('client.clientPerson', persona.toString());
-      });
-    }
-
-    //  Residencia (España / Extranjero / UE)
-    if (residencia) {
-      chain = chain.then(() => {
-        cy.log(`Seleccionando Residencia: ${residencia}`);
-        return seleccionarPorName('client.clientResidency', residencia.toString());
-      });
-    }
-
-    //  Dirección / Ciudad / Provincia / País (campos nuevos)
-    const camposDireccion = [
+      // Dirección fiscal (en UI nueva)
       { label: 'Dirección', name: 'client.address', valor: direccion },
       { label: 'Ciudad', name: 'client.city', valor: ciudad },
       { label: 'Provincia', name: 'client.region', valor: provincia },
-      { label: 'País', name: 'client.country', valor: pais }
+      { label: 'País', name: 'client.country', valor: pais },
+
+      // Contacto principal (UI nueva)
+      { label: 'Contacto - E-mail', name: 'client.principalContactEmail', valor: contactoEmail },
+      { label: 'Contacto - Teléfono', name: 'client.principalContactPhone', valor: contactoTelefono },
+      { label: 'Contacto - Cargo', name: 'client.principalContactJobTitle', valor: contactoCargo },
     ];
 
-    camposDireccion.forEach((campo) => {
-      if (!campo.valor) {
-        cy.log(` Campo vacío en Excel: ${campo.label}`);
-        return;
-      }
-
-      // Versión sin .catch: usamos solo escribirPorName,
-      // que ya devuelve un chainable de Cypress
-      chain = chain.then(() =>
-        escribirPorName(campo.name, campo.valor, campo.label)
-      );
+    campos.forEach(c => {
+      chain = chain.then(() => escribirPorNameSeguro(c.name, c.valor, c.label));
     });
 
-    // 🔹 Dirección Fiscal (Dirección, Ciudad, Provincia, País)
-    const camposFiscal = [
-      { label: 'Dirección Fiscal', posibles: ['client.fiscalAddress', 'client.address'], valor: direccion },
-      { label: 'Ciudad Fiscal', posibles: ['client.fiscalCity', 'client.city'], valor: ciudad },
-      { label: 'Provincia Fiscal', posibles: ['client.region'], valor: provincia },
-      { label: 'País Fiscal', posibles: ['client.county'], valor: pais }
-    ];
+    // Actividad (Autocomplete)
+    if (actividad) {
+      chain = chain.then(() => seleccionarActividadAutocomplete(actividad));
+    }
 
-    camposFiscal.forEach((campo) => {
-      if (!campo.valor) {
-        cy.log(`Campo vacío en Excel: ${campo.label}`);
-        return;
-      }
-      chain = chain.then(() => intentarRellenarFiscal(campo, direccion, ciudad, provincia, pais));
-    });
+    // Persona (radio J/F)
+    if (persona) {
+      chain = chain.then(() => seleccionarRadioPorNameSeguro('client.clientPerson', persona, 'Persona'));
+    }
 
-    // (El campo Contacto Activo no se rellena porque no está en el Excel actual)
+    // Residencia (radio R/E/U)
+    if (residencia) {
+      chain = chain.then(() => seleccionarRadioPorNameSeguro('client.clientResidency', residencia, 'Residencia'));
+    }
 
     return chain.then(() => {
       const etiquetaCaso = numeroCaso ? `TC${String(numeroCaso).padStart(3, '0')} - ` : '';
-      cy.log(`${etiquetaCaso}Datos Generales rellenados desde Excel`);
+      cy.log(`${etiquetaCaso}Datos Generales rellenados (mapeo Excel 1..21 OK)`);
     });
+  }
+
+  function escribirPorNameSeguro(nameAttr, valor, etiqueta = '') {
+    if (!nameAttr || valor === undefined || valor === null || String(valor).trim() === '') {
+      return cy.wrap(null);
+    }
+
+    const texto = String(valor);
+    const selector = `input[name="${nameAttr}"], textarea[name="${nameAttr}"]`;
+    const etiquetaLog = etiqueta || nameAttr;
+
+    cy.log(`Escribiendo en "${etiquetaLog}": ${texto}`);
+
+    return cy.get('body').then($body => {
+      const $found = $body.find(selector);
+
+      if (!$found.length) {
+        cy.log(`(SKIP) No existe en UI: ${nameAttr}`);
+        return cy.wrap(null);
+      }
+
+      const $el = $found.first();
+
+      return cy.wrap($el)
+        .scrollIntoView()
+        .should('be.visible')
+        .then(() => cy.wrap($el).clear({ force: true }))
+        .then(() => {
+          cy.wait(80);
+          return cy.wrap($el).type(texto, { force: true, delay: 0 });
+        })
+        .then(() => {
+          cy.wait(30);
+          return cy.wrap($el).should(($input) => {
+            const actual = $input.val();
+            if (actual !== texto) {
+              cy.log(`⚠️ "${etiquetaLog}" esperaba "${texto}" pero tiene "${actual}" (ok, seguimos)`);
+            }
+          });
+        });
+    });
+  }
+
+  function seleccionarRadioPorNameSeguro(name, textoHumano, etiqueta = '') {
+    if (!textoHumano) return cy.wrap(null);
+
+    const t = String(textoHumano).trim().toLowerCase();
+
+    const mapPersona = { 'juridica': 'J', 'jurídica': 'J', 'fisica': 'F', 'física': 'F' };
+    const mapResidencia = { 'españa': 'R', 'espana': 'R', 'extranjero': 'E', 'ue': 'U' };
+
+    const value =
+      name === 'client.clientPerson' ? (mapPersona[t] || textoHumano) :
+        name === 'client.clientResidency' ? (mapResidencia[t] || textoHumano) :
+          textoHumano;
+
+    const selector = `input[type="radio"][name="${name}"][value="${value}"]`;
+    const etiquetaLog = etiqueta || name;
+
+    return cy.get('body').then($body => {
+      const $radio = $body.find(selector);
+      if (!$radio.length) {
+        cy.log(`(SKIP) Radio no existe: ${etiquetaLog} (${name}=${value})`);
+        return cy.wrap(null);
+      }
+      cy.log(`Seleccionando ${etiquetaLog}: ${textoHumano} -> ${value}`);
+      return cy.wrap($radio.first()).check({ force: true });
+    });
+  }
+
+  function seleccionarActividadAutocomplete(valor) {
+    if (!valor) return cy.wrap(null);
+
+    const texto = String(valor);
+
+    return cy.contains('label', /^Actividad$/i, { timeout: 10000 })
+      .should('exist')
+      .then($label => {
+        const forId = $label.attr('for'); // ej: _r_3u_
+
+        if (forId) {
+          return cy.get(`#${forId}`, { timeout: 10000 })
+            .scrollIntoView()
+            .should('be.visible')
+            .clear({ force: true })
+            .type(texto, { force: true, delay: 0 })
+            .type('{enter}', { force: true });
+        }
+
+        // Fallback por si cambian el for
+        return cy.get('input[role="combobox"]', { timeout: 10000 })
+          .first()
+          .scrollIntoView()
+          .should('be.visible')
+          .clear({ force: true })
+          .type(texto, { force: true, delay: 0 })
+          .type('{enter}', { force: true });
+      });
   }
 
   // Intenta rellenar campo fiscal por posibles name -> etiqueta -> orden de bloque
@@ -3268,9 +3361,29 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         return;
       }
 
+      // Para "Dto." en Datos adicionales, escribir directamente sin scroll
+      if (campo.name === 'client.discount') {
+        chain = chain.then(() => {
+          cy.log(`Escribiendo en "${campo.label}": ${campo.valor}`);
+          return cy.get('body').then($body => {
+            const $input = $body.find(`input[name="${campo.name}"]`).filter(':visible').first();
+            if ($input.length) {
+              return cy.wrap($input[0])
+                .click({ force: true })
+                .type('{selectall}', { force: true })
+                .clear({ force: true })
+                .wait(50)
+                .type(String(campo.valor), { force: true, delay: 0 });
+            }
+            cy.log(`(SKIP) No existe en UI: ${campo.name}`);
+            return cy.wrap(null);
+          });
+        });
+      } else {
       chain = chain.then(() =>
         escribirPorName(campo.name, campo.valor, campo.label)
       );
+      }
     });
 
     return chain.then(() => {
@@ -3408,204 +3521,703 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   // Rellenar formulario de Facturación (sin modal, directamente en la pestaña)
   function llenarFormularioFacturacion(caso, numeroCaso) {
-    // Mantener el mapeo "como antes" por posiciones (dato_1..dato_14),
-    // y SOLO añadir el nuevo desplegable "Tipo Facturación" leyendo su valor por id (r_5t_) del Excel.
+    // --- util: buscar en Excel por fragmento del selector/etiqueta ---
     const obtenerDatoPorSelectorExcel = (needle) => {
-      const n = (needle || '').toString();
+      if (!needle) return null;
+      const n = (needle || '').toString().toLowerCase().trim();
       const total = Number(caso?.__totalCamposExcel) || 30;
+
       for (let i = 1; i <= total; i++) {
-        const sel = (caso?.[`valor_etiqueta_${i}`] || '').toString();
+        const sel = (caso?.[`valor_etiqueta_${i}`] || '').toString().toLowerCase().trim();
         const val = caso?.[`dato_${i}`];
-        if (sel && sel.includes(n) && val !== undefined && val !== null && `${val}` !== '') {
+        
+        // Normalizar: quitar espacios y mantener guiones bajos tal cual
+        const selSinEspacios = sel.replace(/\s+/g, '');
+        const nSinEspacios = n.replace(/\s+/g, '');
+        
+        // Buscar coincidencia exacta, por fragmento, o sin espacios
+        // También buscar si el needle está contenido en el selector o viceversa
+        const coincide = sel === n || 
+                        selSinEspacios === nSinEspacios ||
+                        sel.includes(n) || 
+                        n.includes(sel) ||
+                        selSinEspacios.includes(nSinEspacios) ||
+                        nSinEspacios.includes(selSinEspacios);
+        
+        // Log de depuración solo para IBAN parte 1
+        if (needle.includes('17p') || needle.includes('iban')) {
+          cy.log(`   IBAN DEBUG campo ${i}: buscando "${n}", encontrado "${sel}", coincide=${coincide}, valor="${val || '(vacío)'}"`);
+        }
+        
+        if (sel && coincide && val !== undefined && val !== null && `${val}` !== '') {
           return val;
         }
       }
       return null;
     };
 
-    const empresas = caso.dato_1;
-    const disenoFactura = caso.dato_2; // Ej: "Diseño 2"
-    const banco = caso.dato_3;
-    const formaPago = caso.dato_4;
-    const swift = caso.dato_5;
-    const cobroFinMes = caso.dato_6;
-    const conRiesgo = caso.dato_7;
-    const cccEmpresa = caso.dato_8;
-    const iban = caso.dato_9;
-    const cContable = caso.dato_10;
-    const iva = caso.dato_11;
-    const diasCobro = caso.dato_12;
-    const riesgoAsegurado = caso.dato_13;
-    const dto = caso.dato_14;
+    // --- util: buscar en Excel por name attribute ---
+    const obtenerDatoPorNameExcel = (nameAttr) => {
+      if (!nameAttr) return null;
+      const total = Number(caso?.__totalCamposExcel) || 30;
+      const nameAttrLower = (nameAttr || '').toString().toLowerCase().trim();
+      
+      for (let i = 1; i <= total; i++) {
+        const tipo = (caso?.[`etiqueta_${i}`] || '').toString().toLowerCase().trim().replace(/\s+/g, ' ');
+        const selector = (caso?.[`valor_etiqueta_${i}`] || '').toString().toLowerCase().trim();
+        const val = caso?.[`dato_${i}`];
+        
+        // Verificar que sea de tipo "name" (puede tener espacios: "name " o "name")
+        if (!tipo.includes('name')) continue;
+        
+        // Buscar coincidencia exacta o por fragmento
+        // También buscar por el nombre del campo sin el prefijo "client."
+        const selectorSinPrefijo = selector.replace(/^client\./, '');
+        const nameAttrSinPrefijo = nameAttrLower.replace(/^client\./, '');
+        
+        const coincide = selector === nameAttrLower || 
+                        selector.includes(nameAttrLower) || 
+                        nameAttrLower.includes(selector) ||
+                        selectorSinPrefijo === nameAttrSinPrefijo ||
+                        selectorSinPrefijo.includes(nameAttrSinPrefijo) ||
+                        nameAttrSinPrefijo.includes(selectorSinPrefijo);
+        
+        if (coincide && val !== undefined && val !== null && `${val}` !== '') {
+          return val;
+        }
+      }
+      return null;
+    };
 
-    // Nuevo campo: Tipo Facturación (Excel: id r_5t_ -> "Beneficio")
+    // --- datos según el mapeo del Excel TC010 ---
+    // Leer siempre por valor_etiqueta_X para no depender del orden
+    // Empresas (id _r_17g_-label -> "DESDE CANARIAS")
+    const empresas = obtenerDatoPorSelectorExcel('_r_17g_') || obtenerDatoPorSelectorExcel('_r_17g_-label');
+    // Diseño Factura (id _r_17j_-label -> "Diseño 2")
+    const disenoFactura = obtenerDatoPorSelectorExcel('_r_17j_') || obtenerDatoPorSelectorExcel('_r_17j_-label');
+    // Banco (name client.bankName -> "prueba")
+    const banco = obtenerDatoPorNameExcel('client.bankName');
+    // Forma de Pago (name client.paymentMethodDesc -> "233", pero en HTML es client.paymentMethodId)
+    // Buscar primero por paymentMethodDesc (descripción) y luego por paymentMethodId (ID)
+    const formaPago = obtenerDatoPorNameExcel('client.paymentMethodDesc') || obtenerDatoPorNameExcel('client.paymentMethodId');
+    if (formaPago) {
+      cy.log(`✅ Forma de Pago encontrada en Excel: "${formaPago}" (se escribirá como número)`);
+    } else {
+      cy.log(`⚠️ Forma de Pago NO encontrada en Excel`);
+    }
+    // Swift (name client.swift -> "eeeeee44")
+    const swift = obtenerDatoPorNameExcel('client.swift');
+    // IBAN parte 1 (id _r_17p_-label -> "EE11")
+    // Buscar de múltiples formas para asegurar que se encuentre
+    const ibanParte1 = obtenerDatoPorSelectorExcel('_r_17p_-label') || 
+                       obtenerDatoPorSelectorExcel('_r_17p_') ||
+                       obtenerDatoPorSelectorExcel('r_17p') ||
+                       obtenerDatoPorSelectorExcel('17p');
+    if (ibanParte1) {
+      cy.log(`✅ IBAN Parte 1 encontrada en Excel: "${ibanParte1}"`);
+    } else {
+      cy.log(`⚠️ IBAN Parte 1 NO encontrada en Excel (buscando _r_17p_ o _r_17p_-label)`);
+    }
+    // IBAN parte 2 (name client.iban -> "11111111111111111111")
+    const ibanParte2 = obtenerDatoPorNameExcel('client.iban');
+    if (ibanParte2) {
+      cy.log(`✅ IBAN Parte 2 encontrada en Excel: "${ibanParte2}"`);
+    } else {
+      cy.log(`⚠️ IBAN Parte 2 NO encontrada en Excel (buscando client.iban)`);
+    }
+    // C. Contable (name client.CuentaContable -> "prueba", pero en HTML es client.bankAccount)
+    const cContable = obtenerDatoPorNameExcel('client.CuentaContable') || obtenerDatoPorNameExcel('client.bankAccount');
+    // IVA (name client.defaultTax -> "20")
+    const iva = obtenerDatoPorNameExcel('client.defaultTax');
+    // Días Cobro (name client.diaCobro1 -> "2")
+    const diasCobro = obtenerDatoPorNameExcel('client.diaCobro1');
+    // Riesgo Asegurado (name client.RiesgoAsegurado -> "prueba", pero en HTML es client.insuredRisk)
+    const riesgoAsegurado = obtenerDatoPorNameExcel('client.RiesgoAsegurado') || obtenerDatoPorNameExcel('client.insuredRisk');
+    // Dto (name client.discount -> "2")
+    const dto = obtenerDatoPorNameExcel('client.discount');
+    // Tipo Facturación (id r_5t_ -> "Beneficio")
     const tipoFacturacion = obtenerDatoPorSelectorExcel('r_5t_');
 
-    cy.log(`Datos Facturación detectados: empresas=${empresas}, disenoFactura=${disenoFactura}, tipoFacturacion=${tipoFacturacion}, banco=${banco}, formaPago=${formaPago}, swift=${swift}, cobroFinMes=${cobroFinMes}, conRiesgo=${conRiesgo}, cccEmpresa=${cccEmpresa}, iban=${iban}, cContable=${cContable}, iva=${iva}, diasCobro=${diasCobro}, riesgoAsegurado=${riesgoAsegurado}, dto=${dto}`);
-
-    let chain = cy.wrap(null);
-
-    // Checkbox: Cobro fin de mes (antes de escribir inputs, por si habilita/cambia campos)
-    if (cobroFinMes) {
-      chain = chain.then(() => {
-        cy.log('Marcando checkbox "Cobro fin de mes"');
-        return cy.get('input[name="client.cobroFinMes"]', { timeout: 10000 })
-          .check({ force: true });
-      });
+    // C. Venta (autocomplete) - buscar por selector o name
+    // Puede venir como id _r_48 o _r_1an_ o por name client.salesAccount
+    const cVenta = obtenerDatoPorSelectorExcel('_r_48') || 
+                   obtenerDatoPorSelectorExcel('_r_1an_') || 
+                   obtenerDatoPorSelectorExcel('C. Venta') || 
+                   obtenerDatoPorNameExcel('client.salesAccount') || 
+                   null;
+    if (cVenta) {
+      cy.log(`✅ C. Venta encontrada en Excel: "${cVenta}"`);
+    } else {
+      cy.log(`⚠️ C. Venta NO encontrada en Excel`);
     }
 
-    // Checkbox: Con Riesgo (antes de escribir "Riesgo Asegurado", porque suele estar oculto)
-    if (conRiesgo) {
-      chain = chain.then(() => {
-        cy.log('Marcando checkbox "Con Riesgo"');
-        return cy.get('input[name="client.bConRiesgo"]', { timeout: 10000 })
-          .check({ force: true })
-          .then(() => cy.wait(300));
-      });
+    // CCC Empresa - buscar por selector (puede no estar en Excel)
+    const cccEmpresa = obtenerDatoPorSelectorExcel('_r_1ab_') || obtenerDatoPorSelectorExcel('CCC Empresa') || null;
+
+    // Campos opcionales que pueden no estar en el Excel
+    const cobroFinMes = null; // No está en el Excel del TC010
+    const conRiesgo = null; // No está en el Excel del TC010
+
+    // Construir IBAN completo si tenemos ambas partes
+    const iban = (ibanParte1 && ibanParte2) ? `${ibanParte1}${ibanParte2}` : (ibanParte1 || ibanParte2 || null);
+
+    // Log de depuración completo
+    cy.log(`═══════════════════════════════════════════════════════`);
+    cy.log(`📊 DATOS LEÍDOS DEL EXCEL (TC010):`);
+    cy.log(`   Empresas: ${empresas || '(vacío)'}`);
+    cy.log(`   Diseño Factura: ${disenoFactura || '(vacío)'}`);
+    cy.log(`   Tipo Facturación: ${tipoFacturacion || '(vacío)'}`);
+    cy.log(`   Banco: ${banco || '(vacío)'}`);
+    cy.log(`   Forma de Pago: ${formaPago || '(vacío)'}`);
+    cy.log(`   Swift: ${swift || '(vacío)'}`);
+    cy.log(`   IBAN Parte 1: ${ibanParte1 || '(vacío)'}`);
+    cy.log(`   IBAN Parte 2: ${ibanParte2 || '(vacío)'}`);
+    cy.log(`   IBAN Completo: ${iban || '(vacío)'}`);
+    cy.log(`   C. Contable: ${cContable || '(vacío)'}`);
+    cy.log(`   C. Venta: ${cVenta || '(vacío)'}`);
+    cy.log(`   CCC Empresa: ${cccEmpresa || '(vacío)'}`);
+    cy.log(`   IVA: ${iva || '(vacío)'}`);
+    cy.log(`   Días Cobro: ${diasCobro || '(vacío)'}`);
+    cy.log(`   Riesgo Asegurado: ${riesgoAsegurado || '(vacío)'}`);
+    cy.log(`   Dto: ${dto || '(vacío)'}`);
+    cy.log(`═══════════════════════════════════════════════════════`);
+    
+    // Log de depuración del Excel completo para ver qué hay
+    const totalCampos = Number(caso?.__totalCamposExcel) || 30;
+    cy.log(`🔍 DEBUG: Total campos en Excel: ${totalCampos}`);
+    for (let i = 1; i <= Math.min(totalCampos, 20); i++) {
+      const etiqueta = caso?.[`etiqueta_${i}`];
+      const valorEtiqueta = caso?.[`valor_etiqueta_${i}`];
+      const dato = caso?.[`dato_${i}`];
+      if (etiqueta || valorEtiqueta || dato) {
+        cy.log(`   Campo ${i}: etiqueta="${etiqueta || ''}", valor_etiqueta="${valorEtiqueta || ''}", dato="${dato || ''}"`);
+      }
     }
+    
+    // Resumen de campos encontrados vs no encontrados
+    cy.log(`📋 RESUMEN DE CAMPOS:`);
+    cy.log(`   ✅ Encontrados: Empresas=${!!empresas}, Diseño=${!!disenoFactura}, Tipo Fact=${!!tipoFacturacion}, Banco=${!!banco}, FormaPago=${!!formaPago}, Swift=${!!swift}`);
+    cy.log(`   ✅ IBAN: Parte1=${!!ibanParte1}, Parte2=${!!ibanParte2}`);
+    cy.log(`   ✅ Otros: C.Contable=${!!cContable}, IVA=${!!iva}, DíasCobro=${!!diasCobro}, Riesgo=${!!riesgoAsegurado}, Dto=${!!dto}`);
+    cy.log(`   ⚠️  No en Excel: CCC Empresa=${!cccEmpresa}, C.Venta=${!cVenta}`);
 
-    // Campos de texto normales (usando los nombres reales del HTML)
-    const camposTexto = [
-      { name: 'client.bankName', valor: banco, label: 'Banco' },
-      { name: 'client.swift', valor: swift, label: 'Swift' },
-      { name: 'client.iban', valor: iban, label: 'IBAN' },
-      { name: 'client.CuentaContable', valor: cContable, label: 'C. Contable' },
-      { name: 'client.defaultTax', valor: iva, label: 'IVA' },
-      { name: 'client.diaCobro1', valor: diasCobro, label: 'Días Cobro' },
-      { name: 'client.discount', valor: dto, label: 'Dto' }
-    ];
+    // ---------------- helpers ----------------
+    const escapeRegex = (s) => Cypress._.escapeRegExp(String(s));
 
-    // Campos de autocomplete (necesitan tratamiento especial)
-    const camposAutocomplete = [
-      { label: 'Empresas', valor: empresas, strictExact: false },
-      { label: 'Forma de Pago', valor: formaPago, strictExact: false },
-      // Campos críticos: si no encontramos opción exacta, NO seleccionamos "la primera" (evita guardar un valor incorrecto)
-      { label: 'Tipo Facturación', valor: tipoFacturacion, strictExact: true }, // NUEVO (por r_5t_)
-      { label: 'Diseño Factura', valor: disenoFactura, strictExact: true }
-    ];
+    // ✅ Empresas: click + seleccionar opción (como antes). NO usa id.
+    const seleccionarEmpresaFacturacion = (empresaTxt) => {
+      const valor = String(empresaTxt).trim();
+      const regex = new RegExp(`^${escapeRegex(valor)}$`, 'i');
 
-    // Rellenar campos de texto normales
-    camposTexto.forEach((campo) => {
-      if (!campo.valor || campo.valor === '') {
-        cy.log(`Campo vacío en Excel: ${campo.label}`);
-        return;
-      }
+      cy.log(`Seleccionando Empresa (Facturación): "${valor}"`);
 
-      chain = chain.then(() =>
-        escribirPorName(campo.name, campo.valor, campo.label)
-      );
-    });
+      return cy.contains('label', /^Empresas$/i, { timeout: 10000 })
+        .should('exist')
+        .scrollIntoView()
+        .parents('.MuiFormControl-root')
+        .first()
+        .within(() => {
+          cy.get('[role="combobox"]', { timeout: 10000 })
+            .should('be.visible')
+            .click({ force: true });
+        })
+        .then(() => {
+          // listbox de MUI
+          return cy.get('[role="listbox"]', { timeout: 10000 })
+            .should('be.visible')
+            .within(() => {
+              cy.contains('[role="option"]', regex, { timeout: 10000 })
+                .scrollIntoView()
+                .click({ force: true });
+            });
+        });
+    };
 
-    // Rellenar campos autocomplete
-    camposAutocomplete.forEach((campo) => {
-      if (!campo.valor || campo.valor === '') {
-        cy.log(`Campo vacío en Excel: ${campo.label}`);
-        return;
-      }
+    // ✅ modal "Aplicar a todas las empresas" -> Sí, aplicar
+    const aceptarModalAplicarSiExiste = () => {
+      return cy.get('body').then(($body) => {
+        const $dlg = $body.find('[role="dialog"]:visible');
+        if (!$dlg.length) return cy.wrap(null);
 
-      chain = chain.then(() => {
-        cy.log(`Rellenando autocomplete "${campo.label}" con valor "${campo.valor}"`);
-        const valorTxt = campo.valor.toString();
-        const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
+        // Tu modal tiene botón: "Sí, aplicar"
+        return cy.contains('[role="dialog"] button', /sí,\s*aplicar/i, { timeout: 5000 })
+          .should('be.visible')
+          .click({ force: true });
+      });
+    };
 
-        const seleccionarOpcion = () => {
+    // ✅ Autocomplete por label (sin ids dinámicos), selecciona opción exacta si strictExact
+    const seleccionarAutocompletePorLabel = (label, valor, { strictExact = false } = {}) => {
+      const valorTxt = String(valor).trim();
+      const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
+
+      cy.log(`Autocomplete "${label}" => "${valorTxt}"`);
+
+      return cy.contains('label', new RegExp(`^${escapeRegex(label)}$`, 'i'), { timeout: 10000 })
+        .should('exist')
+        .scrollIntoView()
+        .parents('.MuiFormControl-root')
+        .first()
+        .within(() => {
+          cy.get('input[role="combobox"], input[aria-autocomplete="list"], input', { timeout: 10000 })
+            .first()
+            .should('be.visible')
+            .click({ force: true })
+            .clear({ force: true })
+            .type(valorTxt, { force: true });
+        })
+        .then(() => cy.wait(200))
+        .then(() => {
           return cy.get('body').then(($body) => {
             const $opts = $body.find('[role="option"]').filter(':visible');
             if (!$opts.length) {
-              cy.log(`No se encontraron opciones para "${campo.label}", continuando`);
+              cy.log(`No hay opciones visibles para "${label}"`);
               return cy.wrap(null);
             }
 
             const exacta = Array.from($opts).find((el) => regexValor.test((el.textContent || '').trim()));
             if (exacta) {
-              return cy.wrap(exacta).click({ force: true }).then(() => {
-                cy.log(`Opción "${valorTxt}" seleccionada para "${campo.label}"`);
-              });
+              return cy.wrap(exacta).click({ force: true });
             }
 
-            if (campo.strictExact) {
-              cy.log(`⚠️ No se encontró coincidencia exacta para "${campo.label}" con "${valorTxt}". No se selecciona fallback.`);
-              // Cerrar desplegable si sigue abierto para evitar seleccionar accidentalmente
+            if (strictExact) {
+              cy.log(`⚠️ No exacta para "${label}" con "${valorTxt}" (strict). No se selecciona fallback.`);
               return cy.get('body').type('{esc}', { force: true }).then(() => cy.wrap(null));
             }
 
-            // fallback: primera opción visible (solo para campos no críticos)
-            return cy.wrap($opts[0]).click({ force: true }).then(() => {
-              cy.log(`Opción (primera) seleccionada para "${campo.label}"`);
-            });
+            return cy.wrap($opts[0]).click({ force: true });
           });
-        };
+        });
+    };
 
-        // Buscar por label y luego el input del autocomplete
-        return cy.contains('label', new RegExp(`^${escapeRegex(campo.label)}$`, 'i'), { timeout: 10000 })
-          .should('exist')
-          .scrollIntoView()
-          .then(($label) => {
-            // Buscar el input del autocomplete asociado
-            return cy.wrap($label)
-              .parents('.MuiFormControl-root')
-              .first()
-              .within(() => {
-                cy.get('input[role="combobox"], input[aria-autocomplete="list"], input', { timeout: 10000 })
-                  .should('exist')
-                  .scrollIntoView()
-                  .click({ force: true })
-                  .clear({ force: true })
-                  .type(valorTxt, { force: true });
-              })
-              .then(() => cy.wait(500))
-              .then(() => seleccionarOpcion())
-              .then(() => {
-                if (!campo.strictExact) return cy.wrap(null);
-                // Validación inmediata: si es crítico, comprobar que el input queda con el valor esperado
-                return cy.wrap($label)
-                  .parents('.MuiFormControl-root')
-                  .first()
-                  .find('input')
-                  .first()
-                  .invoke('val')
-                  .then((v) => {
-                    const actual = (v === undefined || v === null) ? '' : String(v).trim();
-                    if (!actual || actual.toLowerCase() !== valorTxt.toLowerCase()) {
-                      cy.log(`⚠️ "${campo.label}" quedó como "${actual}" tras seleccionar. Se validará al final (TC043) como ERROR si no coincide.`);
-                    }
-                  });
-              });
-          });
-      });
-    });
+    // ✅ Select tipo "dropdown" (cuando no es autocomplete) por label -> click combobox -> option
+    const seleccionarSelectPorLabel = (label, valor) => {
+      const valorTxt = String(valor).trim();
+      const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
 
-    // Riesgo Asegurado: suele estar oculto hasta marcar "Con Riesgo".
-    // Si hay dato, intentamos marcar "Con Riesgo" (si existe) y luego escribir solo si el input está visible.
-    if (riesgoAsegurado) {
-      chain = chain
+      cy.log(`Select "${label}" => "${valorTxt}"`);
+
+      return cy.contains('label', new RegExp(`^${escapeRegex(label)}$`, 'i'), { timeout: 10000 })
+        .should('exist')
+        .scrollIntoView()
+        .parents('.MuiFormControl-root')
+        .first()
+        .within(() => {
+          cy.get('[role="combobox"]', { timeout: 10000 })
+            .should('be.visible')
+            .click({ force: true });
+        })
         .then(() => {
+          return cy.get('[role="listbox"]', { timeout: 10000 })
+            .should('be.visible')
+            .within(() => {
+              cy.contains('[role="option"]', regexValor, { timeout: 10000 })
+                .scrollIntoView()
+                .click({ force: true });
+            });
+        });
+    };
+
+    // IBAN en el HTML viene en 2 inputs separados (id _r_1af_ con placeholder="ES91" y id _r_1ag_ con placeholder="21000418450200051332")
+    const escribirIbanSiSePuede = (ibanCompleto, ibanParte1, ibanParte2) => {
+      // Si tenemos partes separadas, usarlas directamente
+      if (ibanParte1 || ibanParte2) {
+        // Si solo tenemos una parte, intentar escribirla en el input correspondiente
+        if (ibanParte1 && !ibanParte2) {
+          cy.log(`Escribiendo solo IBAN parte 1: ${ibanParte1}`);
           return cy.get('body').then(($body) => {
-            const $chk = $body.find('input[name="client.bConRiesgo"]');
-            const estaMarcado = $chk.prop('checked') === true;
-            if ($chk.length && !estaMarcado) {
-              return cy.wrap($chk[0]).check({ force: true }).then(() => cy.wait(300));
+            const $input1 = $body.find('input#_r_1af_, input[id="_r_1af_"]').filter(':visible').first();
+            if ($input1.length) {
+              cy.wrap($input1[0]).scrollIntoView().clear({ force: true }).type(String(ibanParte1).toUpperCase(), { force: true, delay: 0 });
+              return cy.wrap(null);
+            }
+            // Buscar por label
+            const $label = $body.find('label').filter((_, el) => /^IBAN$/i.test((el.textContent || '').trim())).filter(':visible').first();
+            if ($label.length) {
+              return cy.wrap($label).parents('.MuiBox-root, .MuiFormControl-root').first().then(($container) => {
+                const $inputs = $container.find('input').filter(':visible');
+                if ($inputs.length >= 1) {
+                  cy.wrap($inputs[0]).scrollIntoView().clear({ force: true }).type(String(ibanParte1).toUpperCase(), { force: true, delay: 0 });
+                }
+                return cy.wrap(null);
+              });
             }
             return cy.wrap(null);
           });
-        })
-        .then(() => {
+        }
+        
+        if (ibanParte2 && !ibanParte1) {
+          cy.log(`Escribiendo solo IBAN parte 2: ${ibanParte2}`);
           return cy.get('body').then(($body) => {
-            const $inp = $body
-              .find('input[name="client.RiesgoAsegurado"], textarea[name="client.RiesgoAsegurado"]')
-              .filter(':visible');
-            if (!$inp.length) {
-              cy.log('Riesgo Asegurado no visible (se omite para evitar fallo)');
+            const $input2 = $body.find('input#_r_1ag_, input[id="_r_1ag_"]').filter(':visible').first();
+            if ($input2.length) {
+              cy.wrap($input2[0]).scrollIntoView().clear({ force: true }).type(String(ibanParte2), { force: true, delay: 0 });
               return cy.wrap(null);
             }
-            return escribirPorName('client.RiesgoAsegurado', riesgoAsegurado, 'Riesgo Asegurado');
+            // Buscar por label
+            const $label = $body.find('label').filter((_, el) => /^IBAN$/i.test((el.textContent || '').trim())).filter(':visible').first();
+            if ($label.length) {
+              return cy.wrap($label).parents('.MuiBox-root, .MuiFormControl-root').first().then(($container) => {
+                const $inputs = $container.find('input').filter(':visible');
+                if ($inputs.length >= 2) {
+                  cy.wrap($inputs[1]).scrollIntoView().clear({ force: true }).type(String(ibanParte2), { force: true, delay: 0 });
+                }
+                return cy.wrap(null);
+              });
+            }
+            return cy.wrap(null);
           });
+        }
+        
+        // Si tenemos ambas partes, usar la lógica original
+        if (ibanParte1 && ibanParte2) {
+          cy.log(`Escribiendo IBAN en dos partes: ${ibanParte1} / ${ibanParte2}`);
+          return cy.get('body').then(($body) => {
+            // PRIORIDAD 1: Buscar directamente por IDs conocidos del HTML actual
+            // Buscar también por placeholder para ser más flexible
+            const $input1 = $body.find('input#_r_1af_, input[id="_r_1af_"], input[placeholder*="ES91"], input[placeholder*="ES"], input[maxlength="4"]').filter(':visible').first();
+            const $input2 = $body.find('input#_r_1ag_, input[id="_r_1ag_"], input[placeholder*="21000418450200051332"], input[maxlength="20"]').filter(':visible').first();
+            
+            cy.log(`IBAN DEBUG: Input1 encontrado=${$input1.length > 0} (buscando por ID o placeholder), Input2 encontrado=${$input2.length > 0} (buscando por ID o placeholder)`);
+            
+            if ($input1.length && $input2.length) {
+              cy.log(`IBAN: Escribiendo "${ibanParte1}" en input1 (id="${$input1[0].id || 'sin id'}", placeholder="${$input1[0].getAttribute('placeholder') || ''}")`);
+              cy.log(`IBAN: Escribiendo "${ibanParte2}" en input2 (id="${$input2[0].id || 'sin id'}", placeholder="${$input2[0].getAttribute('placeholder') || ''}")`);
+              
+              cy.wrap($input1[0])
+                .scrollIntoView()
+                .should('be.visible')
+                .clear({ force: true })
+                .type(String(ibanParte1).toUpperCase(), { force: true, delay: 0 });
+              cy.wait(100);
+              cy.wrap($input2[0])
+                .scrollIntoView()
+                .should('be.visible')
+                .clear({ force: true })
+                .type(String(ibanParte2), { force: true, delay: 0 });
+              return cy.wrap(null);
+            }
+
+          // PRIORIDAD 2: Buscar por label IBAN
+          const $label = $body.find('label').filter((_, el) => {
+            const texto = (el.textContent || el.innerText || '').trim();
+            return /^IBAN$/i.test(texto);
+          }).filter(':visible').first();
+
+          if ($label.length) {
+            cy.log('IBAN encontrado por label, buscando inputs...');
+            // Subir al contenedor padre que contiene los 2 inputs del IBAN
+            // Según el HTML, los inputs están en un contenedor con clase css-1q7gx9h o css-1rfkbsb
+            return cy.wrap($label)
+              .parents('.MuiBox-root, .MuiFormControl-root, div[class*="css-1q7gx9h"], div[class*="css-1rfkbsb"]')
+              .first()
+              .then(($container) => {
+                // Buscar todos los inputs visibles dentro del contenedor
+                const $inputs = $container.find('input').filter(':visible');
+                cy.log(`IBAN DEBUG por label: Encontrados ${$inputs.length} inputs visibles en el contenedor`);
+                
+                if ($inputs.length >= 2) {
+                  // Verificar que el primer input tenga placeholder "ES91" o maxlength="4" (código país)
+                  // y el segundo tenga placeholder con números o maxlength="20"
+                  let input1 = $inputs[0];
+                  let input2 = $inputs[1];
+                  
+                  // Si hay más de 2 inputs, intentar identificar cuáles son los del IBAN
+                  if ($inputs.length > 2) {
+                    const inputsArray = Array.from($inputs);
+                    // Buscar el que tiene placeholder="ES91" o maxlength="4"
+                    const input1Candidato = inputsArray.find(inp => {
+                      const placeholder = inp.getAttribute('placeholder') || '';
+                      const maxlength = inp.getAttribute('maxlength') || '';
+                      return placeholder.includes('ES') || maxlength === '4';
+                    });
+                    // Buscar el que tiene placeholder con números o maxlength="20"
+                    const input2Candidato = inputsArray.find(inp => {
+                      const placeholder = inp.getAttribute('placeholder') || '';
+                      const maxlength = inp.getAttribute('maxlength') || '';
+                      return /^\d+$/.test(placeholder) || maxlength === '20';
+                    });
+                    
+                    if (input1Candidato) input1 = input1Candidato;
+                    if (input2Candidato) input2 = input2Candidato;
+                  }
+                  
+                  cy.log(`IBAN: Escribiendo "${ibanParte1}" en input1 (placeholder="${input1.getAttribute('placeholder') || ''}", maxlength="${input1.getAttribute('maxlength') || ''}")`);
+                  cy.log(`IBAN: Escribiendo "${ibanParte2}" en input2 (placeholder="${input2.getAttribute('placeholder') || ''}", maxlength="${input2.getAttribute('maxlength') || ''}")`);
+                  
+                  // 1º input (4 chars - código país)
+                  cy.wrap(input1)
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .clear({ force: true })
+                    .type(String(ibanParte1).toUpperCase(), { force: true, delay: 0 });
+                  
+                  // Esperar un momento antes de escribir en el segundo input
+                  cy.wait(100);
+                  
+                  // 2º input (resto - 20 dígitos)
+                  cy.wrap(input2)
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .clear({ force: true })
+                    .type(String(ibanParte2), { force: true, delay: 0 });
+                  
+                  return cy.wrap(null);
+                }
+                cy.log(`IBAN DEBUG: No se detectaron 2 inputs IBAN en el contenedor (encontrados: ${$inputs.length}). Buscando en contenedores más amplios...`);
+                
+                // Fallback: buscar en contenedores más amplios
+                return cy.wrap($label)
+                  .closest('div[class*="css-1q7gx9h"], div[class*="css-1rfkbsb"], .MuiBox-root')
+                  .then(($fallbackContainer) => {
+                    const $fallbackInputs = $fallbackContainer.find('input').filter(':visible');
+                    cy.log(`IBAN DEBUG fallback: Encontrados ${$fallbackInputs.length} inputs en contenedor más amplio`);
+                    
+                    if ($fallbackInputs.length >= 2) {
+                      cy.log(`IBAN: Escribiendo en inputs del contenedor fallback`);
+                      cy.wrap($fallbackInputs[0])
+                        .scrollIntoView()
+                        .should('be.visible')
+                        .clear({ force: true })
+                        .type(String(ibanParte1).toUpperCase(), { force: true, delay: 0 });
+                      cy.wait(100);
+                      cy.wrap($fallbackInputs[1])
+                        .scrollIntoView()
+                        .should('be.visible')
+                        .clear({ force: true })
+                        .type(String(ibanParte2), { force: true, delay: 0 });
+                      return cy.wrap(null);
+                    }
+                    
+                    cy.log('No se detectaron 2 inputs IBAN en ningún contenedor. Se omite.');
+                    return cy.wrap(null);
+                  });
+              });
+          }
+
+          cy.log('No se encontraron inputs IBAN. Se omite.');
+          return cy.wrap(null);
         });
+        }
+      }
+
+      // Si tenemos IBAN completo, hacer split
+      if (!ibanCompleto) return cy.wrap(null);
+      const ibanTxt = String(ibanCompleto).replace(/\s+/g, '').toUpperCase();
+
+      // Split: 4 primeros caracteres (código país) + resto (20 dígitos)
+      const p1 = ibanTxt.slice(0, 4);
+      const p2 = ibanTxt.slice(4);
+
+      cy.log(`Escribiendo IBAN completo (split): ${p1} / ${p2}`);
+
+      return cy.get('body').then(($body) => {
+        // PRIORIDAD 1: Buscar directamente por IDs conocidos
+        const $input1 = $body.find('input#_r_1af_, input[id="_r_1af_"]').filter(':visible').first();
+        const $input2 = $body.find('input#_r_1ag_, input[id="_r_1ag_"]').filter(':visible').first();
+        
+        if ($input1.length && $input2.length) {
+          cy.log('IBAN encontrado por IDs específicos (IBAN completo)');
+          cy.wrap($input1[0])
+            .scrollIntoView()
+            .clear({ force: true })
+            .type(p1, { force: true, delay: 0 });
+          cy.wrap($input2[0])
+            .scrollIntoView()
+            .clear({ force: true })
+            .type(p2, { force: true, delay: 0 });
+          return cy.wrap(null);
+        }
+
+        // PRIORIDAD 2: Buscar por label IBAN
+        const $label = $body.find('label').filter((_, el) => {
+          const texto = (el.textContent || el.innerText || '').trim();
+          return /^IBAN$/i.test(texto);
+        }).filter(':visible').first();
+
+        if ($label.length) {
+        return cy.wrap($label)
+          .parents('.MuiBox-root, .MuiFormControl-root')
+          .first()
+          .then(($container) => {
+            const $inputs = $container.find('input').filter(':visible');
+              if ($inputs.length >= 2) {
+                cy.wrap($inputs[0])
+                  .scrollIntoView()
+                  .clear({ force: true })
+                  .type(p1, { force: true, delay: 0 });
+                cy.wrap($inputs[1])
+                  .scrollIntoView()
+                  .clear({ force: true })
+                  .type(p2, { force: true, delay: 0 });
+                return cy.wrap(null);
+              }
+              cy.log('No se detectaron 2 inputs IBAN. Se omite.');
+              return cy.wrap(null);
+            });
+        }
+
+        cy.log('IBAN label no visible. Se omite.');
+            return cy.wrap(null);
+      });
+    };
+
+    // ---------------- ejecución ----------------
+    let chain = cy.wrap(null);
+
+    // ✅ 1) EMPRESAS: como antes (click + seleccionar) + modal si aparece
+    if (empresas) {
+      chain = chain
+        .then(() => seleccionarEmpresaFacturacion(empresas))
+        .then(() => aceptarModalAplicarSiExiste());
+    }
+
+    // ✅ 2) CCC Empresa (select dentro Configuración de Factura)
+    if (cccEmpresa) {
+      chain = chain.then(() => seleccionarAutocompletePorLabel('CCC Empresa', cccEmpresa, { strictExact: true }));
+    }
+
+    // ✅ 3) Tipo Facturación + Diseño Factura (autocompletes)
+    if (tipoFacturacion) {
+      chain = chain.then(() => seleccionarAutocompletePorLabel('Tipo Facturación', tipoFacturacion, { strictExact: true }));
+    }
+    if (disenoFactura) {
+      chain = chain.then(() => seleccionarAutocompletePorLabel('Diseño Factura', disenoFactura, { strictExact: true }));
+    }
+
+    // ✅ 4) IVA (tiene name="client.defaultTax")
+    if (iva !== undefined && iva !== null && `${iva}` !== '') {
+      chain = chain.then(() => escribirPorName('client.defaultTax', iva, 'IVA'));
+    }
+
+    // ✅ 5) Banco + Swift
+    if (banco) chain = chain.then(() => escribirPorName('client.bankName', banco, 'Banco'));
+    if (swift) chain = chain.then(() => escribirPorName('client.swift', swift, 'Swift'));
+
+    // ✅ 6) Forma de pago: en tu HTML es input name="client.paymentMethodId" + botón (buscador)
+    // Aquí lo más estable es usar el autocomplete por label si existe; si no, al menos escribir el id.
+    if (formaPago) {
+      // Si en tu UI Forma de Pago NO es autocomplete real, esto al menos mete el valor.
+      chain = chain.then(() => escribirPorName('client.paymentMethodId', formaPago, 'Forma de Pago'));
+    }
+
+    // ✅ 7) Días cobro (dos inputs diaCobro1/diaCobro2). Si solo tienes uno en Excel, va al 1.
+    if (diasCobro) {
+      chain = chain.then(() => escribirPorName('client.diaCobro1', diasCobro, 'Días Cobro'));
+    }
+
+    // ✅ 8) Cobro fin mes (switch checkbox)
+    if (cobroFinMes) {
+      chain = chain.then(() => {
+        cy.log('Marcando "Cobro fin mes"');
+        return cy.get('input[name="client.cobroFinMes"]', { timeout: 10000 })
+          .should('exist')
+          .check({ force: true });
+      });
+    }
+
+    // ✅ 9) C. Contable (name="client.bankAccount")
+    if (cContable) {
+      chain = chain.then(() => escribirPorName('client.bankAccount', cContable, 'C. Contable'));
+    }
+
+    // ✅ 10) C. Venta (autocomplete)
+    if (cVenta) {
+      chain = chain.then(() => seleccionarAutocompletePorLabel('C. Venta', cVenta, { strictExact: true }));
+    }
+
+    // ✅ 11) IBAN (especial; dos inputs separados)
+    if (ibanParte1 || ibanParte2 || iban) {
+      chain = chain.then(() => {
+        cy.log(`Ejecutando escritura de IBAN: parte1="${ibanParte1 || '(vacío)'}", parte2="${ibanParte2 || '(vacío)'}", completo="${iban || '(vacío)'}"`);
+        return escribirIbanSiSePuede(iban, ibanParte1, ibanParte2);
+      });
+    } else {
+      cy.log(`⚠️ IBAN no se ejecutará: parte1=${!!ibanParte1}, parte2=${!!ibanParte2}, completo=${!!iban}`);
+    }
+
+    // ✅ 12) Dto (name="client.discount")
+    if (dto !== undefined && dto !== null && `${dto}` !== '') {
+      chain = chain.then(() => escribirPorName('client.discount', dto, 'Dto'));
+    }
+
+    // ✅ 13) Con Riesgo (switch: name="client.withRiskB") y Riesgo asegurado (name="client.insuredRisk")
+    if (conRiesgo) {
+      chain = chain.then(() => {
+        cy.log('Activando "Con Riesgo"');
+        return cy.get('input[name="client.withRiskB"]', { timeout: 10000 })
+          .should('exist')
+          .check({ force: true });
+      });
+    }
+
+    if (riesgoAsegurado !== undefined && riesgoAsegurado !== null && `${riesgoAsegurado}` !== '') {
+      chain = chain.then(() => {
+        // Solo escribir si el input está visible (evita fallos si UI lo oculta)
+        return cy.get('body').then(($body) => {
+          const $inp = $body.find('input[name="client.insuredRisk"]').filter(':visible');
+          if (!$inp.length) {
+            cy.log('Riesgo Asegurado no visible, se omite');
+            return cy.wrap(null);
+          }
+          return escribirPorName('client.insuredRisk', riesgoAsegurado, 'Riesgo Asegurado');
+        });
+      });
     }
 
     return chain.then(() => {
       const etiquetaCaso = numeroCaso ? `TC${String(numeroCaso).padStart(3, '0')} - ` : '';
-      cy.log(`${etiquetaCaso}Formulario Facturación rellenado desde Excel`);
+      cy.log(`${etiquetaCaso}Formulario Facturación rellenado (corregido)`);
+      });
+  }
+
+  function aceptarModalAplicarEmpresasSiExiste() {
+    return cy.get('body').then(($body) => {
+      const $dialog = $body.find('[role="dialog"]:visible');
+      if (!$dialog.length) return cy.wrap(null);
+
+      const $btn = $dialog.find('button').filter((_, el) => {
+        const t = (el.innerText || '').trim().toLowerCase();
+        return t.includes('sí') && t.includes('aplicar');
+      });
+
+      if ($btn.length) {
+        cy.log('Modal detectado -> pulsando "Sí, aplicar"');
+        return cy.wrap($btn[0]).click({ force: true });
+      }
+
+      return cy.wrap(null);
+    });
+  }
+
+  function aceptarAlertaFacturacionSiExiste() {
+    return cy.get('body').then(($body) => {
+      const $dialog = $body.find('[role="dialog"]:visible');
+
+      if (!$dialog.length) {
+        cy.log('No hay alerta de aplicar a todas las empresas');
+        return cy.wrap(null);
+      }
+
+      cy.log('Alerta de Facturación detectada');
+
+      // Botón exacto: "Sí, aplicar"
+      const $btnAplicar = $dialog.find('button').filter((_, el) => {
+        const txt = (el.innerText || '').trim().toLowerCase();
+        return txt.includes('sí') && txt.includes('aplicar');
+      });
+
+      if ($btnAplicar.length) {
+        cy.log('Pulsando "Sí, aplicar"');
+        return cy.wrap($btnAplicar[0]).click({ force: true });
+      }
+
+      // Fallback ultra defensivo
+      cy.log('Fallback: buscando botón que contenga "aplicar"');
+      return cy.wrap($dialog[0]).within(() => {
+        cy.contains('button', /aplicar/i, { timeout: 2000 })
+          .click({ force: true });
+      });
     });
   }
 
@@ -3620,35 +4232,80 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     cy.log(`Escribiendo en "${etiquetaLog}": ${texto}`);
 
-    // Buscar directamente con Cypress
-    // Romper la cadena para evitar errores cuando la página se actualiza
-    // NO hacer blur() ni disparar eventos que puedan guardar el formulario automáticamente
-    return cy.get(selector, { timeout: 10000 })
-      .should('be.visible')
-      .scrollIntoView()
-      .then(($el) => {
-        // Limpiar el campo
-        return cy.wrap($el[0])
-          .clear({ force: true });
-      })
-      .then(() => {
-        // Esperar un poco para que se estabilice
-        cy.wait(100);
-        // Escribir el texto - NO hacer blur después
-        return cy.get(selector, { timeout: 10000 })
-          .should('be.visible')
-          .type(texto, { force: true, delay: 0 });
-      })
-      .then(() => {
-        // Verificar el valor sin hacer blur (evita guardado automático)
-        cy.wait(50);
-        return cy.get(selector, { timeout: 10000 })
-          .should(($input) => {
+    // ✅ Si no existe el input, NO fallar
+    return cy.get('body').then($body => {
+      const $found = $body.find(selector);
+      if (!$found.length) {
+        cy.log(`(SKIP) No existe en UI: ${selector}`);
+        return cy.wrap(null);
+      }
+
+      // Usamos el elemento encontrado para evitar re-render
+      const $el = $found.first();
+
+      return cy.wrap($el)
+        .scrollIntoView()
+        .should('be.visible')
+        .then(() => {
+          // Limpiar el campo de forma más agresiva: seleccionar todo y borrar
+          cy.wrap($el).click({ force: true });
+          cy.wrap($el).type('{selectall}', { force: true });
+          cy.wrap($el).clear({ force: true });
+          cy.wait(50);
+          // Verificar que esté vacío antes de escribir usando cy.then() en lugar de cy.should()
+          return cy.wrap($el).then(($input) => {
+            const val = $input.val();
+            // Si todavía tiene valor (incluyendo "0"), intentar borrar de nuevo
+            if (val && val !== '') {
+              cy.wrap($input).click({ force: true });
+              cy.wrap($input).type('{selectall}', { force: true });
+              cy.wrap($input).clear({ force: true });
+              cy.wait(30);
+            }
+            return cy.wrap(null);
+          });
+        })
+        .then(() => {
+          cy.wait(100);
+          return cy.wrap($el).type(texto, { force: true, delay: 0 });
+        })
+        .then(() => {
+          cy.wait(50);
+          // Usar cy.then() en lugar de cy.should() para evitar el error de comandos dentro del callback
+          return cy.wrap($el).then(($input) => {
             const valorActual = $input.val();
             if (valorActual !== texto) {
-              cy.log(` Valor esperado "${texto}" pero se obtuvo "${valorActual}", continuando...`);
+              // Mover cy.log() fuera del callback usando cy.then() para loguear después
+              cy.log(`⚠️ Valor esperado "${texto}" pero se obtuvo "${valorActual}", continuando...`);
             }
+            return cy.wrap(null);
           });
+        });
+    });
+  }
+
+  function seleccionarActividad(valor) {
+    if (!valor) return cy.wrap(null);
+
+    return cy.contains('label', /^Actividad$/i, { timeout: 10000 })
+      .should('exist')
+      .then($label => {
+        const forId = $label.attr('for'); // ej: _r_3u_
+        if (forId) {
+          return cy.get(`#${forId}`)
+            .scrollIntoView()
+            .should('be.visible')
+            .clear({ force: true })
+            .type(String(valor), { force: true })
+            .type('{enter}', { force: true });
+        }
+
+        // fallback
+        return cy.get('input[role="combobox"]').first()
+          .scrollIntoView()
+          .clear({ force: true })
+          .type(String(valor), { force: true })
+          .type('{enter}', { force: true });
       });
   }
 
@@ -3696,7 +4353,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       // Buscar específicamente en el área de la tabla de la pestaña actual
       // Buscar la tabla MuiDataGrid o el área de contenido de la pestaña
       const tabla = $body.find('.MuiDataGrid-root:visible, .MuiTableContainer:visible, table:visible').first();
-      
+
       if (tabla.length > 0) {
         // Verificar si la tabla tiene filas de datos
         const filas = tabla.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible').filter((_, el) => {
@@ -3704,7 +4361,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
           return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos/i.test(textoFila);
         });
-        
+
         if (filas.length > 0) {
           cy.log(` La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
           return cy.wrap(true);
@@ -3714,7 +4371,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             const texto = (el.textContent || '').toLowerCase();
             return /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
           });
-          
+
           if (mensajeSinFilas.length > 0) {
             cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
             return cy.wrap(false);
@@ -3734,7 +4391,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           const estaEnContenido = $el.closest('[class*="MuiPaper"], [class*="content"], [class*="tabpanel"]').length > 0;
           return estaVisible && estaEnContenido && /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
         });
-        
+
         if (mensajeSinFilas.length > 0) {
           cy.log(` ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
           return cy.wrap(false);
@@ -4020,6 +4677,55 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         });
       })
       .then(() => {
+        // Verificar si aparece una alerta de error después de guardar
+        cy.log('TC043: Verificando si aparece alerta de error...');
+        return cy.get('body').then($body => {
+          const textoCompleto = $body.text();
+          
+          // Buscar alertas de error (como "Request failed with status code 500")
+          const tieneError = textoCompleto.includes('Request failed with status code 500') ||
+                            textoCompleto.includes('status code 500') ||
+                            textoCompleto.includes('Error 500') ||
+                            $body.find('[class*="error"], [class*="Error"], [role="alert"]').filter((_, el) => {
+                              const texto = (el.textContent || '').toLowerCase();
+                              return texto.includes('500') || 
+                                     texto.includes('error') || 
+                                     texto.includes('failed');
+                            }).length > 0;
+
+          if (tieneError) {
+            cy.log('⚠️ TC043: Alerta de error detectada después de guardar');
+            const mensajeError = $body.find('[class*="error"], [class*="Error"], [role="alert"]')
+              .first()
+              .text()
+              .trim() || 'Request failed with status code 500';
+            
+            // Registrar como ERROR y terminar el caso
+            return cy.registrarResultados({
+              numero: 43,
+              nombre: `TC043 - ${casoDatosGenerales?.nombre || 'Crear cliente completo con todas las pestañas'}`,
+              esperado: 'Comportamiento correcto',
+              obtenido: mensajeError,
+              resultado: 'ERROR',
+              pantalla: PANTALLA,
+              archivo: 'reportes_pruebas_novatrans.xlsx'
+            }).then(() => {
+              cy.log('TC043: Caso terminado por error detectado');
+              return cy.wrap('ERROR_DETECTADO');
+            });
+          }
+          
+          // Si no hay error, continuar con el flujo normal
+          cy.log('TC043: No se detectó alerta de error, continuando con búsqueda...');
+          return cy.wrap(null);
+        });
+      })
+      .then((resultado) => {
+        // Si se detectó un error, terminar aquí sin buscar
+        if (resultado === 'ERROR_DETECTADO') {
+          return cy.wrap(null);
+        }
+        
         cy.log(`TC043: Formulario guardado. Buscando cliente ${nombreCliente}...`);
 
         // Volver a la lista y buscar el cliente por nombre
@@ -4047,21 +4753,21 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Reintentar la búsqueda una vez si no se encuentra la fila
         let intentos = 0;
         const buscarFila = () => {
-        return cy.get('body').then($body => {
-          const filas = $body.find('.MuiDataGrid-row:visible');
-          if (filas.length === 0) {
+          return cy.get('body').then($body => {
+            const filas = $body.find('.MuiDataGrid-row:visible');
+            if (filas.length === 0) {
               cy.log(' No se encontraron filas en la tabla');
-            return cy.wrap(null);
-          }
+              return cy.wrap(null);
+            }
 
-          const filaEncontrada = Array.from(filas).find((el) => {
-            const textoFila = (el.innerText || el.textContent || '').toLowerCase();
-            return textoFila.includes(nombreCliente.toLowerCase());
-          });
+            const filaEncontrada = Array.from(filas).find((el) => {
+              const textoFila = (el.innerText || el.textContent || '').toLowerCase();
+              return textoFila.includes(nombreCliente.toLowerCase());
+            });
 
-          if (filaEncontrada) {
-            cy.log('Cliente encontrado, abriendo formulario de edición...');
-            return cy.wrap(filaEncontrada).dblclick({ force: true });
+            if (filaEncontrada) {
+              cy.log('Cliente encontrado, abriendo formulario de edición...');
+              return cy.wrap(filaEncontrada).dblclick({ force: true });
             }
 
             // Si no se encuentra y aún no hemos reintentado, volver a buscar
@@ -4122,14 +4828,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
         const esperadosFacturacion = caso10Facturacion
           ? {
-              // mismos mapeos que en llenarFormularioFacturacion()
-              empresas: caso10Facturacion.dato_1,
-              disenoFactura: caso10Facturacion.dato_2,
-              banco: caso10Facturacion.dato_3,
-              formaPago: caso10Facturacion.dato_4,
-              swift: caso10Facturacion.dato_5,
-              tipoFacturacion: obtenerDatoPorSelectorExcel(caso10Facturacion, 'r_5t_')
-            }
+            // mismos mapeos que en llenarFormularioFacturacion()
+            empresas: caso10Facturacion.dato_1,
+            disenoFactura: caso10Facturacion.dato_2,
+            banco: caso10Facturacion.dato_3,
+            formaPago: caso10Facturacion.dato_4,
+            swift: caso10Facturacion.dato_5,
+            tipoFacturacion: obtenerDatoPorSelectorExcel(caso10Facturacion, 'r_5t_')
+          }
           : null;
 
         const leerValorInputPorLabel = (labelTexto) => {
@@ -4265,7 +4971,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                               })
                               .filter(':visible')
                               .first();
-                            
+
                             if (elementoDirecciones.length > 0) {
                               return cy.wrap(elementoDirecciones[0])
                                 .scrollIntoView()

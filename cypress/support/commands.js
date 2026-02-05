@@ -1256,7 +1256,21 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
   }
 
   return cy.obtenerDatosExcel(nombreHojaExcel).then((datosFiltros) => {
-    const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
+    cy.log(`Total de casos encontrados en Excel: ${datosFiltros.length}`);
+    
+    // Log de todos los casos encontrados para debug
+    if (numeroCaso === 22 || numeroCaso === 23) {
+      cy.log(`Casos multifiltro encontrados: ${datosFiltros.filter(f => f.funcion?.includes('multifiltro') || f.funcionalidad?.includes('multifiltro')).map(f => `${f.caso} (nombre: ${f.nombre})`).join(', ')}`);
+      cy.log(`Buscando específicamente: TC${numeroCasoFormateado}`);
+    }
+    
+    let filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
+
+    // Si el caso encontrado tiene todos los campos vacíos, log para debug
+    if (filtroEspecifico && !filtroEspecifico.dato_1 && !filtroEspecifico.dato_2 && !filtroEspecifico.valor_etiqueta_1) {
+      cy.log(`⚠️ Caso TC${numeroCasoFormateado} encontrado pero con campos vacíos. Esto indica un problema en la lectura del Excel.`);
+      cy.log(`Revisa los logs de la consola del navegador para ver los detalles de la lectura del Excel.`);
+    }
 
     if (!filtroEspecifico) {
       cy.log(`No se encontró TC${numeroCasoFormateado}`);
@@ -1272,12 +1286,34 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
       });
       return cy.wrap(true);
     }
+    
+    // Verificar si el caso encontrado tiene los datos correctos
+    if (numeroCaso === 22 || numeroCaso === 23) {
+      cy.log(`Caso encontrado: ${filtroEspecifico.caso}, Nombre: "${filtroEspecifico.nombre}", Funcionalidad: "${filtroEspecifico.funcionalidad}"`);
+    }
 
+    // Log detallado de todos los campos del caso encontrado
+    cy.log(`=== Datos completos del caso TC${numeroCasoFormateado} ===`);
+    cy.log(`Nombre: "${filtroEspecifico.nombre || ''}"`);
+    cy.log(`Función: "${filtroEspecifico.funcion || ''}"`);
+    cy.log(`etiqueta_1: "${filtroEspecifico.etiqueta_1 || ''}"`);
+    cy.log(`valor_etiqueta_1: "${filtroEspecifico.valor_etiqueta_1 || ''}"`);
+    cy.log(`dato_1: "${filtroEspecifico.dato_1 || ''}"`);
+    cy.log(`etiqueta_2: "${filtroEspecifico.etiqueta_2 || ''}"`);
+    cy.log(`valor_etiqueta_2: "${filtroEspecifico.valor_etiqueta_2 || ''}"`);
+    cy.log(`dato_2: "${filtroEspecifico.dato_2 || ''}"`);
+    cy.log(`Total campos Excel: ${filtroEspecifico.__totalCamposExcel || 0}`);
     cy.log(`Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.dato_1} - ${filtroEspecifico.dato_2}`);
-    cy.log(`Datos del Excel: etiqueta_1="${filtroEspecifico.etiqueta_1}", valor_etiqueta_1="${filtroEspecifico.valor_etiqueta_1}"`);
-    cy.log(`Operador del Excel (dato_1): "${filtroEspecifico.dato_1}", Valor (dato_2): "${filtroEspecifico.dato_2}"`);
 
-    const esMultifiltroConOperador = filtroEspecifico.valor_etiqueta_1 === 'operator';
+    // Validación más flexible: buscar "operator" en cualquier campo o verificar si hay operador y valor
+    const tieneOperator = filtroEspecifico.valor_etiqueta_1 === 'operator' || 
+                          filtroEspecifico.valor_etiqueta_1?.toLowerCase().includes('operator') ||
+                          filtroEspecifico.etiqueta_1?.toLowerCase().includes('operator') ||
+                          Object.values(filtroEspecifico).some(v => String(v || '').toLowerCase().includes('operator'));
+    
+    const tieneOperadorYValor = filtroEspecifico.dato_1 && filtroEspecifico.dato_2;
+    
+    const esMultifiltroConOperador = tieneOperator || (tieneOperadorYValor && filtroEspecifico.funcion?.toLowerCase().includes('multifiltro'));
 
     if (esMultifiltroConOperador) {
       cy.get('body').then($body => {
@@ -1426,34 +1462,122 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
         }
       });
     } else {
-      cy.log(`No es un caso de multifiltro válido: etiqueta_1=${filtroEspecifico.etiqueta_1}, valor_etiqueta_1=${filtroEspecifico.valor_etiqueta_1}`);
+      cy.log(`No es un caso de multifiltro válido (validación estricta): etiqueta_1=${filtroEspecifico.etiqueta_1}, valor_etiqueta_1=${filtroEspecifico.valor_etiqueta_1}`);
 
       const pantallaLower = (nombrePantalla || '').toLowerCase();
       const esClientes = pantallaLower.includes('clientes');
 
-      if (esClientes && (numeroCaso === 22 || numeroCaso === 23)) {
+      // Para clientes casos 21, 22, 23: ejecutar búsqueda aunque no pase validación estricta si tiene operador y valor
+      if (esClientes && (numeroCaso === 21 || numeroCaso === 22 || numeroCaso === 23) && filtroEspecifico.dato_1 && filtroEspecifico.dato_2) {
+        cy.log(`Caso TC${numeroCasoFormateado} de clientes: ejecutando búsqueda con operador "${filtroEspecifico.dato_1}" y valor "${filtroEspecifico.dato_2}"`);
+        
+        // Intentar seleccionar operador si existe
+        cy.get('body').then($body => {
+          // Buscar y seleccionar operador (similar al bloque anterior)
+          const selectors = [
+            'button:contains("Contiene")',
+            'button:contains("Contenga")',
+            'button:contains("Mayor o igual")',
+            'button:contains("Empieza con")',
+            'button:contains("Empiece por")',
+            '[role="button"]:contains("Contiene")',
+            '[role="button"]:contains("Mayor o igual")',
+            '[role="button"]:contains("Empieza con")',
+            'div[role="button"]',
+            'button.MuiButton-root',
+          ];
+
+          let selectorEncontrado = null;
+          for (const selector of selectors) {
+            if ($body.find(selector).length > 0 && !selectorEncontrado) {
+              selectorEncontrado = selector;
+              break;
+            }
+          }
+
+          if (selectorEncontrado) {
+            cy.get(selectorEncontrado).first().click({ force: true });
+            cy.wait(500);
+            
+            cy.get('body').then($body2 => {
+              const menuSelectors = [
+                'li[role="menuitem"]',
+                '[role="menuitem"]',
+                '[role="option"]',
+                '.MuiMenuItem-root',
+              ];
+
+              let selectorMenu = null;
+              for (const menuSelector of menuSelectors) {
+                if ($body2.find(menuSelector).length > 0) {
+                  selectorMenu = menuSelector;
+                  break;
+                }
+              }
+
+              const finalSelector = selectorMenu || 'li[role="menuitem"], [role="option"], .MuiMenuItem-root';
+
+              cy.get('body').then($body3 => {
+                const elementos = $body3.find(finalSelector);
+                if (elementos.length > 0) {
+                  cy.get(finalSelector).then($items => {
+                    const items = Array.from($items).map(item => item.textContent.trim());
+                    cy.log(`Opciones del menú operador: ${items.join(', ')}`);
+
+                    let operadorEncontrado = null;
+                    const operadorBuscado = (filtroEspecifico.dato_1 || '').toLowerCase();
+
+                    if (operadorBuscado.includes('mayor') && operadorBuscado.includes('igual')) {
+                      operadorEncontrado = items.find(o => /Mayor o igual|Greater than or equal/i.test(o));
+                    } else if (operadorBuscado.includes('empieza') || operadorBuscado.includes('starts') || operadorBuscado.includes('empiece')) {
+                      operadorEncontrado = items.find(o => /Empieza con|Empiece por|Starts with/i.test(o));
+                    } else if (operadorBuscado.includes('contiene') || operadorBuscado.includes('contains') || operadorBuscado.includes('contenga')) {
+                      operadorEncontrado = items.find(o => /Contiene|Contenga|Contains/i.test(o));
+                    } else {
+                      operadorEncontrado = items.find(opt =>
+                        opt.toLowerCase().includes(operadorBuscado) ||
+                        operadorBuscado.includes(opt.toLowerCase())
+                      );
+                    }
+
+                    if (operadorEncontrado) {
+                      cy.get(finalSelector).contains(operadorEncontrado).click({ force: true });
+                      cy.log(`Operador seleccionado: ${operadorEncontrado}`);
+                    } else {
+                      cy.log(`⚠️ Operador "${filtroEspecifico.dato_1}" no encontrado, continuando sin seleccionar operador`);
+                      cy.get('body').click(0, 0);
+                    }
+                  });
+                } else {
+                  cy.log('⚠️ No se encontraron elementos del menú, continuando sin seleccionar operador');
+                  cy.get('body').click(0, 0);
+                }
+              });
+            });
+          } else {
+            cy.log('No se encontró el botón del dropdown de operador, continuando con la búsqueda');
+          }
+        })
+        .then(() => {
+          // Ejecutar búsqueda después de seleccionar operador (o si no se encontró)
+          cy.wait(500);
+          return cy.wrap(null);
+        });
+        
+        // Continuar con la búsqueda (el código después del if/else)
+      } else {
+        // Si no es un caso especial de clientes, registrar error y terminar
         cy.registrarResultados({
           numero: numeroCaso,
-          nombre: filtroEspecifico.nombre || `TC${numeroCasoFormateado} - Multifiltro ${filtroEspecifico.dato_1 || ''}`,
-          esperado: 'Multifiltro correcto',
-          obtenido: 'Multifiltro aplicado correctamente',
-          resultado: 'OK',
+          nombre: `TC${numeroCasoFormateado} - Multifiltro no válido`,
+          esperado: `Multifiltro con operador`,
+          obtenido: `No es un multifiltro válido`,
+          resultado: 'ERROR',
           archivo: 'reportes_pruebas_novatrans.xlsx',
           pantalla: nombrePantalla
         });
         return cy.wrap(true);
       }
-
-      cy.registrarResultados({
-        numero: numeroCaso,
-        nombre: `TC${numeroCasoFormateado} - Multifiltro no válido`,
-        esperado: `Multifiltro con operador`,
-        obtenido: `No es un multifiltro válido`,
-        resultado: 'ERROR',
-        archivo: 'reportes_pruebas_novatrans.xlsx',
-        pantalla: nombrePantalla
-      });
-      return cy.wrap(true);
     }
 
     // Aplicar búsqueda
@@ -1465,6 +1589,15 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
       .should('exist')
       .clear({ force: true })
       .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+
+    // Esperar un poco más para que se procese la búsqueda, especialmente para casos 21, 22, 23 de clientes
+    const pantallaLower = (nombrePantalla || '').toLowerCase();
+    const esClientes = pantallaLower.includes('clientes');
+    if (esClientes && (numeroCaso === 21 || numeroCaso === 22 || numeroCaso === 23)) {
+      cy.wait(1500); // Esperar más tiempo para casos de clientes
+    } else {
+      cy.wait(500);
+    }
 
     // ✅ NUEVO: en vez de wait fijo, esperamos a refresco real
     return esperarTablaActualizada().then(() => {
