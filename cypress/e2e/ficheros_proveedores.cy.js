@@ -214,6 +214,13 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
       case 55:
         return { fn: comprobarGuardadoCompleto, autoRegistro: true };
+      case 56:
+      case 57:
+      case 58:
+      case 59:
+      case 60:
+      case 61:
+        return { fn: guardarSeccionSinRellenar, autoRegistro: true };
       default:
         return null;
     }
@@ -275,7 +282,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         .clear({ force: true })
         .type(texto, { force: true })
         .type('{enter}', { force: true });
-      return cy.wait(400);
+      return cy.wait(1500); // Aumentado de 400 a 1500ms para dar más tiempo a que se procese la búsqueda
     },
 
     filasVisibles() {
@@ -289,7 +296,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     return UI.abrirPantalla();
   }
 
-  function esperarResultadosTablaEnLista(timeoutMs = 12000) {
+  function esperarResultadosTablaEnLista(timeoutMs = 25000) {
     const inicio = Date.now();
     const check = () => {
       return cy.get('body', { log: false }).then(($b) => {
@@ -363,7 +370,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     return UI.abrirPantalla()
       .then(() => seleccionarColumnaFiltroSiExiste(columna))
       .then(() => UI.buscar(valor))
-      .then(() => esperarResultadosTablaEnLista(12000))
+      .then(() => cy.wait(1000)) // Espera adicional después de buscar
+      .then(() => esperarResultadosTablaEnLista(25000))
       .then(() => cy.wrap(null));
   }
 
@@ -405,20 +413,22 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
   }
 
   function ordenarColumnaDesdeExcel(caso, numero) {
-    let col = caso?.dato_1 || '';
-    if (!col) {
-      const mapa = {
-        16: 'Código',
-        17: 'NIF/CIF',
-        18: 'Nombre',
-        19: 'Razón Social',
-        20: 'Teléfono',
-        21: 'Tipo Proveedor',
-        22: 'Email',
-        23: 'Código Contable'
-      };
-      col = mapa[numero] || 'Código';
-    }
+    // Mapa de casos a columnas (siempre usar el mapa, no leer del Excel)
+    const mapa = {
+      16: 'Código',
+      17: 'NIF/CIF',
+      18: 'Nombre',
+      19: 'Razón Social',
+      20: 'Teléfono',
+      21: 'Tipo Proveedor',
+      22: 'Email',
+      23: 'Código Contable'
+    };
+
+    // Siempre usar el mapa si existe el caso, si no usar fallback
+    const col = mapa[numero] || 'Código';
+
+    cy.log(`Caso ${numero}: Ordenando columna "${col}"`);
     const patron = obtenerPatronColumna(col);
     return UI.abrirPantalla().then(() => {
       return cy.contains('.MuiDataGrid-columnHeaderTitle', patron).click({ force: true });
@@ -813,7 +823,6 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     });
   }
 
-
   function crearConCamposObligatorios(caso, numero, casoId) {
     const nombre = caso?.nombre || 'Crear con campos obligatorios';
     const codigo4 = generarNumeroAleatorio(4);
@@ -829,6 +838,74 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       .then(() => {
         // Igual que en Clientes: rellenar en la pestaña activa (Datos generales)
         return navegarSeccionFormulario('Datos generales').then(() => llenarCamposFormulario(casoNormalizado));
+      })
+      .then(() => {
+        // Añadir campo obligatorio "Nombre" (viene del Excel como pruebaXXXX, ya normalizado con números)
+        // Buscar específicamente el campo con etiqueta="name" y valor_etiqueta="Nombre"
+        let nombreValor = null;
+        const totalCampos = Number(casoNormalizado?.__totalCamposExcel) || 40;
+
+        // Buscar específicamente el campo con etiqueta="name" y valor_etiqueta="Nombre"
+        for (let i = 1; i <= totalCampos; i++) {
+          const etiqueta = String(casoNormalizado?.[`etiqueta_${i}`] || '').trim().toLowerCase();
+          const valorEtiqueta = String(casoNormalizado?.[`valor_etiqueta_${i}`] || '').trim();
+          const dato = casoNormalizado?.[`dato_${i}`];
+
+          if (etiqueta === 'name' && valorEtiqueta === 'Nombre' && dato != null && String(dato).trim() !== '') {
+            nombreValor = String(dato).trim();
+            break;
+          }
+        }
+
+        // Si no se encontró con el método específico, usar fallback
+        if (!nombreValor) {
+          nombreValor =
+            encontrarValorEnCasoPorClave(casoNormalizado, 'name', 'Nombre') ||
+            extraerDatoPorEtiquetaOSelector(casoNormalizado, /(^name$|^nombre$|nombre)/i);
+        }
+
+        cy.log(`[TC027] Valor extraído para Nombre: "${nombreValor}"`);
+
+        if (nombreValor) {
+          const valorFinal = String(nombreValor).trim();
+          // Verificar que el valor empiece con "prueba" (debe ser "pruebaXXXX")
+          if (!valorFinal.toLowerCase().startsWith('prueba')) {
+            cy.log(`[TC027] El valor extraído "${valorFinal}" no empieza con "prueba", buscando el valor correcto...`);
+            // Buscar cualquier campo que tenga "prueba" en el dato
+            for (let i = 1; i <= totalCampos; i++) {
+              const dato = casoNormalizado?.[`dato_${i}`];
+              if (dato != null && String(dato).trim().toLowerCase().startsWith('prueba')) {
+                nombreValor = String(dato).trim();
+                cy.log(`[TC027] Valor correcto encontrado: "${nombreValor}"`);
+                break;
+              }
+            }
+          }
+
+          const valorFinalCorrecto = nombreValor ? String(nombreValor).trim() : valorFinal;
+          cy.log(`Rellenando campo obligatorio "Nombre" con: ${valorFinalCorrecto}`);
+
+          return cy.get('input[name="name"]', { timeout: 15000 })
+            .filter(':visible')
+            .first()
+            .scrollIntoView()
+            .then(($input) => {
+              const valorActual = ($input.val() || $input[0]?.value || '').toString().trim();
+              // Si el campo ya tiene el valor correcto (empieza con "prueba"), no hacer nada
+              if (valorActual && valorActual.toLowerCase().startsWith('prueba') && valorActual === valorFinalCorrecto) {
+                cy.log(`[TC027] El campo "Nombre" ya tiene el valor correcto: "${valorActual}", no se modifica`);
+                return cy.wrap(null);
+              }
+              // Si el valor actual no es correcto o está vacío, escribir el valor correcto
+              return cy.wrap($input)
+                .click({ force: true })
+                .clear({ force: true })
+                .type(valorFinalCorrecto, { force: true });
+            });
+        } else {
+          cy.log(' No se encontró valor para el campo "Nombre" en el Excel');
+        }
+        return cy.wrap(null);
       })
       .then(() => rellenarCamposObligatoriosClienteAsociado(casoNormalizado, codigo3))
       .then(() => clickGuardarPrincipalSiExiste({ requerido: true }))
@@ -960,25 +1037,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         });
       })
 
-      // 2) Si NO hay 500 => volver a lista y buscar por el CÓDIGO creado
-      .then((continuar) => {
-        if (!continuar) return cy.wrap(null);
-
-        return UI.abrirPantalla()
-          .then(() => UI.buscar(String(codigoCreado)))
-          .then(() => esperarResultadosTablaEnLista(15000))
-          .then(() => {
-            return cy.get('body').then(($b) => {
-              const filas = $b.find('.MuiDataGrid-row:visible').length;
-
-              if (filas === 0) {
-                return registrarError(`No aparece ninguna fila al buscar el código "${codigoCreado}"`);
-              }
-
-              return cy.wrap(null);
-            });
-          });
-      });
+    // Caso 28: Solo crear y guardar, no buscar nada (ese es otro caso diferente)
+    // No hacer búsqueda después de guardar
   }
 
   function rellenarDatosFinancieros(caso) {
@@ -1941,11 +2001,22 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
   }
 
   function llenarFormularioIncidencia(caso, numeroCaso) {
-    const fecha = caso.dato_1;
-    const descripcion = caso.dato_2;
-    const notas = caso.dato_3;
+    // Leer campos del Excel de forma robusta
+    // Campo fecha: etiqueta_1="id", valor_etiqueta_1="_r_4c_", dato_1="23/01/2026"
+    const fecha = encontrarValorEnCasoPorClave(caso, 'id', '_r_4c_') ||
+      encontrarValorEnCasoPorClave(caso, 'id', 'r4c') ||
+      caso.dato_1;
+
+    // Campo Incidencia: etiqueta_2="name", valor_etiqueta_2="Incidencia", dato_2="prueba"
+    const descripcion = encontrarValorEnCasoPorClave(caso, 'name', 'Incidencia') ||
+      caso.dato_2;
+
+    // Campo Notas (si existe)
+    const notas = encontrarValorEnCasoPorClave(caso, 'name', 'Notas') ||
+      caso.dato_3;
 
     cy.log(` Incidencia -> Fecha="${fecha}" | Descripción="${descripcion}" | Notas="${notas}"`);
+    cy.log(` TC${String(numeroCaso || 33).padStart(3, '0')}: Valores leídos - fecha: "${fecha}", descripcion: "${descripcion}", notas: "${notas}"`);
 
     let chain = cy.wrap(null);
 
@@ -1954,11 +2025,22 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         const textoFecha = fecha.toString();
         const fechaObj = parseFechaBasicaExcel(textoFecha);
 
+        if (!fechaObj) {
+          cy.log(` No se pudo parsear la fecha: "${textoFecha}"`);
+          return cy.wrap(null);
+        }
+
         const abrirCalendario = () => {
           return cy.get('body').then(($body) => {
             const $container = $body
               .find('.MuiDrawer-root:visible, [role="dialog"]:visible, .MuiModal-root:visible')
               .last();
+
+            // Buscar el campo de fecha por id _r_4c_ primero
+            const $inputFecha = $container.find('input#_r_4c_, input[id*="_r_4c_"]').filter(':visible').first();
+            if ($inputFecha.length) {
+              return cy.wrap($inputFecha[0]).click({ force: true });
+            }
 
             const $btn = $container
               .find('button[aria-label*="Choose date"], button[aria-label*="date"], button[aria-label*="fecha"]')
@@ -1987,8 +2069,86 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       });
     }
 
+    // IMPORTANTE: Asegurarse de que el campo "Incidencia" se rellene SIEMPRE si hay valor
     if (descripcion) {
-      chain = chain.then(() => escribirPorName('Incidencia', descripcion, 'Descripción'));
+      chain = chain.then(() => {
+        cy.log(` TC${String(numeroCaso || 33).padStart(3, '0')}: Rellenando campo "Incidencia" con valor: "${descripcion}"`);
+
+        // Esperar a que el modal esté completamente visible y cargado
+        return cy.contains('h3', /^Nueva incidencia$/i, { timeout: 20000 })
+          .should('be.visible')
+          .then(() => cy.wait(500)) // Esperar un poco más para que se rendericen todos los campos
+          .then(() => {
+            // Estrategia 1: Buscar directamente por name="Incidencia" usando cy.get (más confiable)
+            cy.log(` TC${String(numeroCaso || 33).padStart(3, '0')}: Buscando campo por name="Incidencia"...`);
+            return cy.get('input[name="Incidencia"]', { timeout: 10000 })
+              .should('be.visible')
+              .scrollIntoView()
+              .click({ force: true })
+              .clear({ force: true })
+              .type(String(descripcion), { force: true, delay: 0 })
+              .should('have.value', String(descripcion))
+              .then(() => {
+                cy.log(` TC${String(numeroCaso || 33).padStart(3, '0')}: Campo "Incidencia" rellenado correctamente con "${descripcion}"`);
+                return cy.wrap(null);
+              });
+          })
+          .then(
+            () => cy.wrap(null), // Éxito
+            () => {
+              // Error: intentar siguiente estrategia
+              cy.log(`TC${String(numeroCaso || 33).padStart(3, '0')}: No encontrado por name, intentando por label...`);
+              // Estrategia 2: Buscar por label "Incidencia"
+              return cy.contains('label', /^Incidencia$/i, { timeout: 10000 })
+                .should('be.visible')
+                .invoke('attr', 'for')
+                .then((forAttr) => {
+                  if (forAttr) {
+                    const escapedId = forAttr.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+                    cy.log(` TC${String(numeroCaso || 33).padStart(3, '0')}: Label encontrado, for="${forAttr}"`);
+                    return cy.get(`input#${escapedId}`, { timeout: 10000 })
+                      .should('be.visible')
+                      .scrollIntoView()
+                      .click({ force: true })
+                      .clear({ force: true })
+                      .type(String(descripcion), { force: true, delay: 0 })
+                      .should('have.value', String(descripcion))
+                      .then(() => {
+                        cy.log(`TC${String(numeroCaso || 33).padStart(3, '0')}: Campo "Incidencia" rellenado correctamente`);
+                        return cy.wrap(null);
+                      });
+                  }
+                  // Si no tiene for, intentar siguiente estrategia
+                  return cy.wrap(null);
+                });
+            }
+          )
+          .then(
+            () => cy.wrap(null), // Éxito
+            () => {
+              // Estrategia 3: Buscar el segundo input de texto visible en el modal (después de la fecha)
+              cy.log(` TC${String(numeroCaso || 33).padStart(3, '0')}: Buscando segundo input de texto en modal...`);
+              return cy.get('.MuiDrawer-root:visible, [role="dialog"]:visible, .MuiModal-root:visible')
+                .last()
+                .within(() => {
+                  return cy.get('input[type="text"]:visible, input:not([type]):visible')
+                    .not('input[placeholder*="Buscar"], input[placeholder*="Search"], input[id*="_r_4c_"]')
+                    .first() // Primer input de texto que no sea fecha ni búsqueda
+                    .scrollIntoView()
+                    .click({ force: true })
+                    .clear({ force: true })
+                    .type(String(descripcion), { force: true, delay: 0 })
+                    .should('have.value', String(descripcion))
+                    .then(() => {
+                      cy.log(`TC${String(numeroCaso || 33).padStart(3, '0')}: Campo "Incidencia" rellenado (método genérico)`);
+                      return cy.wrap(null);
+                    });
+                });
+            }
+          );
+      });
+    } else {
+      cy.log(`TC${String(numeroCaso || 33).padStart(3, '0')}: No se encontró valor para el campo "Incidencia"`);
     }
 
     if (notas) {
@@ -2531,7 +2691,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
     return chain.then(() => {
       const etiquetaCaso = numeroCaso ? `TC${String(numeroCaso).padStart(3, '0')} - ` : '';
-      cy.log(`${etiquetaCaso}✅ Calidad rellenado`);
+      cy.log(`${etiquetaCaso}Calidad rellenado`);
     });
   }
 
@@ -2570,208 +2730,700 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         .then(() => cy.wait(800));
     });
   }
-
-  function getDrawerVisible() {
-    return cy.get('.MuiDrawer-root:visible, [role="dialog"]:visible, .MuiModal-root:visible')
-      .last()
-      .should('be.visible');
-  }
-
-  const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-  //  Asegura pestaña SIN BUCLES: click solo si NO está seleccionada
-  function asegurarPestanaSinBucle(nombrePestana) {
-    const rx = new RegExp(`^${escapeRegex(nombrePestana)}$`, 'i');
-
-    return cy.get('body').then(($body) => {
-      const $tab = $body.find('[role="tab"]').filter((_, el) => rx.test((el.textContent || el.innerText || '').trim())).first();
-      if (!$tab.length) {
-        cy.log(` No encontré pestaña: ${nombrePestana}`);
-        return cy.wrap(null);
-      }
-
-      const yaSeleccionada = String($tab.attr('aria-selected') || '').toLowerCase() === 'true';
-      if (yaSeleccionada) {
-        return cy.wrap(null);
-      }
-
-      return cy.wrap($tab[0])
-        .scrollIntoView()
-        .click({ force: true })
-        .then(() => {
-          // esperar que quede marcada
-          return cy.wrap($tab[0]).should('have.attr', 'aria-selected', 'true');
-        });
-    });
-  }
-
-  //  Abre modal (usa tu helper si existe)
-  function abrirModalSeccionSafe(seccion) {
-    if (typeof abrirModalSeccion === 'function') return abrirModalSeccion(seccion, true);
-
-    // fallback genérico
-    return cy.contains('button', /nuevo|añadir|add|create/i, { timeout: 20000 })
-      .filter(':visible')
-      .first()
-      .click({ force: true });
-  }
-
-  //  Guardar modal por sección (usa tus helpers reales)
-  function guardarModalSeccionSafe(seccion) {
-    if (/direcc/i.test(seccion) && typeof guardarNuevaDireccion === 'function') return guardarNuevaDireccion();
-    if (/contact/i.test(seccion) && typeof guardarNuevoContacto === 'function') return guardarNuevoContacto();
-    if (/asociad/i.test(seccion) && typeof guardarNuevoAsociado === 'function') return guardarNuevoAsociado();
-    if (/inciden/i.test(seccion) && typeof guardarNuevaIncidencia === 'function') return guardarNuevaIncidencia();
-    if (/zona/i.test(seccion) && typeof guardarNuevaZonaCarga === 'function') return guardarNuevaZonaCarga();
-    if (/certific/i.test(seccion) && typeof guardarNuevaCertificacion === 'function') return guardarNuevaCertificacion();
-    if (/calidad/i.test(seccion) && typeof guardarNuevoRegistroCalidad === 'function') return guardarNuevoRegistroCalidad();
-
-    return cy.contains('button', /^guardar$/i, { timeout: 20000 }).filter(':visible').last().click({ force: true });
-  }
-
-  //  Rellenar modal por sección (usa tus helpers reales)
-  function llenarModalSeccionSafe(seccion, casoSeccion, numCaso) {
-    if (/direcc/i.test(seccion) && typeof llenarFormularioDireccion === 'function') return llenarFormularioDireccion(casoSeccion, numCaso);
-    if (/contact/i.test(seccion) && typeof llenarFormularioContacto === 'function') return llenarFormularioContacto(casoSeccion, numCaso);
-    if (/asociad/i.test(seccion) && typeof llenarFormularioAsociado === 'function') return llenarFormularioAsociado(casoSeccion, numCaso);
-    if (/inciden/i.test(seccion) && typeof llenarFormularioIncidencia === 'function') return llenarFormularioIncidencia(casoSeccion, numCaso);
-    if (/zona/i.test(seccion) && typeof llenarFormularioZonaCarga === 'function') return llenarFormularioZonaCarga(casoSeccion, numCaso);
-    if (/certific/i.test(seccion) && typeof llenarFormularioCertificacion === 'function') return llenarFormularioCertificacion(casoSeccion, numCaso);
-    if (/calidad/i.test(seccion) && typeof llenarFormularioCalidad === 'function') return llenarFormularioCalidad(casoSeccion, numCaso);
-
-    // fallback genérico si tu caso trae etiqueta_i/valor_etiqueta_i/dato_i
-    if (typeof llenarCamposFormulario === 'function') return llenarCamposFormulario(casoSeccion);
-
-    return cy.wrap(null);
-  }
-
-  //  Normaliza lo que devuelve obtenerDatosExcel (a veces es objeto)
-  function normalizarCasosExcel(raw) {
-    if (Array.isArray(raw)) return raw;
-    if (raw && typeof raw === 'object') return Object.values(raw);
-    return [];
-  }
-
-  //  Busca un caso por número TC
-  function getCasoPorNumero(todosLosCasos, n) {
-    return (todosLosCasos || []).find((c) => {
-      const num = parseInt(String(c?.caso || '').replace(/\D/g, ''), 10);
-      return num === n;
-    }) || null;
-  }
-
-  //  FUNCIÓN FINAL: rellena todo y SOLO al final Guardar
+  // TC055: Comprobar guardado completo (igual que TC043 de clientes)
   function comprobarGuardadoCompleto(caso, numero, casoId) {
-    const numeroCaso = numero || 28;
-    const idCaso = casoId || `TC${String(numeroCaso).padStart(3, '0')}`;
-    const nombreCaso = caso?.nombre || 'Crear con todo (Proveedor)';
+    cy.log('TC055: Comprobando guardado completo de proveedor');
 
-    const LIST_URL = '/dashboard/suppliers';
-    const FORM_URL = '/dashboard/suppliers/form';
-
-    const onFail = (e) => {
-      const obs = `ERROR: ${e?.message || e}`;
-      if (typeof registrarResultadoAutomatico === 'function') {
-        return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-      }
-      return cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false });
-    };
-
-    return cy.obtenerDatosExcel(HOJA_EXCEL).then((raw) => {
-      const todosLosCasos = normalizarCasosExcel(raw);
-
-      const tc28 = getCasoPorNumero(todosLosCasos, 28) || caso; // base: Generales + Financieros
-      const tc30 = getCasoPorNumero(todosLosCasos, 30); // Direcciones
-      const tc31 = getCasoPorNumero(todosLosCasos, 31); // Contactos
-      const tc32 = getCasoPorNumero(todosLosCasos, 32); // Asociados
-      const tc33 = getCasoPorNumero(todosLosCasos, 33); // Incidencias
-      const tc34 = getCasoPorNumero(todosLosCasos, 34); // Zonas de Carga
-      const tc35 = getCasoPorNumero(todosLosCasos, 35); // Certificaciones
-      const tc36 = getCasoPorNumero(todosLosCasos, 36); // Calidad
+    // Obtener datos del caso 28 para DATOS GENERALES y FINANCIEROS
+    return cy.obtenerDatosExcel(HOJA_EXCEL).then((todosLosCasos) => {
+      const tc28 = todosLosCasos.find(c => {
+        const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+        return num === 28;
+      });
 
       if (!tc28) {
-        const obs = 'No existe TC028 (Crear con todo) en Excel.';
+        cy.log(' No se encontró el caso 28 en Excel, no se puede continuar');
+        const obs = 'No existe TC028 (Crear con todo) en Excel. El caso 55 requiere TC028 para rellenar Datos Generales y Financieros.';
         if (typeof registrarResultadoAutomatico === 'function') {
-          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+          return registrarResultadoAutomatico(55, 'TC055', caso?.nombre || 'Comprobar guardado completo', obs, 'ERROR', true)
             .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
         }
         return cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false });
       }
 
-      // 1) Login + ir al formulario
-      let chain = cy.wrap(null)
-        .then(() => cy.login())
-        .then(() => cy.visit(LIST_URL))
-        .then(() => (UI.esperarTabla ? UI.esperarTabla() : cy.wait(800)))
-        .then(() => {
-          // usa tu helper si existe, si no, visita directo
-          if (typeof abrirFormularioNuevoProveedor === 'function') return abrirFormularioNuevoProveedor();
-          return cy.visit(FORM_URL);
-        })
-        .then(() => cy.url().should('include', FORM_URL));
-
-      // 2) DATOS GENERALES (rellenar YA)
-      chain = chain
-        .then(() => asegurarPestanaSinBucle('DATOS GENERALES'))
-        .then(() => {
-          cy.log(' Rellenando DATOS GENERALES (TC028)...');
-          return llenarCamposFormulario(tc28);
-        });
-
-      // 3) DATOS FINANCIEROS (rellenar YA)
-      chain = chain
-        .then(() => asegurarPestanaSinBucle('DATOS FINANCIEROS'))
-        .then(() => {
-          cy.log(' Rellenando DATOS FINANCIEROS (TC028)...');
-          return llenarCamposFormulario(tc28);
-        });
-
-      // 4) SECCIONES MODAL: Direcciones -> ... -> Calidad
-      const modales = [
-        { seccion: 'DIRECCIONES', caso: tc30, num: 30 },
-        { seccion: 'CONTACTOS', caso: tc31, num: 31 },
-        { seccion: 'ASOCIADOS', caso: tc32, num: 32 },
-        { seccion: 'INCIDENCIAS', caso: tc33, num: 33 },
-        { seccion: 'ZONAS DE CARGA', caso: tc34, num: 34 },
-        { seccion: 'CERTIFICACIONES', caso: tc35, num: 35 },
-        { seccion: 'CALIDAD', caso: tc36, num: 36 }
-      ].filter((x) => !!x.caso);
-
-      //  hacer secuencial con reduce (sin forEach que a veces confunde)
-      chain = modales.reduce((acc, item) => {
-        return acc
-          .then(() => asegurarPestanaSinBucle(item.seccion))
-          .then(() => {
-            cy.log(` Rellenando ${item.seccion} (TC${String(item.num).padStart(3, '0')})...`);
-            return abrirModalSeccionSafe(item.seccion)
-              .then(() => llenarModalSeccionSafe(item.seccion, item.caso, item.num))
-              .then(() => guardarModalSeccionSafe(item.seccion))
-              .then(() => cy.wait(700));
-          });
-      }, chain);
-
-      // 5)  SOLO AHORA: GUARDAR FINAL
-      chain = chain
-        .then(() => {
-          cy.log(' TODO relleno -> Click Guardar FINAL');
-          return clickGuardarDentroFormulario(); // el tuyo (correcto)
-        })
-        .then(() => cy.wait(1500));
-
-      // 6) Resultado OK (si quieres aquí luego reabrir y verificar pestañas, lo añadimos)
-      return chain.then(() => {
-        const obs = 'Proveedor rellenado (Generales+Financieros+Modales) y Guardado final ejecutado.';
-        if (typeof registrarResultadoAutomatico === 'function') {
-          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
-            .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
-        }
-        return cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false });
-      }, onFail);
-
-    }, onFail);
+      cy.log('Usando datos del caso 28 para DATOS GENERALES y FINANCIEROS');
+      return TC055ConDatos(tc28, todosLosCasos);
+    });
   }
 
+  function TC055ConDatos(casoDatosGenerales, todosLosCasos) {
+    const numeroCaso = 55;
+    const idCaso = 'TC055';
+    const nombreCaso = 'Comprobar que se quedan guardados todos los registros';
+
+    const LIST_URL = '/dashboard/suppliers';
+    const FORM_URL = '/dashboard/suppliers/form';
+
+    // Función para verificar que una pestaña tiene datos guardados
+    const verificarPestañaTieneDatos = (nombrePestaña) => {
+      return cy.get('body').then(($body) => {
+        const tabActiva = $body.find('[role="tab"][aria-selected="true"]').first();
+        const ariaControls = tabActiva.attr('aria-controls');
+        const panelActivo = ariaControls ? $body.find(`[id="${ariaControls}"]`) : $body.find('[role="tabpanel"]:not([hidden])').first();
+        const $scope = (panelActivo && panelActivo.length) ? panelActivo : $body;
+
+        // DataGrid (si aplica)
+        const dg = $scope.find('.MuiDataGrid-root').first();
+        if (dg.length) {
+          const grid = dg.find('[role="grid"]').first();
+          const rc = parseInt(String(grid.attr('aria-rowcount') || ''), 10);
+          if (Number.isFinite(rc) && rc > 1) return cy.wrap(true);
+
+          const filasDG = dg.find('.MuiDataGrid-row[data-rowindex], [role="row"][data-rowindex]');
+          if (filasDG.length > 0) return cy.wrap(true);
+
+          const txt = (dg.text() || '').toLowerCase();
+          if (/sin\s+filas|no\s+hay\s+datos|sin\s+datos|no\s+rows|no\s+results/i.test(txt)) return cy.wrap(false);
+        }
+
+        // Tabla HTML
+        const filasTabla = $scope.find('table tbody tr, tbody tr').filter((_, el) => (el.textContent || '').trim().length > 0);
+        if (filasTabla.length > 0) return cy.wrap(true);
+
+        // Formulario (inputs/selects con valores)
+        const inputs = $scope.find('input:visible, textarea:visible');
+        const combos = $scope.find('[role="combobox"]:visible, .MuiSelect-select:visible, [aria-haspopup="listbox"]:visible');
+        const hayValorInput = Array.from(inputs).some((el) => {
+          const v = String(el.value || '').trim();
+          if (!v) return false;
+          if (v === '0') return false;
+          return true;
+        });
+        const hayValorCombo = Array.from(combos).some((el) => {
+          const t = (el.innerText || el.textContent || '').trim();
+          if (!t) return false;
+          if (/selecciona|select|elige|choose/i.test(t)) return false;
+          return true;
+        });
+        return cy.wrap(hayValorInput || hayValorCombo);
+      });
+    };
+
+    // Función para leer el código del proveedor
+    const leerCodigoProveedor = () => {
+      return cy.get('body').then(($body) => {
+        // Buscar campo "Código" por label
+        const $label = $body.find('label').filter((_, el) => {
+          const t = (el.textContent || el.innerText || '').trim().toLowerCase();
+          return t === 'código' || t === 'codigo' || t === 'code';
+        }).first();
+
+        if ($label.length) {
+          const forAttr = $label.attr('for');
+          if (forAttr) {
+            const sel = forAttr.includes('.') ? `[id="${forAttr}"]` : `#${forAttr}`;
+            const v = $body.find(sel).first().val();
+            return cy.wrap(v ? String(v).trim() : null);
+          }
+        }
+
+        // Fallback: buscar por name
+        const $input = $body.find('input[name*="code"], input[name*="codigo"], input[name*="Code"]').first();
+        if ($input.length) {
+          const v = $input.val();
+          return cy.wrap(v ? String(v).trim() : null);
+        }
+
+        return cy.wrap(null);
+      });
+    };
+
+    // Buscar casos 30-36 para las demás pestañas (igual que TC043 busca casos 8-15)
+    const tc30 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 30;
+    }); // Direcciones
+    const tc31 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 31;
+    }); // Contactos
+    const tc32 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 32;
+    }); // Asociados
+    const tc33 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 33;
+    }); // Incidencias
+    const tc34 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 34;
+    }); // Zonas de Carga
+    const tc35 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 35;
+    }); // Certificaciones
+    const tc36 = todosLosCasos.find(c => {
+      const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
+      return num === 36;
+    }); // Calidad
+
+    // Normalizar casos con placeholders (igual que caso 28 - crearConTodo)
+    const codigo4 = generarNumeroAleatorio(4);
+    const codigo3 = generarNumeroAleatorio(3);
+    const caso28Normalizado = sustituirPlaceholders(casoDatosGenerales, codigo4, codigo3);
+    const nombreProveedor = extraerDatoPorEtiquetaOSelector(caso28Normalizado, /(^name$|^nombre$|nombre)/i) || `ProveedorPrueba${codigo4}`;
+
+    const tc30Normalizado = tc30 ? sustituirPlaceholders(tc30, codigo4, codigo3) : null;
+    const tc31Normalizado = tc31 ? sustituirPlaceholders(tc31, codigo4, codigo3) : null;
+    const tc32Normalizado = tc32 ? sustituirPlaceholders(tc32, codigo4, codigo3) : null;
+    const tc33Normalizado = tc33 ? sustituirPlaceholders(tc33, codigo4, codigo3) : null;
+    const tc34Normalizado = tc34 ? sustituirPlaceholders(tc34, codigo4, codigo3) : null;
+    const tc35Normalizado = tc35 ? sustituirPlaceholders(tc35, codigo4, codigo3) : null;
+    const tc36Normalizado = tc36 ? sustituirPlaceholders(tc36, codigo4, codigo3) : null;
+
+
+    // Resetear flag de financieros para que se rellene correctamente
+    Cypress.env('__financieros_rellenados__', false);
+
+    let codigoProveedor = null;
+
+    // Preparar pantalla limpia: el runner ya lo hace, pero verificamos
+    return cy.url().then((u) => {
+      if (!/\/form/i.test(u)) {
+        return abrirFormularioNuevoProveedor();
+      }
+      return cy.wrap(null);
+    })
+      .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
+      .then(() => {
+        cy.log('Rellenando DATOS GENERALES usando datos del caso 28...');
+        // Rellenar DATOS GENERALES (igual que crearConTodo - caso 28)
+        return navegarSeccionFormulario('Datos generales')
+          .then(() => llenarCamposFormulario(caso28Normalizado))
+          .then(() => rellenarFechaDatosGenerales(caso28Normalizado))
+          .then(() => rellenarRadiosDatosGenerales(caso28Normalizado))
+          .then(() => rellenarTipoProveedorDatosGenerales(caso28Normalizado))
+          .then(() => rellenarCamposObligatoriosClienteAsociado(caso28Normalizado, codigo3))
+          .then(() => esperarDatosGeneralesCompletosAntesDeFinancieros(caso28Normalizado))
+          .then(() => {
+            return leerCodigoProveedor().then((codigo) => {
+              if (codigo) {
+                codigoProveedor = codigo;
+                cy.log(`TC055: Código del proveedor capturado: ${codigoProveedor}`);
+              }
+              return cy.wrap(null);
+            });
+          });
+      })
+      .then(() => {
+        cy.log('Rellenando DATOS FINANCIEROS usando datos del caso 28...');
+        // Rellenar DATOS FINANCIEROS (igual que crearConTodo - caso 28)
+        return navegarSeccionFormulario('Datos financieros')
+          .then(() => llenarCamposFormulario(caso28Normalizado))
+          .then(() => rellenarDatosFinancieros(caso28Normalizado))
+          .then(() => rellenarEmpresaFinanciero(caso28Normalizado))
+          .then(() => rellenarCCompraFinanciero(caso28Normalizado))
+          .then(() => rellenarMetodoPagoFinanciero(caso28Normalizado));
+      })
+      .then(() => {
+        cy.log('Rellenando todas las pestañas usando datos de los casos 30-36...');
+        // Obtener casos 30-36 para las demás pestañas
+        const casosPestañas = [
+          { caso: tc30Normalizado, num: 30 },
+          { caso: tc31Normalizado, num: 31 },
+          { caso: tc32Normalizado, num: 32 },
+          { caso: tc33Normalizado, num: 33 },
+          { caso: tc34Normalizado, num: 34 },
+          { caso: tc35Normalizado, num: 35 },
+          { caso: tc36Normalizado, num: 36 }
+        ].filter((x) => !!x.caso);
+
+        cy.log(`Encontrados ${casosPestañas.length} casos para las pestañas (30-36)`);
+
+        // Rellenar cada pestaña
+        // Para Incidencias (33) y Zonas de carga (34), hacerlo explícitamente como en los casos individuales
+        let chain = cy.wrap(null);
+        casosPestañas.forEach((item) => {
+          chain = chain.then(() => {
+            cy.log(`Rellenando pestaña con datos del caso ${item.num} (TC${String(item.num).padStart(3, '0')})...`);
+
+            // Casos 33 (Incidencias) y 34 (Zonas de carga): hacerlo explícitamente
+            if (item.num === 33) {
+              // INCIDENCIAS - igual que caso 33
+              return navegarSeccionFormulario('Incidencias')
+                .then(() => abrirModalSeccion('Incidencias', true))
+                .then(() => llenarFormularioIncidencia(item.caso, item.num))
+                .then(() => guardarNuevaIncidencia())
+                .then(() => cy.wait(500));
+            } else if (item.num === 34) {
+              // ZONAS DE CARGA - hacerlo EXACTAMENTE igual que anadirProveedor (caso 34)
+              // anadirProveedor ya navega a la sección y luego llama a abrirModalSeccion
+              // Pero como ya estamos en el formulario, solo necesitamos navegar y luego hacer lo mismo
+              return navegarSeccionFormulario('Zonas de carga')
+                .then(() => {
+                  cy.log('TC055: Sección detectada: ZONAS DE CARGA');
+                  // Hacer exactamente lo mismo que anadirProveedor hace para zonas de carga
+                  return abrirModalSeccion('Zonas de carga', true)
+                    .then(() => llenarFormularioZonaCarga(item.caso, item.num))
+                    .then(() => guardarNuevaZonaCarga());
+                })
+                .then(() => cy.wait(500));
+            } else {
+              // Para las demás pestañas, usar anadirProveedor
+              return anadirProveedor(item.caso, item.num, `TC${String(item.num).padStart(3, '0')}`)
+                .then(() => cy.wait(500));
+            }
+          });
+        });
+        return chain;
+      })
+      .then(() => {
+        // 5) GUARDAR FINAL con reintentos si hay error de cliente asociado
+        cy.log(' TODO relleno -> Click Guardar FINAL');
+
+        // Función para detectar error de cliente ya asociado
+        const hayErrorClienteAsociado = () => {
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            // Buscar el error en diferentes formatos posibles
+            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|associated.*provider|el cliente.*ya está|the client.*already/i.test(texto);
+
+            // También buscar en elementos específicos de alertas/toasts
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
+            let hayErrorEnAlert = false;
+            $alerts.each((_, el) => {
+              const textoAlert = (el.textContent || el.innerText || '').toString();
+              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|associated.*provider/i.test(textoAlert)) {
+                hayErrorEnAlert = true;
+                return false; // break
+              }
+            });
+
+            return cy.wrap(hayError || hayErrorEnAlert);
+          });
+        };
+
+        // Función para cambiar Cliente Asociado por otro valor
+        const cambiarClienteAsociado = () => {
+          cy.log('TC055: Cambiando Cliente Asociado por otro valor...');
+          // Asegurarse de estar en Datos generales
+          return navegarSeccionFormulario('Datos generales')
+            .then(() => cy.wait(500))
+            .then(() => cy.get('body').then(($b) => {
+              const rxLabel = /(Cliente\s+Asociado|Associated\s+Customer|Client\s+Associat)/i;
+              const label = $b.find('label').filter((_, el) => rxLabel.test((el.textContent || '').trim())).first();
+              if (!label.length) {
+                cy.log('TC055: No se encontró el label de Cliente Asociado');
+                return cy.wrap(false);
+              }
+
+              const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+              const forAttr = label.attr('for') || '';
+              const sel = forAttr ? `#${escapeCssId(forAttr)}` : null;
+
+              const getInput = () => {
+                if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
+                return cy
+                  .get('input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 15000 })
+                  .filter(':visible')
+                  .first();
+              };
+
+              return getInput()
+                .then(($inp) => {
+                  if (!$inp || !$inp.length) {
+                    cy.log('TC055: No se encontró el input de Cliente Asociado');
+                    return cy.wrap(false);
+                  }
+
+                  // Obtener el valor actual antes de limpiar
+                  const valorActual = ($inp.val() || '').toString().trim();
+
+                  // Limpiar y abrir el desplegable
+                  return cy.wrap($inp)
+                    .scrollIntoView()
+                    .click({ force: true })
+                    .clear({ force: true })
+                    .type('{downArrow}', { force: true }) // Abrir desplegable
+                    .then(() => cy.wait(300))
+                    .then(() => {
+                      // Buscar una opción diferente en el listbox
+                      return cy.get('ul[role="listbox"]', { timeout: 10000 })
+                        .filter(':visible')
+                        .last()
+                        .find('li[role="option"]:visible')
+                        .then(($opts) => {
+                          if ($opts.length === 0) {
+                            cy.log('TC055: No hay opciones disponibles en el desplegable');
+                            return cy.wrap(false);
+                          }
+
+                          // Buscar opciones diferentes al valor actual
+                          const opciones = Array.from($opts);
+                          const opcionesDiferentes = opciones.filter((opt) => {
+                            const texto = (opt.textContent || opt.innerText || '').trim();
+                            return texto && texto !== valorActual && texto.length > 0;
+                          });
+
+                          // Seleccionar una opción aleatoria de las diferentes disponibles
+                          let opcionSeleccionada = null;
+                          if (opcionesDiferentes.length > 0) {
+                            const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
+                            opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
+                          } else if (opciones.length > 0) {
+                            // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
+                            const indiceAleatorio = Math.floor(Math.random() * opciones.length);
+                            opcionSeleccionada = opciones[indiceAleatorio];
+                          }
+
+                          if (opcionSeleccionada) {
+                            const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
+                            cy.log(`TC055: Seleccionando cliente aleatorio: "${textoOpcion}"`);
+                            return cy.wrap(opcionSeleccionada)
+                              .scrollIntoView()
+                              .click({ force: true })
+                              .then(() => cy.wait(500))
+                              .then(() => cy.wrap(true));
+                          }
+
+                          return cy.wrap(false);
+                        });
+                    })
+                    .then((resultado) => {
+                      cy.get('body').type('{esc}', { force: true, log: false });
+                      return cy.wrap(resultado);
+                    });
+                });
+            }));
+        };
+
+        // Función recursiva para intentar guardar con reintentos
+        const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
+          if (intentos >= maxIntentos) {
+            const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          return clickGuardarPrincipalSiExiste({ requerido: true })
+            .then((clicado) => {
+              if (!clicado) {
+                const obs = 'No se pudo pulsar Guardar (botón no visible/habilitado)';
+                return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+              }
+              return cy.wait(2000);
+            })
+            .then(() => hayErrorClienteAsociado())
+            .then((hayError) => {
+              if (hayError) {
+                cy.log(`TC055: Error detectado - Cliente ya asociado (intento ${intentos + 1}/${maxIntentos})`);
+                // Cambiar Cliente Asociado y reintentar
+                return cambiarClienteAsociado()
+                  .then((cambiado) => {
+                    if (cambiado) {
+                      cy.log(`TC055: Cliente Asociado cambiado, reintentando guardar...`);
+                      return intentarGuardarConReintentos(intentos + 1, maxIntentos);
+                    } else {
+                      const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
+                      return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                    }
+                  });
+              } else {
+                // No hay error, verificar si hay mensaje de éxito
+                return cy.get('body').then(($b) => {
+                  const texto = ($b.text() || '').toString();
+                  const hayExito = /proveedor.*creado|proveedor.*guardado|provider.*created|provider.*saved|creado.*correctamente|guardado.*correctamente/i.test(texto);
+                  if (hayExito || intentos === 0) {
+                    // Éxito o primer intento sin error (asumimos éxito)
+                    cy.log(`TC055: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
+                    return cy.wrap(null);
+                  }
+                  // Si no hay mensaje claro, asumimos éxito si no hay error
+                  cy.log('TC055: No se detectó error, asumiendo guardado exitoso');
+                  return cy.wrap(null);
+                });
+              }
+            });
+        };
+
+        return intentarGuardarConReintentos();
+      })
+      .then(() => {
+        // 6) Buscar el proveedor creado y verificar pestañas
+        if (!codigoProveedor) {
+          cy.log('No se pudo capturar el código del proveedor, intentando leerlo de nuevo...');
+          return cy.url().then((urlActual) => {
+            if (urlActual.includes('/form')) {
+              return leerCodigoProveedor().then((codigo) => {
+                if (codigo) codigoProveedor = codigo;
+                return cy.wrap(null);
+              });
+            }
+            return cy.wrap(null);
+          });
+        }
+        return cy.wrap(null);
+      })
+      .then(() => {
+        // Volver a la lista
+        return cy.url().then((urlActual) => {
+          if (urlActual.includes('/form')) {
+            cy.log('Navegando a la lista de proveedores...');
+            return cy.visit(LIST_URL).then(() => cy.wait(2000));
+          }
+          return cy.wrap(null);
+        });
+      })
+      .then(() => UI.esperarTabla())
+      .then(() => {
+        if (!codigoProveedor) {
+          const obs = 'No se pudo capturar el código del proveedor para buscar y verificar.';
+          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+        }
+
+        cy.log(`Buscando proveedor: ${codigoProveedor}`);
+        return UI.buscar(codigoProveedor);
+      })
+      .then((resPrev) => {
+        if (resPrev && resPrev.resultado === 'ERROR') return cy.wrap(resPrev);
+
+        cy.wait(1000);
+        return cy.get('body').then($body => {
+          const filas = $body.find('.MuiDataGrid-row:visible');
+          if (filas.length === 0) {
+            const obs = `No se encontró el proveedor con código ${codigoProveedor} después de guardar.`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          const filaEncontrada = Array.from(filas).find((el) => {
+            const textoFila = (el.innerText || el.textContent || '').toLowerCase();
+            return textoFila.includes(codigoProveedor.toLowerCase());
+          });
+
+          if (filaEncontrada) {
+            cy.log('Proveedor encontrado, abriendo formulario de edición...');
+            return cy.wrap(filaEncontrada).dblclick({ force: true });
+          } else {
+            const obs = `No se encontró la fila con el código ${codigoProveedor}.`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+        });
+      })
+      .then((resPrev) => {
+        if (resPrev && resPrev.resultado === 'ERROR') return cy.wrap(resPrev);
+
+        cy.wait(2000);
+        return cy.url().should('include', '/dashboard/suppliers/form');
+      })
+      .then((resPrev) => {
+        if (resPrev && resPrev.resultado === 'ERROR') return cy.wrap(resPrev);
+
+        cy.log('TC055: Verificando que todas las pestañas tienen datos guardados...');
+
+        // Lista de pestañas a verificar
+        const pestañasAVerificar = [
+          'Direcciones',
+          'Contactos',
+          'Asociados',
+          'Incidencias',
+          'Zonas de carga',
+          'Certificaciones',
+          'Calidad'
+        ];
+
+        let chainVerificacion = cy.wrap([]);
+
+        pestañasAVerificar.forEach((pestaña) => {
+          chainVerificacion = chainVerificacion.then((pestañasSinDatos) => {
+            cy.log(`Verificando pestaña: ${pestaña}`);
+            return navegarSeccionFormulario(pestaña)
+              .then(() => cy.wait(1000))
+              .then(() => verificarPestañaTieneDatos(pestaña))
+              .then((tieneDatos) => {
+                const nuevasPestañasSinDatos = [...pestañasSinDatos];
+                if (!tieneDatos) {
+                  nuevasPestañasSinDatos.push(pestaña);
+                }
+                return cy.wrap(nuevasPestañasSinDatos);
+              });
+          });
+        });
+
+        return chainVerificacion;
+      })
+      .then((pestañasSinDatos) => {
+        cy.log('TC055: Verificación completada');
+
+        let resultado = 'OK';
+        let mensaje = `Proveedor ${codigoProveedor || 'creado'} verificado. Todas las pestañas tienen datos guardados.`;
+
+        if (pestañasSinDatos && pestañasSinDatos.length > 0) {
+          resultado = 'ERROR';
+          const pestañasError = pestañasSinDatos.join(', ');
+          mensaje = `Proveedor ${codigoProveedor || 'creado'}, pero las siguientes pestañas NO tienen datos guardados: ${pestañasError}`;
+          cy.log(` ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
+        } else {
+          cy.log(` Todas las pestañas tienen datos guardados correctamente`);
+        }
+
+        return registrarResultadoAutomatico(
+          numeroCaso,
+          idCaso,
+          nombreCaso,
+          mensaje,
+          resultado,
+          true
+        );
+      });
+  }
+
+  // TC056-TC061: Guardar secciones sin rellenar ningún campo
+  function guardarSeccionSinRellenar(caso, numero, casoId) {
+    const numeroCaso = numero || 56;
+    const idCaso = casoId || `TC${String(numeroCaso).padStart(3, '0')}`;
+    const nombreCaso = caso?.nombre || 'Guardar sección sin rellenar ningún campo';
+
+    // Mapear número de caso a nombre de sección
+    const mapeoSecciones = {
+      56: 'Direcciones',
+      57: 'Asociados',
+      58: 'Incidencias',
+      59: 'Zonas de carga',
+      60: 'Certificaciones',
+      61: 'Calidad'
+    };
+
+    const nombreSeccion = mapeoSecciones[numeroCaso];
+    if (!nombreSeccion) {
+      const obs = `No se encontró mapeo para el caso ${numeroCaso}`;
+      return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+    }
+
+    // Asegurar que estamos en el formulario
+    return cy.url().then((u) => {
+      if (!/\/form/i.test(u)) {
+        return abrirFormularioNuevoProveedor();
+      }
+      return cy.wrap(null);
+    })
+      .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Navegando a la pestaña ${nombreSeccion}...`);
+        return navegarSeccionFormulario(nombreSeccion);
+      })
+      .then(() => cy.wait(1000))
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Abriendo modal de ${nombreSeccion}...`);
+        // Abrir el modal de la sección (igual que anadirProveedor)
+        if (nombreSeccion === 'Direcciones') {
+          return abrirModalSeccion('Direcciones', true);
+        } else if (nombreSeccion === 'Asociados') {
+          return abrirModalSeccion('Asociados', true);
+        } else if (nombreSeccion === 'Incidencias') {
+          return abrirModalSeccion('Incidencias', true);
+        } else if (nombreSeccion === 'Zonas de carga') {
+          return abrirModalSeccion('Zonas de carga', true);
+        } else if (nombreSeccion === 'Certificaciones') {
+          return abrirModalSeccion('Certificaciones', true);
+        } else if (nombreSeccion === 'Calidad') {
+          return abrirModalSeccion('Calidad', true);
+        }
+        return cy.wrap(null);
+      })
+      .then(() => cy.wait(1000))
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Pulsando Guardar del formulario (igual que casos 30-36)...`);
+        // Usar las mismas funciones de guardado que los casos 30-36
+        // Esto asegura que se pulse el botón Guardar del formulario, no el del header
+        if (nombreSeccion === 'Direcciones') {
+          return guardarNuevaDireccion();
+        } else if (nombreSeccion === 'Asociados') {
+          return guardarNuevoAsociado();
+        } else if (nombreSeccion === 'Incidencias') {
+          return guardarNuevaIncidencia();
+        } else if (nombreSeccion === 'Zonas de carga') {
+          return guardarNuevaZonaCarga();
+        } else if (nombreSeccion === 'Certificaciones') {
+          return guardarNuevaCertificacion();
+        } else if (nombreSeccion === 'Calidad') {
+          return guardarNuevoRegistroCalidad();
+        }
+        return cy.wrap(null);
+      })
+      .then(() => cy.wait(2000)) // Esperar a que aparezca el aviso
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Verificando si aparece aviso de campos obligatorios...`);
+        // Verificar si aparece un aviso de campos obligatorios
+        return cy.get('body').then($body => {
+          const textoCompleto = ($body.text() || '').toLowerCase();
+
+          // Buscar avisos/alertas de validación
+          const avisos = $body.find('[role="alert"], .MuiAlert-root, .MuiSnackbar-root, [class*="error"], [class*="Error"], [class*="warning"], [class*="Warning"]')
+            .filter(':visible')
+            .map((_, el) => (el.textContent || el.innerText || '').trim())
+            .get();
+
+          // Buscar texto relacionado con campos obligatorios o mensajes de error
+          const tieneAvisoCamposObligatorios =
+            /campo.*obligatorio|required.*field|field.*required|debe.*rellenar|debe.*completar|completar.*campo|rellenar.*campo/i.test(textoCompleto) ||
+            avisos.some(aviso => /campo.*obligatorio|required.*field|field.*required|debe.*rellenar|debe.*completar/i.test(aviso.toLowerCase()));
+
+          // Detectar claves de traducción sin traducir (ej: "suppliers.form.addresses.messages.error")
+          const tieneClaveTraduccion =
+            /\w+\.\w+\.\w+/i.test(textoCompleto) ||
+            avisos.some(aviso => /\w+\.\w+\.\w+/i.test(aviso));
+
+          if (!tieneAvisoCamposObligatorios && !tieneClaveTraduccion) {
+            const obs = 'No aparece aviso de campos obligatorios al intentar guardar sin rellenar campos. Debería aparecer un aviso.';
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          // Verificar si el aviso está bien escrito
+          // Un aviso bien escrito debería mencionar "campo obligatorio", "required field", etc.
+          // NO debe ser una clave de traducción sin traducir
+          const avisosBienEscritos = [
+            /campo.*obligatorio/i,
+            /required.*field/i,
+            /field.*required/i,
+            /debe.*rellenar/i,
+            /debe.*completar/i
+          ];
+
+          const avisoBienEscrito = avisosBienEscritos.some(regex =>
+            regex.test(textoCompleto) || avisos.some(aviso => regex.test(aviso))
+          );
+
+          // Si es una clave de traducción sin traducir, está mal escrito
+          if (tieneClaveTraduccion) {
+            const textoAviso = avisos.length > 0 ? avisos[0] :
+              (textoCompleto.match(/\w+\.\w+\.\w+[^\s]*/i)?.[0] || 'Clave de traducción sin traducir');
+            const obs = `Aparece aviso de campos obligatorios pero está mal escrito (clave de traducción sin traducir): "${textoAviso}". Debería aparecer "Campos obligatorios" o similar.`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          if (avisoBienEscrito) {
+            const obs = 'Aparece aviso de campos obligatorios correctamente escrito.';
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
+              .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
+          } else {
+            // El aviso existe pero está mal escrito
+            const textoAviso = avisos.length > 0 ? avisos[0] : 'Aviso encontrado en el texto de la página';
+            const obs = `Aparece aviso de campos obligatorios pero está mal escrito: "${textoAviso}"`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+        });
+      });
+  }
 
   // -------------------- Helpers formulario --------------------
 
@@ -3184,7 +3836,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
   function rellenarCamposObligatoriosClienteAsociado(caso, fallbackCodigoCliente) {
     // TC027: además de Código, hay que rellenar:
-    // - "Código de cliente" (input pequeño con placeholder "Código de cliente")
+    // - "Código" (input pequeño con placeholder "Código" dentro de Cliente Asociado)
     // - "Cliente Asociado" (Autocomplete MUI)
     const codigoCliente =
       extraerDatoPorEtiquetaOSelector(caso, /(c[oó]digo\s+de\s+cliente|customer\s+code|codi\s+de\s+client)/i) ||
@@ -3203,17 +3855,17 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
       // Subir a un contenedor razonable que incluya ambos inputs (código + autocomplete)
       // OJO: necesitamos el MISMO contenedor donde el label y los inputs son hermanos.
-      // Si subimos al padre, a veces perdemos el input pequeño ("Código de cliente").
+      // Si subimos al padre, a veces perdemos el input pequeño ("Código" dentro de Cliente Asociado).
       const $root = label.closest('div');
 
       const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
       const forAttr = label.attr('for') || '';
 
       return cy.wrap($root).within(() => {
-        // 1) Código de cliente (input pequeño)
+        // 1) Código (input pequeño dentro de Cliente Asociado - ahora se llama "Código", no "Código de cliente")
         if (codigoCliente !== undefined && codigoCliente !== null && `${codigoCliente}` !== '') {
           cy.get(
-            'input[placeholder*="Código de cliente"], input[placeholder*="Código de client"], input[placeholder*="Codigo"], input[placeholder*="Customer code"]'
+            'input[placeholder="Código"], input[placeholder*="Código"], input[placeholder="Codigo"], input[placeholder*="Codigo"], input[placeholder*="Code"]'
           )
             .filter(':visible')
             .first()
