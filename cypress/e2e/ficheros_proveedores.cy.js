@@ -136,91 +136,91 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      // case 1:
-      //   return { fn: cargaPantalla };
-      // case 2:
-      // case 3:
-      // case 4:
-      // case 5:
-      // case 6:
-      // case 7:
-      // case 8:
-      // case 9:
-      // case 10:
-      // case 11:
-      // case 12:
-      // case 13:
-      // case 14:
-      // case 15:
-      //   return { fn: ejecutarFiltroIndividualExcelValidandoFilas };
-      // case 16:
-      // case 17:
-      // case 18:
-      // case 19:
-      // case 20:
-      // case 21:
-      // case 22:
-      // case 23:
-      //   return { fn: ordenarColumnaDesdeExcel };
-      // case 24:
-      //   return { fn: ocultarColumnaDesdeExcel };
-      // case 25:
-      //   return { fn: mostrarColumnaDesdeExcel };
-      // case 26:
-      //   return { fn: abrirFormularioNuevoProveedor };
-      // case 27:
-      //   return { fn: crearConCamposObligatorios, autoRegistro: true };
+      case 1:
+        return { fn: cargaPantalla };
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+      case 15:
+        return { fn: ejecutarFiltroIndividualExcelValidandoFilas };
+      case 16:
+      case 17:
+      case 18:
+      case 19:
+      case 20:
+      case 21:
+      case 22:
+      case 23:
+        return { fn: ordenarColumnaDesdeExcel };
+      case 24:
+        return { fn: ocultarColumnaDesdeExcel };
+      case 25:
+        return { fn: mostrarColumnaDesdeExcel };
+      case 26:
+        return { fn: abrirFormularioNuevoProveedor };
+      case 27:
+        return { fn: crearConCamposObligatorios, autoRegistro: true };
       case 28:
         return { fn: crearConTodo, autoRegistro: true };
-      // case 29:
-      // case 30:
-      // case 31:
-      // case 32:
-      // case 33:
-      // case 34:
-      // case 35:
-      // case 36:
-      //   return { fn: anadirProveedor };
-      // case 37:
-      //   return { fn: editarConFilaSeleccionada };
-      // case 38:
-      //   return { fn: editarSinSeleccion };
-      // case 39:
-      //   return { fn: eliminarConFilaSeleccionada };
-      // case 40:
-      //   return { fn: eliminarSinSeleccion };
-      // case 41:
-      //   return { fn: seleccionarFila };
-      // case 42:
-      //   return { fn: scrollTablaProveedores };
-      // case 43:
-      //   return { fn: resetFiltrosRecarga };
-      // case 44:
-      //   return { fn: guardarFiltroDesdeExcel };
-      // case 45:
-      //   return { fn: limpiarFiltroDesdeExcel };
-      // case 46:
-      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
-      // case 47:
-      // case 48:
-      // case 49:
-      // case 50:
-      // case 51:
-      // case 52:
-      //   return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
-      // case 53:
-      //   return { fn: cambiarIdiomasProveedores };
-      // case 54:
-      //   return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
-      // case 55:
-      //   return { fn: comprobarGuardadoCompleto, autoRegistro: true };
-      // case 56:
-      // case 57:
-      // case 58:
-      // case 59:
-      // case 60:
-      // case 61:
-      //   return { fn: guardarSeccionSinRellenar, autoRegistro: true };
+      case 29:
+      case 30:
+      case 31:
+      case 32:
+      case 33:
+      case 34:
+      case 35:
+      case 36:
+        return { fn: anadirProveedor };
+      case 37:
+        return { fn: editarConFilaSeleccionada };
+      case 38:
+        return { fn: editarSinSeleccion };
+      case 39:
+        return { fn: eliminarConFilaSeleccionada };
+      case 40:
+        return { fn: eliminarSinSeleccion };
+      case 41:
+        return { fn: seleccionarFila };
+      case 42:
+        return { fn: scrollTablaProveedores };
+      case 43:
+        return { fn: resetFiltrosRecarga };
+      case 44:
+        return { fn: guardarFiltroDesdeExcel };
+      case 45:
+        return { fn: limpiarFiltroDesdeExcel };
+      case 46:
+        return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      case 47:
+      case 48:
+      case 49:
+      case 50:
+      case 51:
+      case 52:
+        return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
+      case 53:
+        return { fn: cambiarIdiomasProveedores };
+      case 54:
+        return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
+      case 55:
+        return { fn: comprobarGuardadoCompleto, autoRegistro: true };
+      case 56:
+      case 57:
+      case 58:
+      case 59:
+      case 60:
+      case 61:
+        return { fn: guardarSeccionSinRellenar, autoRegistro: true };
       default:
         return null;
     }
@@ -474,7 +474,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         if ($btn.length) {
           cy.wrap($btn[0]).should('be.disabled');
         } else {
-          cy.log('✅ No existe botón Editar sin selección (OK)');
+          cy.log(' No existe botón Editar sin selección (OK)');
         }
         return cy.wrap(null);
       });
@@ -3957,7 +3957,6 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
     return completar(0);
   }
-
 
   function parseFechaBasicaExcel(texto) {
     if (texto instanceof Date) return texto;
