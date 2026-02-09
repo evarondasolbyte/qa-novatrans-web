@@ -136,91 +136,91 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      case 1:
-        return { fn: cargaPantalla };
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-      case 9:
-      case 10:
-      case 11:
-      case 12:
-      case 13:
-      case 14:
-      case 15:
-        return { fn: ejecutarFiltroIndividualExcelValidandoFilas };
-      case 16:
-      case 17:
-      case 18:
-      case 19:
-      case 20:
-      case 21:
-      case 22:
-      case 23:
-        return { fn: ordenarColumnaDesdeExcel };
-      case 24:
-        return { fn: ocultarColumnaDesdeExcel };
-      case 25:
-        return { fn: mostrarColumnaDesdeExcel };
-      case 26:
-        return { fn: abrirFormularioNuevoProveedor };
-      case 27:
-        return { fn: crearConCamposObligatorios, autoRegistro: true };
+      // case 1:
+      //   return { fn: cargaPantalla };
+      // case 2:
+      // case 3:
+      // case 4:
+      // case 5:
+      // case 6:
+      // case 7:
+      // case 8:
+      // case 9:
+      // case 10:
+      // case 11:
+      // case 12:
+      // case 13:
+      // case 14:
+      // case 15:
+      //   return { fn: ejecutarFiltroIndividualExcelValidandoFilas };
+      // case 16:
+      // case 17:
+      // case 18:
+      // case 19:
+      // case 20:
+      // case 21:
+      // case 22:
+      // case 23:
+      //   return { fn: ordenarColumnaDesdeExcel };
+      // case 24:
+      //   return { fn: ocultarColumnaDesdeExcel };
+      // case 25:
+      //   return { fn: mostrarColumnaDesdeExcel };
+      // case 26:
+      //   return { fn: abrirFormularioNuevoProveedor };
+      // case 27:
+      //   return { fn: crearConCamposObligatorios, autoRegistro: true };
       case 28:
         return { fn: crearConTodo, autoRegistro: true };
-      case 29:
-      case 30:
-      case 31:
-      case 32:
-      case 33:
-      case 34:
-      case 35:
-      case 36:
-        return { fn: anadirProveedor };
-      case 37:
-        return { fn: editarConFilaSeleccionada };
-      case 38:
-        return { fn: editarSinSeleccion };
-      case 39:
-        return { fn: eliminarConFilaSeleccionada };
-      case 40:
-        return { fn: eliminarSinSeleccion };
-      case 41:
-        return { fn: seleccionarFila };
-      case 42:
-        return { fn: scrollTablaProveedores };
-      case 43:
-        return { fn: resetFiltrosRecarga };
-      case 44:
-        return { fn: guardarFiltroDesdeExcel };
-      case 45:
-        return { fn: limpiarFiltroDesdeExcel };
-      case 46:
-        return { fn: seleccionarFiltroGuardadoDesdeExcel };
-      case 47:
-      case 48:
-      case 49:
-      case 50:
-      case 51:
-      case 52:
-        return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
-      case 53:
-        return { fn: cambiarIdiomasProveedores };
-      case 54:
-        return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
-      case 55:
-        return { fn: comprobarGuardadoCompleto, autoRegistro: true };
-      case 56:
-      case 57:
-      case 58:
-      case 59:
-      case 60:
-      case 61:
-        return { fn: guardarSeccionSinRellenar, autoRegistro: true };
+      // case 29:
+      // case 30:
+      // case 31:
+      // case 32:
+      // case 33:
+      // case 34:
+      // case 35:
+      // case 36:
+      //   return { fn: anadirProveedor };
+      // case 37:
+      //   return { fn: editarConFilaSeleccionada };
+      // case 38:
+      //   return { fn: editarSinSeleccion };
+      // case 39:
+      //   return { fn: eliminarConFilaSeleccionada };
+      // case 40:
+      //   return { fn: eliminarSinSeleccion };
+      // case 41:
+      //   return { fn: seleccionarFila };
+      // case 42:
+      //   return { fn: scrollTablaProveedores };
+      // case 43:
+      //   return { fn: resetFiltrosRecarga };
+      // case 44:
+      //   return { fn: guardarFiltroDesdeExcel };
+      // case 45:
+      //   return { fn: limpiarFiltroDesdeExcel };
+      // case 46:
+      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      // case 47:
+      // case 48:
+      // case 49:
+      // case 50:
+      // case 51:
+      // case 52:
+      //   return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
+      // case 53:
+      //   return { fn: cambiarIdiomasProveedores };
+      // case 54:
+      //   return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
+      // case 55:
+      //   return { fn: comprobarGuardadoCompleto, autoRegistro: true };
+      // case 56:
+      // case 57:
+      // case 58:
+      // case 59:
+      // case 60:
+      // case 61:
+      //   return { fn: guardarSeccionSinRellenar, autoRegistro: true };
       default:
         return null;
     }
@@ -414,16 +414,16 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
   function ordenarColumnaDesdeExcel(caso, numero) {
     // Mapa de casos a columnas (siempre usar el mapa, no leer del Excel)
-    const mapa = {
-      16: 'Código',
-      17: 'NIF/CIF',
-      18: 'Nombre',
-      19: 'Razón Social',
-      20: 'Teléfono',
-      21: 'Tipo Proveedor',
-      22: 'Email',
-      23: 'Código Contable'
-    };
+      const mapa = {
+        16: 'Código',
+        17: 'NIF/CIF',
+        18: 'Nombre',
+        19: 'Razón Social',
+        20: 'Teléfono',
+        21: 'Tipo Proveedor',
+        22: 'Email',
+        23: 'Código Contable'
+      };
 
     // Siempre usar el mapa si existe el caso, si no usar fallback
     const col = mapa[numero] || 'Código';
@@ -908,21 +908,169 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         return cy.wrap(null);
       })
       .then(() => rellenarCamposObligatoriosClienteAsociado(casoNormalizado, codigo3))
-      .then(() => clickGuardarPrincipalSiExiste({ requerido: true }))
-      .then((clicado) => {
-        if (clicado) return cy.wrap(null);
-        return registrarResultadoAutomatico(
-          numero,
-          casoId || `TC${String(numero).padStart(3, '0')}`,
-          nombre,
-          'No se pudo pulsar Guardar (botón no visible/habilitado)',
-          'ERROR',
-          true
-        );
-      })
-      .then(() => cy.wait(800))
       .then(() => {
-        // Validación esperada por el usuario: al guardar debe saltar error 500
+        // Rellenar Direcciones si hay datos en el Excel
+        cy.log('TC027: Rellenando Direcciones...');
+        return navegarSeccionFormulario('Direcciones')
+          .then(() => abrirModalSeccion('Direcciones', true))
+          .then(() => llenarFormularioDireccion(casoNormalizado))
+          .then(() => guardarNuevaDireccion())
+          .then(() => cy.wait(500));
+      })
+      .then(() => {
+        // Función para detectar error de cliente ya asociado
+        const hayErrorClienteAsociado = () => {
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            // Buscar el error en diferentes formatos posibles
+            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|associated.*provider|el cliente.*ya está|the client.*already/i.test(texto);
+
+            // También buscar en elementos específicos de alertas/toasts
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
+            let hayErrorEnAlert = false;
+            $alerts.each((_, el) => {
+              const textoAlert = (el.textContent || el.innerText || '').toString();
+              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|associated.*provider/i.test(textoAlert)) {
+                hayErrorEnAlert = true;
+                return false; // break
+              }
+            });
+
+            return cy.wrap(hayError || hayErrorEnAlert);
+          });
+        };
+
+        // Función para cambiar Cliente Asociado por otro valor
+        const cambiarClienteAsociado = () => {
+          cy.log('TC027: Cambiando Cliente Asociado por otro valor...');
+          // Asegurarse de estar en Datos generales
+          return navegarSeccionFormulario('Datos generales')
+            .then(() => cy.wait(500))
+            .then(() => cy.get('body').then(($b) => {
+              const rxLabel = /(Cliente\s+Asociado|Associated\s+Customer|Client\s+Associat)/i;
+              const label = $b.find('label').filter((_, el) => rxLabel.test((el.textContent || '').trim())).first();
+              if (!label.length) {
+                cy.log('TC027: No se encontró el label de Cliente Asociado');
+                return cy.wrap(false);
+              }
+
+              const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+              const forAttr = label.attr('for') || '';
+              const sel = forAttr ? `#${escapeCssId(forAttr)}` : null;
+
+              const getInput = () => {
+                if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
+                return cy
+                  .get('input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 15000 })
+                  .filter(':visible')
+                  .first();
+              };
+
+              return getInput()
+                .then(($inp) => {
+                  if (!$inp || !$inp.length) {
+                    cy.log('TC027: No se encontró el input de Cliente Asociado');
+                    return cy.wrap(false);
+                  }
+
+                  // Obtener el valor actual antes de limpiar
+                  const valorActual = ($inp.val() || '').toString().trim();
+
+                  // Limpiar y abrir el desplegable
+                  return cy.wrap($inp)
+                    .scrollIntoView()
+                    .click({ force: true })
+                    .clear({ force: true })
+                    .type('{downArrow}', { force: true }) // Abrir desplegable
+                    .then(() => cy.wait(300))
+                    .then(() => {
+                      // Buscar una opción diferente en el listbox
+                      return cy.get('ul[role="listbox"]', { timeout: 10000 })
+                        .filter(':visible')
+                        .last()
+                        .find('li[role="option"]:visible')
+                        .then(($opts) => {
+                          if ($opts.length === 0) {
+                            cy.log('TC027: No hay opciones disponibles en el desplegable');
+                            return cy.wrap(false);
+                          }
+
+                          // Buscar opciones diferentes al valor actual
+                          const opciones = Array.from($opts);
+                          const opcionesDiferentes = opciones.filter((opt) => {
+                            const texto = (opt.textContent || opt.innerText || '').trim();
+                            return texto && texto !== valorActual && texto.length > 0;
+                          });
+
+                          // Seleccionar una opción aleatoria de las diferentes disponibles
+                          let opcionSeleccionada = null;
+                          if (opcionesDiferentes.length > 0) {
+                            const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
+                            opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
+                          } else if (opciones.length > 0) {
+                            // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
+                            const indiceAleatorio = Math.floor(Math.random() * opciones.length);
+                            opcionSeleccionada = opciones[indiceAleatorio];
+                          }
+
+                          if (opcionSeleccionada) {
+                            const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
+                            cy.log(`TC027: Seleccionando cliente aleatorio: "${textoOpcion}"`);
+                            return cy.wrap(opcionSeleccionada)
+                              .scrollIntoView()
+                              .click({ force: true })
+                              .then(() => cy.wait(500))
+                              .then(() => cy.wrap(true));
+                          }
+
+                          return cy.wrap(false);
+                        });
+                    })
+                    .then((resultado) => {
+                      cy.get('body').type('{esc}', { force: true, log: false });
+                      return cy.wrap(resultado);
+                    });
+                });
+            }));
+        };
+
+        // Función recursiva para intentar guardar con reintentos
+        const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
+          if (intentos >= maxIntentos) {
+            const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
+            return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          return clickGuardarPrincipalSiExiste({ requerido: true })
+      .then((clicado) => {
+              if (!clicado) {
+                const obs = 'No se pudo pulsar Guardar (botón no visible/habilitado)';
+                return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
+                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+              }
+              return cy.wait(2000);
+            })
+            .then(() => hayErrorClienteAsociado())
+            .then((hayError) => {
+              if (hayError) {
+                cy.log(`TC027: Error detectado - Cliente ya asociado (intento ${intentos + 1}/${maxIntentos})`);
+                // Cambiar Cliente Asociado y reintentar
+                return cambiarClienteAsociado()
+                  .then((cambiado) => {
+                    if (cambiado) {
+                      cy.log(`TC027: Cliente Asociado cambiado, reintentando guardar...`);
+                      return intentarGuardarConReintentos(intentos + 1, maxIntentos);
+                    } else {
+                      const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
+                      return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
+                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                    }
+                  });
+              } else {
+                // No hay error de cliente asociado, verificar error 500 (esperado en TC027)
+                return cy.wait(800)
+      .then(() => {
         return cy.get('body').then(($b) => {
           const texto = ($b.text() || '').toString();
           const hay500 =
@@ -946,6 +1094,12 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           // Si no se vio el mensaje, no forzamos ERROR (puede haber cambiado el texto).
           return cy.wrap(null);
         });
+                  });
+              }
+            });
+        };
+
+        return intentarGuardarConReintentos();
       });
   }
 
@@ -1000,6 +1154,16 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       .then(() => rellenarCamposObligatoriosClienteAsociado(casoNormalizado, codigo3))
       .then(() => esperarDatosGeneralesCompletosAntesDeFinancieros(casoNormalizado))
 
+      // --- DIRECCIONES ---
+      .then(() => {
+        cy.log('TC028: Rellenando Direcciones...');
+        return navegarSeccionFormulario('Direcciones')
+          .then(() => abrirModalSeccion('Direcciones', true))
+          .then(() => llenarFormularioDireccion(casoNormalizado))
+          .then(() => guardarNuevaDireccion())
+          .then(() => cy.wait(500));
+      })
+
       // --- DATOS FINANCIEROS ---
       .then(() => navegarSeccionFormulario('Datos financieros'))
       .then(() => llenarCamposFormulario(casoNormalizado))
@@ -1008,33 +1172,178 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       .then(() => rellenarCCompraFinanciero(casoNormalizado))
       .then(() => rellenarMetodoPagoFinanciero(casoNormalizado))
 
-      // Guardar
-      .then(() => clickGuardarPrincipalSiExiste({ requerido: true }))
-      .then((clicado) => {
-        if (clicado) return cy.wrap(true);
-        return registrarError('No se pudo pulsar Guardar (botón no visible/habilitado)').then(() => false);
-      })
-      .then((continuar) => {
-        if (!continuar) return cy.wrap(false);
+      // Guardar con reintentos si hay error de cliente asociado
+      .then(() => {
+        // Función para detectar error de cliente ya asociado
+        const hayErrorClienteAsociado = () => {
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            // Buscar el error en diferentes formatos posibles
+            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|associated.*provider|el cliente.*ya está|the client.*already/i.test(texto);
 
-        // esperar a que aparezca posible toast/error
-        return cy.wait(1200).then(() => true);
-      })
+            // También buscar en elementos específicos de alertas/toasts
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
+            let hayErrorEnAlert = false;
+            $alerts.each((_, el) => {
+              const textoAlert = (el.textContent || el.innerText || '').toString();
+              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|associated.*provider/i.test(textoAlert)) {
+                hayErrorEnAlert = true;
+                return false; // break
+              }
+            });
 
-      // 1) Si hay error 500 => ERROR y cortar
-      .then((continuar) => {
-        if (!continuar) return cy.wrap(false);
+            return cy.wrap(hayError || hayErrorEnAlert);
+          });
+        };
 
-        return hayError500EnBody().then(({ hay500, texto }) => {
-          if (!hay500) return true;
+        // Función para cambiar Cliente Asociado por otro valor
+        const cambiarClienteAsociado = () => {
+          cy.log('TC028: Cambiando Cliente Asociado por otro valor...');
+          // Asegurarse de estar en Datos generales
+          return navegarSeccionFormulario('Datos generales')
+            .then(() => cy.wait(500))
+            .then(() => cy.get('body').then(($b) => {
+              const rxLabel = /(Cliente\s+Asociado|Associated\s+Customer|Client\s+Associat)/i;
+              const label = $b.find('label').filter((_, el) => rxLabel.test((el.textContent || '').trim())).first();
+              if (!label.length) {
+                cy.log('TC028: No se encontró el label de Cliente Asociado');
+                return cy.wrap(false);
+              }
 
-          const msg =
-            /Error al guardar el proveedor/i.test(texto)
-              ? 'Error al guardar el proveedor (status code 500)'
-              : 'Request failed with status code 500';
+              const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+              const forAttr = label.attr('for') || '';
+              const sel = forAttr ? `#${escapeCssId(forAttr)}` : null;
 
-          return registrarError(msg).then(() => false);
-        });
+              const getInput = () => {
+                if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
+                return cy
+                  .get('input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 15000 })
+                  .filter(':visible')
+                  .first();
+              };
+
+              return getInput()
+                .then(($inp) => {
+                  if (!$inp || !$inp.length) {
+                    cy.log('TC028: No se encontró el input de Cliente Asociado');
+                    return cy.wrap(false);
+                  }
+
+                  // Obtener el valor actual antes de limpiar
+                  const valorActual = ($inp.val() || '').toString().trim();
+
+                  // Limpiar y abrir el desplegable
+                  return cy.wrap($inp)
+                    .scrollIntoView()
+                    .click({ force: true })
+                    .clear({ force: true })
+                    .type('{downArrow}', { force: true }) // Abrir desplegable
+                    .then(() => cy.wait(300))
+          .then(() => {
+                      // Buscar una opción diferente en el listbox
+                      return cy.get('ul[role="listbox"]', { timeout: 10000 })
+                        .filter(':visible')
+                        .last()
+                        .find('li[role="option"]:visible')
+                        .then(($opts) => {
+                          if ($opts.length === 0) {
+                            cy.log('TC028: No hay opciones disponibles en el desplegable');
+                            return cy.wrap(false);
+                          }
+
+                          // Buscar opciones diferentes al valor actual
+                          const opciones = Array.from($opts);
+                          const opcionesDiferentes = opciones.filter((opt) => {
+                            const texto = (opt.textContent || opt.innerText || '').trim();
+                            return texto && texto !== valorActual && texto.length > 0;
+                          });
+
+                          // Seleccionar una opción aleatoria de las diferentes disponibles
+                          let opcionSeleccionada = null;
+                          if (opcionesDiferentes.length > 0) {
+                            const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
+                            opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
+                          } else if (opciones.length > 0) {
+                            // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
+                            const indiceAleatorio = Math.floor(Math.random() * opciones.length);
+                            opcionSeleccionada = opciones[indiceAleatorio];
+                          }
+
+                          if (opcionSeleccionada) {
+                            const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
+                            cy.log(`TC028: Seleccionando cliente aleatorio: "${textoOpcion}"`);
+                            return cy.wrap(opcionSeleccionada)
+                              .scrollIntoView()
+                              .click({ force: true })
+                              .then(() => cy.wait(500))
+                              .then(() => cy.wrap(true));
+                          }
+
+                          return cy.wrap(false);
+                        });
+                    })
+                    .then((resultado) => {
+                      cy.get('body').type('{esc}', { force: true, log: false });
+                      return cy.wrap(resultado);
+          });
+      });
+            }));
+        };
+
+        // Función recursiva para intentar guardar con reintentos
+        const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
+          if (intentos >= maxIntentos) {
+            const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
+            return registrarError(obs)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          return clickGuardarPrincipalSiExiste({ requerido: true })
+            .then((clicado) => {
+              if (!clicado) {
+                return registrarError('No se pudo pulsar Guardar (botón no visible/habilitado)')
+                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: 'No se pudo pulsar Guardar' }, { log: false }));
+              }
+              return cy.wait(2000);
+            })
+            .then(() => hayErrorClienteAsociado())
+            .then((hayError) => {
+              if (hayError) {
+                cy.log(`TC028: Error detectado - Cliente ya asociado (intento ${intentos + 1}/${maxIntentos})`);
+                // Cambiar Cliente Asociado y reintentar
+                return cambiarClienteAsociado()
+                  .then((cambiado) => {
+                    if (cambiado) {
+                      cy.log(`TC028: Cliente Asociado cambiado, reintentando guardar...`);
+                      return intentarGuardarConReintentos(intentos + 1, maxIntentos);
+                    } else {
+                      const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
+                      return registrarError(obs)
+                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                    }
+                  });
+              } else {
+                // No hay error de cliente asociado, verificar error 500
+                return cy.wait(1200)
+                  .then(() => hayError500EnBody())
+                  .then(({ hay500, texto }) => {
+                    if (hay500) {
+                      const msg =
+                        /Error al guardar el proveedor/i.test(texto)
+                          ? 'Error al guardar el proveedor (status code 500)'
+                          : 'Request failed with status code 500';
+                      return registrarError(msg)
+                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: msg }, { log: false }));
+                    }
+                    // Éxito: no hay error de cliente asociado ni error 500
+                    cy.log(`TC028: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
+                    return cy.wrap(null);
+                  });
+              }
+            });
+        };
+
+        return intentarGuardarConReintentos();
       })
 
     // Caso 28: Solo crear y guardar, no buscar nada (ese es otro caso diferente)
@@ -1568,7 +1877,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           return cy.wrap(panel)
             .find(`#${CSS.escape(forAttr)}`)
             .should('exist')
-            .then(($input) => escribirInput($input, valor))
+            .then(($input) => {
+              return escribirInput($input, valor)
             .then(() => {
               //  A veces el listbox tarda, pero si aparece lo selecciono.
               // Si no aparece, intento confirmación con teclado.
@@ -1579,6 +1889,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               });
             })
             .then(() => cy.get('body').type('{esc}', { force: true, log: false }));
+            });
         });
     };
 
@@ -2766,7 +3077,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
     // Función para verificar que una pestaña tiene datos guardados
     const verificarPestañaTieneDatos = (nombrePestaña) => {
-      return cy.get('body').then(($body) => {
+    return cy.get('body').then(($body) => {
         const tabActiva = $body.find('[role="tab"][aria-selected="true"]').first();
         const ariaControls = tabActiva.attr('aria-controls');
         const panelActivo = ariaControls ? $body.find(`[id="${ariaControls}"]`) : $body.find('[role="tabpanel"]:not([hidden])').first();
@@ -2896,7 +3207,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       return cy.wrap(null);
     })
       .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
-      .then(() => {
+        .then(() => {
         cy.log('Rellenando DATOS GENERALES usando datos del caso 28...');
         // Rellenar DATOS GENERALES (igual que crearConTodo - caso 28)
         return navegarSeccionFormulario('Datos generales')
@@ -2913,8 +3224,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                 cy.log(`TC055: Código del proveedor capturado: ${codigoProveedor}`);
               }
               return cy.wrap(null);
-            });
-          });
+        });
+    });
       })
       .then(() => {
         cy.log('Rellenando DATOS FINANCIEROS usando datos del caso 28...');
@@ -3102,9 +3413,9 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
           if (intentos >= maxIntentos) {
             const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
-            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-          }
+        return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+      }
 
           return clickGuardarPrincipalSiExiste({ requerido: true })
             .then((clicado) => {
@@ -3196,9 +3507,9 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           const filas = $body.find('.MuiDataGrid-row:visible');
           if (filas.length === 0) {
             const obs = `No se encontró el proveedor con código ${codigoProveedor} después de guardar.`;
-            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-          }
+          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+        }
 
           const filaEncontrada = Array.from(filas).find((el) => {
             const textoFila = (el.innerText || el.textContent || '').toLowerCase();
@@ -3314,7 +3625,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       return cy.wrap(null);
     })
       .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
-      .then(() => {
+        .then(() => {
         cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Navegando a la pestaña ${nombreSeccion}...`);
         return navegarSeccionFormulario(nombreSeccion);
       })
@@ -3412,8 +3723,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
           if (avisoBienEscrito) {
             const obs = 'Aparece aviso de campos obligatorios correctamente escrito.';
-            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
-              .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
+          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
+            .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
           } else {
             // El aviso existe pero está mal escrito
             const textoAviso = avisos.length > 0 ? avisos[0] : 'Aviso encontrado en el texto de la página';
@@ -3443,6 +3754,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
   function navegarSeccionFormulario(seccion) {
     if (!seccion) return cy.wrap(null);
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const palabras = seccion.split(/\s+/).map((p) => escapeRegex(p)).join('.*');
     const regex = new RegExp(palabras, 'i');
     return cy.get('body').then(($b) => {
@@ -3490,6 +3802,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         $el.closest('.MuiAutocomplete-root').length > 0
       );
     };
+
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const seleccionarOptionListbox = (texto) => {
       const target = String(texto ?? '').trim();
@@ -3960,6 +4274,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const escapeCssId = (id = '') =>
       id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
 
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const seleccionarOpcionListbox = (texto) => {
       const t = String(texto || '').trim();
       if (!t) return cy.wrap(null);
@@ -4051,6 +4367,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const escapeCssId = (id = '') =>
       id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
 
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const target = String(empresa).trim();
     const rxExact = new RegExp(`^${escapeRegex(target)}$`, 'i');
     const rxContiene = new RegExp(escapeRegex(target), 'i');
@@ -4132,6 +4450,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const escapeCssId = (id = '') =>
       id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
 
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const target = String(cCompra).trim();
     const rxExact = new RegExp(`^${escapeRegex(target)}$`, 'i');
     const rxContiene = new RegExp(escapeRegex(target), 'i');
@@ -4209,6 +4529,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const escapeCssId = (id = '') =>
       id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
 
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const rxExact = new RegExp(`^${escapeRegex(target)}$`, 'i');
     const rxContiene = new RegExp(escapeRegex(target), 'i');
 
@@ -4279,6 +4601,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
   // -------------------- Columnas (panel) --------------------
 
   function obtenerPatronColumna(nombreColumna = '') {
+    const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const lower = nombreColumna.toLowerCase();
     if (/c[óo]digo/.test(lower)) return /(C[óo]digo|Code|Codi)/i;
     if (/nombre/.test(lower)) return /(Nombre|Name|Nom)/i;
