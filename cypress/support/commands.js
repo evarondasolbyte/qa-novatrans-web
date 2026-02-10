@@ -1286,7 +1286,7 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
       });
       return cy.wrap(true);
     }
-    
+
     // Verificar si el caso encontrado tiene los datos correctos
     if (numeroCaso === 22 || numeroCaso === 23) {
       cy.log(`Caso encontrado: ${filtroEspecifico.caso}, Nombre: "${filtroEspecifico.nombre}", Funcionalidad: "${filtroEspecifico.funcionalidad}"`);
@@ -1312,7 +1312,7 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
                           Object.values(filtroEspecifico).some(v => String(v || '').toLowerCase().includes('operator'));
     
     const tieneOperadorYValor = filtroEspecifico.dato_1 && filtroEspecifico.dato_2;
-    
+
     const esMultifiltroConOperador = tieneOperator || (tieneOperadorYValor && filtroEspecifico.funcion?.toLowerCase().includes('multifiltro'));
 
     if (esMultifiltroConOperador) {
@@ -1567,16 +1567,16 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
         // Continuar con la búsqueda (el código después del if/else)
       } else {
         // Si no es un caso especial de clientes, registrar error y terminar
-        cy.registrarResultados({
-          numero: numeroCaso,
-          nombre: `TC${numeroCasoFormateado} - Multifiltro no válido`,
-          esperado: `Multifiltro con operador`,
-          obtenido: `No es un multifiltro válido`,
-          resultado: 'ERROR',
-          archivo: 'reportes_pruebas_novatrans.xlsx',
-          pantalla: nombrePantalla
-        });
-        return cy.wrap(true);
+      cy.registrarResultados({
+        numero: numeroCaso,
+        nombre: `TC${numeroCasoFormateado} - Multifiltro no válido`,
+        esperado: `Multifiltro con operador`,
+        obtenido: `No es un multifiltro válido`,
+        resultado: 'ERROR',
+        archivo: 'reportes_pruebas_novatrans.xlsx',
+        pantalla: nombrePantalla
+      });
+      return cy.wrap(true);
       }
     }
 
@@ -1753,7 +1753,7 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
             ? (tieneNoRows ? 'No se muestran resultados (multifiltro aplicado correctamente)' : 'Multifiltro aplicado correctamente')
             : (esCasoEstricto && filasVisibles > 0 && !tieneNoRows)
               ? `Se muestran ${filasVisibles} resultados filtrados correctamente`
-              : obtenido;
+            : obtenido;
 
         cy.registrarResultados({
           numero: numeroCaso,
