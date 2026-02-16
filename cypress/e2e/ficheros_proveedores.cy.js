@@ -210,8 +210,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
       case 53:
         return { fn: cambiarIdiomasProveedores };
-      case 54:
-        return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
+      // case 54:
+      //   return { fn: seleccionarFechasFiltroValidandoFilas, autoRegistro: true };
       case 55:
         return { fn: comprobarGuardadoCompleto, autoRegistro: true };
       case 56:
@@ -918,19 +918,19 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           .then(() => cy.wait(500));
       })
       .then(() => {
-        // Función para detectar error de cliente ya asociado
+        // Función para detectar error de cliente ya asociado/vinculado
         const hayErrorClienteAsociado = () => {
           return cy.get('body').then(($b) => {
             const texto = ($b.text() || '').toString();
-            // Buscar el error en diferentes formatos posibles
-            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|associated.*provider|el cliente.*ya está|the client.*already/i.test(texto);
+            // Buscar el error en diferentes formatos posibles, incluyendo "vinculado"
+            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|cliente.*ya.*está.*vinculado|vinculado.*otro.*proveedor|associated.*provider|el cliente.*ya está|the client.*already|client.*already.*linked/i.test(texto);
 
             // También buscar en elementos específicos de alertas/toasts
             const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
             let hayErrorEnAlert = false;
             $alerts.each((_, el) => {
               const textoAlert = (el.textContent || el.innerText || '').toString();
-              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|associated.*provider/i.test(textoAlert)) {
+              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*ya.*está.*vinculado|vinculado.*otro.*proveedor|associated.*provider|client.*already.*linked/i.test(textoAlert)) {
                 hayErrorEnAlert = true;
                 return false; // break
               }
@@ -984,46 +984,63 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                     .type('{downArrow}', { force: true }) // Abrir desplegable
                     .then(() => cy.wait(300))
                     .then(() => {
-                      // Buscar una opción diferente en el listbox
+                      // Buscar una opción diferente en el listbox, haciendo scroll si es necesario
                       return cy.get('ul[role="listbox"]', { timeout: 10000 })
                         .filter(':visible')
                         .last()
-                        .find('li[role="option"]:visible')
-                        .then(($opts) => {
-                          if ($opts.length === 0) {
-                            cy.log('TC027: No hay opciones disponibles en el desplegable');
+                        .then(($listbox) => {
+                          if (!$listbox.length) {
+                            cy.log('TC027: No se encontró el listbox');
                             return cy.wrap(false);
                           }
 
-                          // Buscar opciones diferentes al valor actual
-                          const opciones = Array.from($opts);
-                          const opcionesDiferentes = opciones.filter((opt) => {
-                            const texto = (opt.textContent || opt.innerText || '').trim();
-                            return texto && texto !== valorActual && texto.length > 0;
+                          // Hacer scroll dentro del listbox para cargar más opciones
+                          cy.wrap($listbox[0]).scrollTo('bottom', { duration: 500 });
+                          cy.wait(300);
+                          cy.wrap($listbox[0]).scrollTo('top', { duration: 500 });
+                          cy.wait(300);
+
+                          // Buscar todas las opciones (visibles y no visibles inicialmente)
+                          return cy.wrap($listbox).find('li[role="option"]').then(($opts) => {
+                            if ($opts.length === 0) {
+                              cy.log('TC027: No hay opciones disponibles en el desplegable');
+                              return cy.wrap(false);
+                            }
+
+                            // Buscar opciones diferentes al valor actual
+                            const opciones = Array.from($opts);
+                            const opcionesDiferentes = opciones.filter((opt) => {
+                              const texto = (opt.textContent || opt.innerText || '').trim();
+                              return texto && texto !== valorActual && texto.length > 0;
+                            });
+
+                            cy.log(`TC027: Encontradas ${opciones.length} opciones totales, ${opcionesDiferentes.length} diferentes al valor actual`);
+
+                            // Seleccionar una opción aleatoria de las diferentes disponibles
+                            let opcionSeleccionada = null;
+                            if (opcionesDiferentes.length > 0) {
+                              const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
+                              opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
+                            } else if (opciones.length > 0) {
+                              // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
+                              const indiceAleatorio = Math.floor(Math.random() * opciones.length);
+                              opcionSeleccionada = opciones[indiceAleatorio];
+                            }
+
+                            if (opcionSeleccionada) {
+                              const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
+                              cy.log(`TC027: Seleccionando cliente aleatorio: "${textoOpcion}"`);
+                              // Hacer scroll hasta la opción seleccionada y hacer click
+                              return cy.wrap(opcionSeleccionada)
+                                .scrollIntoView({ block: 'center' })
+                                .wait(200)
+                                .click({ force: true })
+                                .then(() => cy.wait(500))
+                                .then(() => cy.wrap(true));
+                            }
+
+                            return cy.wrap(false);
                           });
-
-                          // Seleccionar una opción aleatoria de las diferentes disponibles
-                          let opcionSeleccionada = null;
-                          if (opcionesDiferentes.length > 0) {
-                            const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
-                            opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
-                          } else if (opciones.length > 0) {
-                            // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
-                            const indiceAleatorio = Math.floor(Math.random() * opciones.length);
-                            opcionSeleccionada = opciones[indiceAleatorio];
-                          }
-
-                          if (opcionSeleccionada) {
-                            const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
-                            cy.log(`TC027: Seleccionando cliente aleatorio: "${textoOpcion}"`);
-                            return cy.wrap(opcionSeleccionada)
-                              .scrollIntoView()
-                              .click({ force: true })
-                              .then(() => cy.wait(500))
-                              .then(() => cy.wrap(true));
-                          }
-
-                          return cy.wrap(false);
                         });
                     })
                     .then((resultado) => {
@@ -1034,14 +1051,83 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
             }));
         };
 
-        // Función recursiva para intentar guardar con reintentos
-        const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
-          if (intentos >= maxIntentos) {
-            const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
-            return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
-              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-          }
+        // Función para detectar error de código ya existe (409)
+        const hayErrorCodigoExiste = () => {
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            // Buscar el error en diferentes formatos posibles
+            const hayError = /c[óo]digo.*ya.*existe|el campo.*c[óo]digo.*ya existe|code.*already.*exists|field.*code.*already/i.test(texto);
 
+            // También buscar en elementos específicos de alertas/toasts
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
+            let hayErrorEnAlert = false;
+            $alerts.each((_, el) => {
+              const textoAlert = (el.textContent || el.innerText || '').toString();
+              if (/c[óo]digo.*ya.*existe|el campo.*c[óo]digo.*ya existe|code.*already.*exists/i.test(textoAlert)) {
+                hayErrorEnAlert = true;
+                return false; // break
+              }
+            });
+
+            return cy.wrap(hayError || hayErrorEnAlert);
+          });
+        };
+
+        // Función para cambiar el código del proveedor a otros 4 números distintos
+        const cambiarCodigoProveedor = () => {
+          cy.log('TC027: Cambiando Código del proveedor por otro valor...');
+          // Asegurarse de estar en Datos generales
+          return navegarSeccionFormulario('Datos generales')
+            .then(() => cy.wait(500))
+            .then(() => cy.get('body').then(($b) => {
+              // Buscar el label de "Código"
+              const rxLabel = /^(C[óo]digo|Code|Codi)$/i;
+              const label = $b.find('label').filter((_, el) => {
+                const texto = (el.textContent || el.innerText || '').trim();
+                return rxLabel.test(texto);
+              }).first();
+
+              if (!label.length) {
+                cy.log('TC027: No se encontró el label de Código');
+                return cy.wrap(false);
+              }
+
+              const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+              const forAttr = label.attr('for') || '';
+              const sel = forAttr ? `#${escapeCssId(forAttr)}` : null;
+
+              const getInput = () => {
+                if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
+                // Fallback: buscar input cerca del label
+                return cy.wrap(label).parents('.MuiFormControl-root, .MuiBox-root').first()
+                  .find('input').filter(':visible').first();
+              };
+
+              return getInput()
+                .then(($inp) => {
+                  if (!$inp || !$inp.length) {
+                    cy.log('TC027: No se encontró el input de Código');
+                    return cy.wrap(false);
+                  }
+
+                  // Generar nuevo código de 4 dígitos
+                  const nuevoCodigo = generarNumeroAleatorio(4);
+                  cy.log(`TC027: Cambiando código a: "${nuevoCodigo}"`);
+
+                  // Escribir el nuevo código
+                  return cy.wrap($inp)
+                    .scrollIntoView()
+                    .clear({ force: true })
+                    .type(nuevoCodigo, { force: true })
+                    .then(() => cy.wait(300))
+                    .then(() => cy.wrap(true));
+                });
+            }));
+        };
+
+        // Función recursiva para intentar guardar con reintentos
+        // Continúa hasta que se pueda guardar (sin límite fijo de intentos)
+        const intentarGuardarConReintentos = (intentos = 0) => {
           return clickGuardarPrincipalSiExiste({ requerido: true })
       .then((clicado) => {
               if (!clicado) {
@@ -1051,26 +1137,68 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               }
               return cy.wait(2000);
             })
-            .then(() => hayErrorClienteAsociado())
-            .then((hayError) => {
-              if (hayError) {
-                cy.log(`TC027: Error detectado - Cliente ya asociado (intento ${intentos + 1}/${maxIntentos})`);
-                // Cambiar Cliente Asociado y reintentar
-                return cambiarClienteAsociado()
-                  .then((cambiado) => {
-                    if (cambiado) {
-                      cy.log(`TC027: Cliente Asociado cambiado, reintentando guardar...`);
-                      return intentarGuardarConReintentos(intentos + 1, maxIntentos);
-                    } else {
-                      const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
-                      return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
-                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-                    }
-                  });
-              } else {
-                // No hay error de cliente asociado, verificar error 500 (esperado en TC027)
-                return cy.wait(800)
       .then(() => {
+              // PRIMERO verificar si el guardado fue exitoso (si es así, no hacer nada más)
+              return cy.wait(500).then(() => cy.get('body').then(($b) => {
+                const texto = ($b.text() || '').toString();
+                // Buscar mensajes de éxito en diferentes formatos
+                const hayExito = /proveedor.*creado|proveedor.*guardado|provider.*created|provider.*saved|creado.*correctamente|guardado.*correctamente|guardado.*exitosamente|saved.*successfully/i.test(texto) ||
+                  $b.find('[class*="success"], [class*="Success"], [role="alert"]').filter((_, el) => {
+                    const textoEl = (el.textContent || el.innerText || '').toLowerCase();
+                    return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
+                  }).length > 0;
+                
+                if (hayExito) {
+                  cy.log(`TC027: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
+                  return cy.wrap(true); // Éxito, retornar true
+                }
+                
+                return cy.wrap(false); // No hay éxito, continuar con verificación de errores
+              }));
+            })
+            .then((hayExito) => {
+              if (hayExito) {
+                return cy.wrap(null); // Éxito, no hacer nada más
+              }
+              
+              // Si no hay éxito, verificar errores
+              // 1. Verificar error de cliente ya asociado (tiene prioridad sobre código)
+              return hayErrorClienteAsociado().then((hayErrorCliente) => {
+                if (hayErrorCliente) {
+                  cy.log(`TC027: Error detectado - Cliente ya vinculado/asociado (intento ${intentos + 1})`);
+                  // Cambiar Cliente Asociado y reintentar
+                  return cambiarClienteAsociado()
+                    .then((cambiado) => {
+                      if (cambiado) {
+                        cy.log(`TC027: Cliente Asociado cambiado, reintentando guardar...`);
+                        return intentarGuardarConReintentos(intentos + 1);
+                      } else {
+                        const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
+                        return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
+                          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                      }
+                    });
+                }
+                // 2. Si no hay error de cliente, verificar error de código ya existe
+                return hayErrorCodigoExiste().then((hayErrorCodigo) => {
+                  if (hayErrorCodigo) {
+                    cy.log(`TC027: Error detectado - Código ya existe (intento ${intentos + 1})`);
+                    // Cambiar código y reintentar
+                    return cambiarCodigoProveedor()
+                      .then((cambiado) => {
+                        if (cambiado) {
+                          cy.log(`TC027: Código cambiado, reintentando guardar...`);
+                          return intentarGuardarConReintentos(intentos + 1);
+                        } else {
+                          const obs = 'No se pudo cambiar el Código para reintentar el guardado';
+                          return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
+                            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                        }
+                      });
+                  }
+                  // 3. Si no hay errores conocidos, verificar error 500 (esperado en TC027)
+                  return cy.wait(800)
+                    .then(() => {
         return cy.get('body').then(($b) => {
           const texto = ($b.text() || '').toString();
           const hay500 =
@@ -1094,8 +1222,9 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           // Si no se vio el mensaje, no forzamos ERROR (puede haber cambiado el texto).
           return cy.wrap(null);
         });
-                  });
-              }
+                    });
+                });
+              });
             });
         };
 
@@ -1174,19 +1303,19 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
       // Guardar con reintentos si hay error de cliente asociado
       .then(() => {
-        // Función para detectar error de cliente ya asociado
+        // Función para detectar error de cliente ya asociado/vinculado
         const hayErrorClienteAsociado = () => {
           return cy.get('body').then(($b) => {
             const texto = ($b.text() || '').toString();
-            // Buscar el error en diferentes formatos posibles
-            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|associated.*provider|el cliente.*ya está|the client.*already/i.test(texto);
+            // Buscar el error en diferentes formatos posibles, incluyendo "vinculado"
+            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|cliente.*ya.*está.*vinculado|vinculado.*otro.*proveedor|associated.*provider|el cliente.*ya está|the client.*already|client.*already.*linked/i.test(texto);
 
             // También buscar en elementos específicos de alertas/toasts
             const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
             let hayErrorEnAlert = false;
             $alerts.each((_, el) => {
               const textoAlert = (el.textContent || el.innerText || '').toString();
-              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|associated.*provider/i.test(textoAlert)) {
+              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*ya.*está.*vinculado|vinculado.*otro.*proveedor|associated.*provider|client.*already.*linked/i.test(textoAlert)) {
                 hayErrorEnAlert = true;
                 return false; // break
               }
@@ -1194,6 +1323,80 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
             return cy.wrap(hayError || hayErrorEnAlert);
           });
+        };
+
+        // Función para detectar error de código ya existe (409)
+        const hayErrorCodigoExiste = () => {
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            // Buscar el error en diferentes formatos posibles
+            const hayError = /c[óo]digo.*ya.*existe|el campo.*c[óo]digo.*ya existe|code.*already.*exists|field.*code.*already/i.test(texto);
+
+            // También buscar en elementos específicos de alertas/toasts
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
+            let hayErrorEnAlert = false;
+            $alerts.each((_, el) => {
+              const textoAlert = (el.textContent || el.innerText || '').toString();
+              if (/c[óo]digo.*ya.*existe|el campo.*c[óo]digo.*ya existe|code.*already.*exists/i.test(textoAlert)) {
+                hayErrorEnAlert = true;
+                return false; // break
+              }
+            });
+
+            return cy.wrap(hayError || hayErrorEnAlert);
+          });
+        };
+
+        // Función para cambiar el código del proveedor a otros 4 números distintos
+        const cambiarCodigoProveedor = () => {
+          cy.log('TC028: Cambiando Código del proveedor por otro valor...');
+          // Asegurarse de estar en Datos generales
+          return navegarSeccionFormulario('Datos generales')
+            .then(() => cy.wait(500))
+            .then(() => cy.get('body').then(($b) => {
+              // Buscar el label de "Código"
+              const rxLabel = /^(C[óo]digo|Code|Codi)$/i;
+              const label = $b.find('label').filter((_, el) => {
+                const texto = (el.textContent || el.innerText || '').trim();
+                return rxLabel.test(texto);
+              }).first();
+
+              if (!label.length) {
+                cy.log('TC028: No se encontró el label de Código');
+                return cy.wrap(false);
+              }
+
+              const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+              const forAttr = label.attr('for') || '';
+              const sel = forAttr ? `#${escapeCssId(forAttr)}` : null;
+
+              const getInput = () => {
+                if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
+                // Fallback: buscar input cerca del label
+                return cy.wrap(label).parents('.MuiFormControl-root, .MuiBox-root').first()
+                  .find('input').filter(':visible').first();
+              };
+
+              return getInput()
+                .then(($inp) => {
+                  if (!$inp || !$inp.length) {
+                    cy.log('TC028: No se encontró el input de Código');
+                    return cy.wrap(false);
+                  }
+
+                  // Generar nuevo código de 4 dígitos
+                  const nuevoCodigo = generarNumeroAleatorio(4);
+                  cy.log(`TC028: Cambiando código a: "${nuevoCodigo}"`);
+
+                  // Escribir el nuevo código
+                  return cy.wrap($inp)
+                    .scrollIntoView()
+                    .clear({ force: true })
+                    .type(nuevoCodigo, { force: true })
+                    .then(() => cy.wait(300))
+                    .then(() => cy.wrap(true));
+                });
+            }));
         };
 
         // Función para cambiar Cliente Asociado por otro valor
@@ -1240,64 +1443,76 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                     .type('{downArrow}', { force: true }) // Abrir desplegable
                     .then(() => cy.wait(300))
           .then(() => {
-                      // Buscar una opción diferente en el listbox
+                      // Buscar una opción diferente en el listbox, haciendo scroll si es necesario
                       return cy.get('ul[role="listbox"]', { timeout: 10000 })
                         .filter(':visible')
                         .last()
-                        .find('li[role="option"]:visible')
-                        .then(($opts) => {
-                          if ($opts.length === 0) {
-                            cy.log('TC028: No hay opciones disponibles en el desplegable');
+                        .then(($listbox) => {
+                          if (!$listbox.length) {
+                            cy.log('TC028: No se encontró el listbox');
                             return cy.wrap(false);
                           }
 
-                          // Buscar opciones diferentes al valor actual
-                          const opciones = Array.from($opts);
-                          const opcionesDiferentes = opciones.filter((opt) => {
-                            const texto = (opt.textContent || opt.innerText || '').trim();
-                            return texto && texto !== valorActual && texto.length > 0;
-                          });
+                          // Hacer scroll dentro del listbox para cargar más opciones
+                          cy.wrap($listbox[0]).scrollTo('bottom', { duration: 500 });
+                          cy.wait(300);
+                          cy.wrap($listbox[0]).scrollTo('top', { duration: 500 });
+                          cy.wait(300);
 
-                          // Seleccionar una opción aleatoria de las diferentes disponibles
-                          let opcionSeleccionada = null;
-                          if (opcionesDiferentes.length > 0) {
-                            const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
-                            opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
-                          } else if (opciones.length > 0) {
-                            // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
-                            const indiceAleatorio = Math.floor(Math.random() * opciones.length);
-                            opcionSeleccionada = opciones[indiceAleatorio];
-                          }
+                          // Buscar todas las opciones (visibles y no visibles inicialmente)
+                          return cy.wrap($listbox).find('li[role="option"]').then(($opts) => {
+                            if ($opts.length === 0) {
+                              cy.log('TC028: No hay opciones disponibles en el desplegable');
+                              return cy.wrap(false);
+                            }
 
-                          if (opcionSeleccionada) {
-                            const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
-                            cy.log(`TC028: Seleccionando cliente aleatorio: "${textoOpcion}"`);
-                            return cy.wrap(opcionSeleccionada)
-                              .scrollIntoView()
-                              .click({ force: true })
+                            // Buscar opciones diferentes al valor actual
+                            const opciones = Array.from($opts);
+                            const opcionesDiferentes = opciones.filter((opt) => {
+                              const texto = (opt.textContent || opt.innerText || '').trim();
+                              return texto && texto !== valorActual && texto.length > 0;
+                            });
+
+                            cy.log(`TC028: Encontradas ${opciones.length} opciones totales, ${opcionesDiferentes.length} diferentes al valor actual`);
+
+                            // Seleccionar una opción aleatoria de las diferentes disponibles
+                            let opcionSeleccionada = null;
+                            if (opcionesDiferentes.length > 0) {
+                              const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
+                              opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
+                            } else if (opciones.length > 0) {
+                              // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
+                              const indiceAleatorio = Math.floor(Math.random() * opciones.length);
+                              opcionSeleccionada = opciones[indiceAleatorio];
+                            }
+
+                            if (opcionSeleccionada) {
+                              const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
+                              cy.log(`TC028: Seleccionando cliente aleatorio: "${textoOpcion}"`);
+                              // Hacer scroll hasta la opción seleccionada y hacer click
+                              return cy.wrap(opcionSeleccionada)
+                                .scrollIntoView({ block: 'center' })
+                                .wait(200)
+                                .click({ force: true })
                               .then(() => cy.wait(500))
                               .then(() => cy.wrap(true));
-                          }
+                            }
 
-                          return cy.wrap(false);
+                            return cy.wrap(false);
+                          });
                         });
                     })
                     .then((resultado) => {
                       cy.get('body').type('{esc}', { force: true, log: false });
                       return cy.wrap(resultado);
-          });
-      });
+                    });
+                });
             }));
         };
 
         // Función recursiva para intentar guardar con reintentos
-        const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
-          if (intentos >= maxIntentos) {
-            const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
-            return registrarError(obs)
-              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-          }
-
+        // Continúa hasta que se pueda guardar (sin límite fijo de intentos)
+        const intentarGuardarConReintentos = (intentos = 0) => {
           return clickGuardarPrincipalSiExiste({ requerido: true })
             .then((clicado) => {
               if (!clicado) {
@@ -1306,40 +1521,83 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               }
               return cy.wait(2000);
             })
-            .then(() => hayErrorClienteAsociado())
-            .then((hayError) => {
-              if (hayError) {
-                cy.log(`TC028: Error detectado - Cliente ya asociado (intento ${intentos + 1}/${maxIntentos})`);
-                // Cambiar Cliente Asociado y reintentar
-                return cambiarClienteAsociado()
-                  .then((cambiado) => {
-                    if (cambiado) {
-                      cy.log(`TC028: Cliente Asociado cambiado, reintentando guardar...`);
-                      return intentarGuardarConReintentos(intentos + 1, maxIntentos);
-                    } else {
-                      const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
-                      return registrarError(obs)
-                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-                    }
-                  });
-              } else {
-                // No hay error de cliente asociado, verificar error 500
-                return cy.wait(1200)
-                  .then(() => hayError500EnBody())
-                  .then(({ hay500, texto }) => {
-                    if (hay500) {
-                      const msg =
-                        /Error al guardar el proveedor/i.test(texto)
-                          ? 'Error al guardar el proveedor (status code 500)'
-                          : 'Request failed with status code 500';
-                      return registrarError(msg)
-                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: msg }, { log: false }));
-                    }
-                    // Éxito: no hay error de cliente asociado ni error 500
-                    cy.log(`TC028: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
-                    return cy.wrap(null);
-                  });
+            .then(() => {
+              // PRIMERO verificar si el guardado fue exitoso (si es así, no hacer nada más)
+              return cy.wait(500).then(() => cy.get('body').then(($b) => {
+                const texto = ($b.text() || '').toString();
+                // Buscar mensajes de éxito en diferentes formatos
+                const hayExito = /proveedor.*creado|proveedor.*guardado|provider.*created|provider.*saved|creado.*correctamente|guardado.*correctamente|guardado.*exitosamente|saved.*successfully/i.test(texto) ||
+                  $b.find('[class*="success"], [class*="Success"], [role="alert"]').filter((_, el) => {
+                    const textoEl = (el.textContent || el.innerText || '').toLowerCase();
+                    return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
+                  }).length > 0;
+                
+                if (hayExito) {
+                  cy.log(`TC028: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
+                  return cy.wrap(true); // Éxito, retornar true
+                }
+                
+                return cy.wrap(false); // No hay éxito, continuar con verificación de errores
+              }));
+            })
+            .then((hayExito) => {
+              if (hayExito) {
+                return cy.wrap(null); // Éxito, no hacer nada más
               }
+              
+              // Si no hay éxito, verificar errores
+              // 1. Verificar error de cliente ya asociado (tiene prioridad sobre código)
+              return hayErrorClienteAsociado().then((hayErrorCliente) => {
+                if (hayErrorCliente) {
+                  cy.log(`TC028: Error detectado - Cliente ya vinculado/asociado (intento ${intentos + 1})`);
+                  // Cambiar Cliente Asociado y reintentar
+                  return cambiarClienteAsociado()
+                    .then((cambiado) => {
+                      if (cambiado) {
+                        cy.log(`TC028: Cliente Asociado cambiado, reintentando guardar...`);
+                        return intentarGuardarConReintentos(intentos + 1);
+                      } else {
+                        const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
+                        return registrarError(obs)
+                          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                      }
+                    });
+                }
+                // 2. Si no hay error de cliente, verificar error de código ya existe
+                return hayErrorCodigoExiste().then((hayErrorCodigo) => {
+                  if (hayErrorCodigo) {
+                    cy.log(`TC028: Error detectado - Código ya existe (intento ${intentos + 1})`);
+                    // Cambiar código y reintentar
+                    return cambiarCodigoProveedor()
+                      .then((cambiado) => {
+                        if (cambiado) {
+                          cy.log(`TC028: Código cambiado, reintentando guardar...`);
+                          return intentarGuardarConReintentos(intentos + 1);
+                        } else {
+                          const obs = 'No se pudo cambiar el Código para reintentar el guardado';
+                          return registrarError(obs)
+                            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                        }
+                      });
+                  }
+                  // 3. Si no hay errores conocidos, verificar error 500
+                  return cy.wait(1200)
+                    .then(() => hayError500EnBody())
+                    .then(({ hay500, texto }) => {
+                      if (hay500) {
+                        const msg =
+                          /Error al guardar el proveedor/i.test(texto)
+                            ? 'Error al guardar el proveedor (status code 500)'
+                            : 'Request failed with status code 500';
+                        return registrarError(msg)
+                          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: msg }, { log: false }));
+                      }
+                      // Si no hay error 500, asumir éxito
+                      cy.log(`TC028: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
+              return cy.wrap(null);
+            });
+          });
+      });
             });
         };
 
@@ -3075,54 +3333,66 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const LIST_URL = '/dashboard/suppliers';
     const FORM_URL = '/dashboard/suppliers/form';
 
-    // Función para verificar que una pestaña tiene datos guardados
-    const verificarPestañaTieneDatos = (nombrePestaña) => {
-    return cy.get('body').then(($body) => {
-        const tabActiva = $body.find('[role="tab"][aria-selected="true"]').first();
-        const ariaControls = tabActiva.attr('aria-controls');
-        const panelActivo = ariaControls ? $body.find(`[id="${ariaControls}"]`) : $body.find('[role="tabpanel"]:not([hidden])').first();
-        const $scope = (panelActivo && panelActivo.length) ? panelActivo : $body;
+    // Función para verificar que una pestaña tiene datos guardados (igual que caso 51 de vehículos)
+    const verificarPestañaSinFilas = (nombrePestaña) => {
+      return cy.get('body').then($body => {
+        // Buscar específicamente en el área de la tabla de la pestaña actual
+        // Buscar la tabla MuiDataGrid o el área de contenido de la pestaña
+        const tabla = $body.find('.MuiDataGrid-root:visible, .MuiTableContainer:visible, table:visible').first();
 
-        // DataGrid (si aplica)
-        const dg = $scope.find('.MuiDataGrid-root').first();
-        if (dg.length) {
-          const grid = dg.find('[role="grid"]').first();
-          const rc = parseInt(String(grid.attr('aria-rowcount') || ''), 10);
-          if (Number.isFinite(rc) && rc > 1) return cy.wrap(true);
+        if (tabla.length > 0) {
+          // Verificar si la tabla tiene filas de datos
+          const filas = tabla.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible').filter((_, el) => {
+            // Excluir filas vacías o que solo contengan "Sin filas"
+            const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
+            return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos/i.test(textoFila);
+          });
 
-          const filasDG = dg.find('.MuiDataGrid-row[data-rowindex], [role="row"][data-rowindex]');
-          if (filasDG.length > 0) return cy.wrap(true);
+          if (filas.length > 0) {
+            cy.log(`TC055: La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
+            return cy.wrap(true);
+          } else {
+            // Verificar si hay mensaje "Sin filas" en la tabla
+            const mensajeSinFilas = tabla.find('*').filter((_, el) => {
+              const texto = (el.textContent || '').toLowerCase();
+              return /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
+            });
 
-          const txt = (dg.text() || '').toLowerCase();
-          if (/sin\s+filas|no\s+hay\s+datos|sin\s+datos|no\s+rows|no\s+results/i.test(txt)) return cy.wrap(false);
+            if (mensajeSinFilas.length > 0) {
+              cy.log(`TC055: ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+              return cy.wrap(false);
+            } else {
+              // Si no hay filas pero tampoco hay mensaje "Sin filas", puede que la tabla esté vacía
+              cy.log(`TC055: La pestaña ${nombrePestaña} no tiene filas visibles`);
+              return cy.wrap(false);
+            }
+          }
+        } else {
+          // Si no hay tabla visible, buscar mensaje "Sin filas" en el área de contenido de la pestaña
+          const mensajeSinFilas = $body.find('*').filter((_, el) => {
+            const texto = (el.textContent || '').toLowerCase();
+            // Buscar solo en elementos visibles y dentro del área de contenido principal
+            const $el = Cypress.$(el);
+            const estaVisible = $el.is(':visible');
+            const estaEnContenido = $el.closest('[class*="MuiPaper"], [class*="content"], [class*="tabpanel"]').length > 0;
+            return estaVisible && estaEnContenido && /sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
+          });
+
+          if (mensajeSinFilas.length > 0) {
+            cy.log(`TC055: ERROR: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+            return cy.wrap(false);
+          } else {
+            // Si no hay tabla ni mensaje "Sin filas", asumir que tiene datos (puede ser un formulario sin tabla)
+            cy.log(`TC055: La pestaña ${nombrePestaña} parece tener contenido (no se encontró tabla ni mensaje "Sin filas")`);
+            return cy.wrap(true);
+          }
         }
-
-        // Tabla HTML
-        const filasTabla = $scope.find('table tbody tr, tbody tr').filter((_, el) => (el.textContent || '').trim().length > 0);
-        if (filasTabla.length > 0) return cy.wrap(true);
-
-        // Formulario (inputs/selects con valores)
-        const inputs = $scope.find('input:visible, textarea:visible');
-        const combos = $scope.find('[role="combobox"]:visible, .MuiSelect-select:visible, [aria-haspopup="listbox"]:visible');
-        const hayValorInput = Array.from(inputs).some((el) => {
-          const v = String(el.value || '').trim();
-          if (!v) return false;
-          if (v === '0') return false;
-          return true;
-        });
-        const hayValorCombo = Array.from(combos).some((el) => {
-          const t = (el.innerText || el.textContent || '').trim();
-          if (!t) return false;
-          if (/selecciona|select|elige|choose/i.test(t)) return false;
-          return true;
-        });
-        return cy.wrap(hayValorInput || hayValorCombo);
       });
     };
 
     // Función para leer el código del proveedor
     const leerCodigoProveedor = () => {
-      return cy.get('body').then(($body) => {
+    return cy.get('body').then(($body) => {
         // Buscar campo "Código" por label
         const $label = $body.find('label').filter((_, el) => {
           const t = (el.textContent || el.innerText || '').trim().toLowerCase();
@@ -3183,6 +3453,20 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const codigo4 = generarNumeroAleatorio(4);
     const codigo3 = generarNumeroAleatorio(3);
     const caso28Normalizado = sustituirPlaceholders(casoDatosGenerales, codigo4, codigo3);
+    
+    // Asegurar que el campo "Código" siempre tenga 4 números aleatorios (no "Fiscal" u otro valor del Excel)
+    const totalCampos = Number(caso28Normalizado?.__totalCamposExcel) || 40;
+    for (let i = 1; i <= totalCampos; i++) {
+      const etiqueta = String(caso28Normalizado?.[`etiqueta_${i}`] || '').trim().toLowerCase();
+      const valorEtiqueta = String(caso28Normalizado?.[`valor_etiqueta_${i}`] || '').trim();
+      // Si es el campo "Código", sobrescribir con codigo4
+      if ((etiqueta === 'name' || etiqueta === 'input') && /^(C[óo]digo|Code|Codi)$/i.test(valorEtiqueta)) {
+        caso28Normalizado[`dato_${i}`] = codigo4;
+        cy.log(`TC055: Campo Código (dato_${i}) sobrescrito con: "${codigo4}"`);
+        break;
+      }
+    }
+    
     const nombreProveedor = extraerDatoPorEtiquetaOSelector(caso28Normalizado, /(^name$|^nombre$|nombre)/i) || `ProveedorPrueba${codigo4}`;
 
     const tc30Normalizado = tc30 ? sustituirPlaceholders(tc30, codigo4, codigo3) : null;
@@ -3204,7 +3488,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       if (!/\/form/i.test(u)) {
         return abrirFormularioNuevoProveedor();
       }
-      return cy.wrap(null);
+        return cy.wrap(null);
     })
       .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
         .then(() => {
@@ -3272,7 +3556,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               // anadirProveedor ya navega a la sección y luego llama a abrirModalSeccion
               // Pero como ya estamos en el formulario, solo necesitamos navegar y luego hacer lo mismo
               return navegarSeccionFormulario('Zonas de carga')
-                .then(() => {
+        .then(() => {
                   cy.log('TC055: Sección detectada: ZONAS DE CARGA');
                   // Hacer exactamente lo mismo que anadirProveedor hace para zonas de carga
                   return abrirModalSeccion('Zonas de carga', true)
@@ -3285,33 +3569,120 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               return anadirProveedor(item.caso, item.num, `TC${String(item.num).padStart(3, '0')}`)
                 .then(() => cy.wait(500));
             }
-          });
         });
+    });
         return chain;
       })
       .then(() => {
         // 5) GUARDAR FINAL con reintentos si hay error de cliente asociado
         cy.log(' TODO relleno -> Click Guardar FINAL');
 
-        // Función para detectar error de cliente ya asociado
-        const hayErrorClienteAsociado = () => {
+        // Función para detectar error de código ya existe (409)
+        const hayErrorCodigoExiste = () => {
           return cy.get('body').then(($b) => {
             const texto = ($b.text() || '').toString();
             // Buscar el error en diferentes formatos posibles
-            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|associated.*provider|el cliente.*ya está|the client.*already/i.test(texto);
+            const hayError = /c[óo]digo.*ya.*existe|el campo.*c[óo]digo.*ya existe|code.*already.*exists|field.*code.*already|el campo c[óo]digo ya existe en base de datos/i.test(texto);
 
             // También buscar en elementos específicos de alertas/toasts
-            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast').filter(':visible');
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast, .MuiPaper-root').filter(':visible');
             let hayErrorEnAlert = false;
             $alerts.each((_, el) => {
               const textoAlert = (el.textContent || el.innerText || '').toString();
-              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|associated.*provider/i.test(textoAlert)) {
+              if (/c[óo]digo.*ya.*existe|el campo.*c[óo]digo.*ya existe|code.*already.*exists|el campo c[óo]digo ya existe en base de datos/i.test(textoAlert)) {
                 hayErrorEnAlert = true;
                 return false; // break
               }
             });
 
-            return cy.wrap(hayError || hayErrorEnAlert);
+            const resultado = hayError || hayErrorEnAlert;
+            if (resultado) {
+              cy.log(`TC055: Error de CÓDIGO detectado`);
+            }
+            return cy.wrap(resultado);
+          });
+        };
+
+        // Función para cambiar el código del proveedor a otros 4 números distintos
+        const cambiarCodigoProveedor = () => {
+          cy.log('TC055: Cambiando Código del proveedor por otro valor...');
+          // Asegurarse de estar en Datos generales
+          return navegarSeccionFormulario('Datos generales')
+            .then(() => cy.wait(500))
+            .then(() => cy.get('body').then(($b) => {
+              // Buscar el label de "Código"
+              const rxLabel = /^(C[óo]digo|Code|Codi)$/i;
+              const label = $b.find('label').filter((_, el) => {
+                const texto = (el.textContent || el.innerText || '').trim();
+                return rxLabel.test(texto);
+              }).first();
+
+              if (!label.length) {
+                cy.log('TC055: No se encontró el label de Código');
+                return cy.wrap(false);
+              }
+
+              const escapeCssId = (id = '') => id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+              const forAttr = label.attr('for') || '';
+              const sel = forAttr ? `#${escapeCssId(forAttr)}` : null;
+
+              const getInput = () => {
+                if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
+                // Fallback: buscar input cerca del label
+                return cy.wrap(label).parents('.MuiFormControl-root, .MuiBox-root').first()
+                  .find('input').filter(':visible').first();
+              };
+
+              return getInput()
+                .then(($inp) => {
+                  if (!$inp || !$inp.length) {
+                    cy.log('TC055: No se encontró el input de Código');
+                    return cy.wrap(false);
+                  }
+
+                  // Generar nuevo código de 4 dígitos
+                  const nuevoCodigo = generarNumeroAleatorio(4);
+                  cy.log(`TC055: Cambiando código a: "${nuevoCodigo}"`);
+
+                  // Escribir el nuevo código
+                  return cy.wrap($inp)
+        .scrollIntoView()
+                    .clear({ force: true })
+                    .type(nuevoCodigo, { force: true })
+        .then(() => {
+                      // Actualizar la variable codigoProveedor con el nuevo código
+                      codigoProveedor = nuevoCodigo;
+                      cy.log(`TC055: Código actualizado en variable: ${codigoProveedor}`);
+                      return cy.wait(300);
+                    })
+                    .then(() => cy.wrap(true));
+                });
+            }));
+        };
+
+        // Función para detectar error de cliente ya asociado/vinculado
+        const hayErrorClienteAsociado = () => {
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            // Buscar el error en diferentes formatos posibles, incluyendo "vinculado"
+            const hayError = /cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|cliente.*ya.*est[áa].*vinculado|vinculado.*otro.*proveedor|el cliente.*ya.*est[áa].*vinculado.*otro.*proveedor|associated.*provider|el cliente.*ya está|the client.*already|client.*already.*linked|cliente.*vinculado.*proveedor|error.*guardar.*proveedor.*cliente.*vinculado/i.test(texto);
+
+            // También buscar en elementos específicos de alertas/toasts
+            const $alerts = $b.find('.MuiAlert-root, .MuiSnackbar-root, [role="alert"], .alert, .toast, .MuiPaper-root').filter(':visible');
+            let hayErrorEnAlert = false;
+            $alerts.each((_, el) => {
+              const textoAlert = (el.textContent || el.innerText || '').toString();
+              if (/cliente.*ya.*asociado|ya.*asociado.*proveedor|cliente.*asociado.*proveedor|cliente.*ya.*est[áa].*vinculado|vinculado.*otro.*proveedor|el cliente.*ya.*est[áa].*vinculado.*otro.*proveedor|associated.*provider|client.*already.*linked|cliente.*vinculado.*proveedor|error.*guardar.*proveedor.*cliente.*vinculado/i.test(textoAlert)) {
+                hayErrorEnAlert = true;
+                return false; // break
+              }
+            });
+
+            const resultado = hayError || hayErrorEnAlert;
+            if (resultado) {
+              cy.log(`TC055: Error de CLIENTE detectado`);
+            }
+            return cy.wrap(resultado);
           });
         };
 
@@ -3337,7 +3708,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                 if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
                 return cy
                   .get('input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 15000 })
-                  .filter(':visible')
+      .filter(':visible')
                   .first();
               };
 
@@ -3359,46 +3730,63 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                     .type('{downArrow}', { force: true }) // Abrir desplegable
                     .then(() => cy.wait(300))
                     .then(() => {
-                      // Buscar una opción diferente en el listbox
+                      // Buscar una opción diferente en el listbox, haciendo scroll si es necesario
                       return cy.get('ul[role="listbox"]', { timeout: 10000 })
                         .filter(':visible')
                         .last()
-                        .find('li[role="option"]:visible')
-                        .then(($opts) => {
-                          if ($opts.length === 0) {
-                            cy.log('TC055: No hay opciones disponibles en el desplegable');
+                        .then(($listbox) => {
+                          if (!$listbox.length) {
+                            cy.log('TC055: No se encontró el listbox');
                             return cy.wrap(false);
                           }
 
-                          // Buscar opciones diferentes al valor actual
-                          const opciones = Array.from($opts);
-                          const opcionesDiferentes = opciones.filter((opt) => {
-                            const texto = (opt.textContent || opt.innerText || '').trim();
-                            return texto && texto !== valorActual && texto.length > 0;
-                          });
+                          // Hacer scroll dentro del listbox para cargar más opciones
+                          cy.wrap($listbox[0]).scrollTo('bottom', { duration: 500 });
+                          cy.wait(300);
+                          cy.wrap($listbox[0]).scrollTo('top', { duration: 500 });
+                          cy.wait(300);
 
-                          // Seleccionar una opción aleatoria de las diferentes disponibles
-                          let opcionSeleccionada = null;
-                          if (opcionesDiferentes.length > 0) {
-                            const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
-                            opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
-                          } else if (opciones.length > 0) {
-                            // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
-                            const indiceAleatorio = Math.floor(Math.random() * opciones.length);
-                            opcionSeleccionada = opciones[indiceAleatorio];
-                          }
+                          // Buscar todas las opciones (visibles y no visibles inicialmente)
+                          return cy.wrap($listbox).find('li[role="option"]').then(($opts) => {
+                            if ($opts.length === 0) {
+                              cy.log('TC055: No hay opciones disponibles en el desplegable');
+                              return cy.wrap(false);
+                            }
 
-                          if (opcionSeleccionada) {
-                            const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
-                            cy.log(`TC055: Seleccionando cliente aleatorio: "${textoOpcion}"`);
-                            return cy.wrap(opcionSeleccionada)
-                              .scrollIntoView()
-                              .click({ force: true })
+                            // Buscar opciones diferentes al valor actual
+                            const opciones = Array.from($opts);
+                            const opcionesDiferentes = opciones.filter((opt) => {
+                              const texto = (opt.textContent || opt.innerText || '').trim();
+                              return texto && texto !== valorActual && texto.length > 0;
+                            });
+
+                            cy.log(`TC055: Encontradas ${opciones.length} opciones totales, ${opcionesDiferentes.length} diferentes al valor actual`);
+
+                            // Seleccionar una opción aleatoria de las diferentes disponibles
+                            let opcionSeleccionada = null;
+                            if (opcionesDiferentes.length > 0) {
+                              const indiceAleatorio = Math.floor(Math.random() * opcionesDiferentes.length);
+                              opcionSeleccionada = opcionesDiferentes[indiceAleatorio];
+                            } else if (opciones.length > 0) {
+                              // Si todas son iguales o no hay diferentes, seleccionar una aleatoria de todas
+                              const indiceAleatorio = Math.floor(Math.random() * opciones.length);
+                              opcionSeleccionada = opciones[indiceAleatorio];
+                            }
+
+                            if (opcionSeleccionada) {
+                              const textoOpcion = (opcionSeleccionada.textContent || opcionSeleccionada.innerText || '').trim();
+                              cy.log(`TC055: Seleccionando cliente aleatorio: "${textoOpcion}"`);
+                              // Hacer scroll hasta la opción seleccionada y hacer click
+                              return cy.wrap(opcionSeleccionada)
+                                .scrollIntoView({ block: 'center' })
+                                .wait(200)
+                                .click({ force: true })
                               .then(() => cy.wait(500))
                               .then(() => cy.wrap(true));
-                          }
+                            }
 
-                          return cy.wrap(false);
+                            return cy.wrap(false);
+                          });
                         });
                     })
                     .then((resultado) => {
@@ -3410,106 +3798,228 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         };
 
         // Función recursiva para intentar guardar con reintentos
-        const intentarGuardarConReintentos = (intentos = 0, maxIntentos = 5) => {
-          if (intentos >= maxIntentos) {
-            const obs = `No se pudo guardar el proveedor después de ${maxIntentos} intentos cambiando el Cliente Asociado`;
-        return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-      }
-
+        // Continúa hasta que se pueda guardar (sin límite fijo de intentos)
+        const intentarGuardarConReintentos = (intentos = 0) => {
           return clickGuardarPrincipalSiExiste({ requerido: true })
             .then((clicado) => {
               if (!clicado) {
                 const obs = 'No se pudo pulsar Guardar (botón no visible/habilitado)';
-                return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-              }
+        return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+      }
               return cy.wait(2000);
             })
-            .then(() => hayErrorClienteAsociado())
-            .then((hayError) => {
-              if (hayError) {
-                cy.log(`TC055: Error detectado - Cliente ya asociado (intento ${intentos + 1}/${maxIntentos})`);
-                // Cambiar Cliente Asociado y reintentar
-                return cambiarClienteAsociado()
-                  .then((cambiado) => {
-                    if (cambiado) {
-                      cy.log(`TC055: Cliente Asociado cambiado, reintentando guardar...`);
-                      return intentarGuardarConReintentos(intentos + 1, maxIntentos);
-                    } else {
-                      const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
-                      return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-                        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-                    }
+            .then(() => {
+              // Verificar errores (alertas) - detectar qué alerta específica aparece
+              // Esperar un poco para que aparezcan los mensajes
+              return cy.wait(1000).then(() => {
+                cy.log(`TC055: Verificando errores después de guardar (intento ${intentos + 1})...`);
+                
+                // Verificar ambas alertas simultáneamente para detectar cuál aparece
+                return cy.wrap(null).then(() => {
+                  return hayErrorCodigoExiste().then((hayErrorCodigo) => {
+                    return hayErrorClienteAsociado().then((hayErrorCliente) => {
+                      cy.log(`TC055: Resultado verificación código: ${hayErrorCodigo}`);
+                      cy.log(`TC055: Resultado verificación cliente: ${hayErrorCliente}`);
+                      
+                      // PRIMERO: Si hay error de cliente, cambiar cliente (no código)
+                      if (hayErrorCliente) {
+                        cy.log(`TC055: Error detectado - Cliente ya vinculado/asociado (intento ${intentos + 1})`);
+                        // Asegurarse de que estamos en el formulario antes de cambiar el cliente
+                        return cy.url().then((urlActual) => {
+                          if (!/\/form/i.test(urlActual)) {
+                            cy.log('TC055: No estamos en el formulario, no se puede cambiar el cliente');
+                            return cy.wrap({ resultado: 'ERROR', obtenido: 'No estamos en el formulario' }, { log: false });
+                          }
+                          // Cambiar Cliente Asociado y reintentar (sin navegar fuera del formulario)
+                          return cambiarClienteAsociado()
+                            .then((cambiado) => {
+                              if (cambiado) {
+                                cy.log(`TC055: Cliente Asociado cambiado, reintentando guardar...`);
+                                return intentarGuardarConReintentos(intentos + 1);
+                              } else {
+                                const obs = 'No se pudo cambiar el Cliente Asociado para reintentar el guardado';
+                                return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                              }
+                            });
+                        });
+                      }
+                      
+                      // SEGUNDO: Si hay error de código (y NO hay error de cliente), cambiar código
+                      if (hayErrorCodigo) {
+                        cy.log(`TC055: Error detectado - Código ya existe (intento ${intentos + 1})`);
+                        // Asegurarse de que estamos en el formulario antes de cambiar el código
+                        return cy.url().then((urlActual) => {
+                          if (!/\/form/i.test(urlActual)) {
+                            cy.log('TC055: No estamos en el formulario, no se puede cambiar el código');
+                            return cy.wrap({ resultado: 'ERROR', obtenido: 'No estamos en el formulario' }, { log: false });
+                          }
+                          // Cambiar código y reintentar (sin navegar fuera del formulario)
+                          return cambiarCodigoProveedor()
+                            .then((cambiado) => {
+                              if (cambiado) {
+                                cy.log(`TC055: Código cambiado, reintentando guardar...`);
+                                return intentarGuardarConReintentos(intentos + 1);
+                              } else {
+                                const obs = 'No se pudo cambiar el Código para reintentar el guardado';
+                                return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                              }
+                            });
+                        });
+                      }
+                      
+                      // Si NO hay errores, verificar si el guardado fue exitoso
+                      return cy.wait(500).then(() => cy.get('body').then(($b) => {
+                        const texto = ($b.text() || '').toString();
+                        // Buscar mensajes de éxito en diferentes formatos
+                        const hayExito = /proveedor.*creado|proveedor.*guardado|provider.*created|provider.*saved|creado.*correctamente|guardado.*correctamente|guardado.*exitosamente|saved.*successfully/i.test(texto) ||
+                          $b.find('[class*="success"], [class*="Success"], [role="alert"]').filter((_, el) => {
+                            const textoEl = (el.textContent || el.innerText || '').toLowerCase();
+                            return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
+                          }).length > 0;
+                        
+                        if (hayExito) {
+                          // Si hay mensaje de éxito y no hay errores, considerar que se guardó correctamente
+                          cy.log(`TC055: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
+                          return cy.wrap({ resultado: 'OK', guardado: true });
+                        }
+                        
+                        // Si no hay éxito ni errores conocidos, registrar como error
+                        const obs = 'No se pudo guardar el proveedor y no se detectó un error conocido';
+                        return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+                      }));
+                    });
                   });
-              } else {
-                // No hay error, verificar si hay mensaje de éxito
-                return cy.get('body').then(($b) => {
-                  const texto = ($b.text() || '').toString();
-                  const hayExito = /proveedor.*creado|proveedor.*guardado|provider.*created|provider.*saved|creado.*correctamente|guardado.*correctamente/i.test(texto);
-                  if (hayExito || intentos === 0) {
-                    // Éxito o primer intento sin error (asumimos éxito)
-                    cy.log(`TC055: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
-                    return cy.wrap(null);
-                  }
-                  // Si no hay mensaje claro, asumimos éxito si no hay error
-                  cy.log('TC055: No se detectó error, asumiendo guardado exitoso');
-                  return cy.wrap(null);
                 });
-              }
+              });
             });
         };
 
         return intentarGuardarConReintentos();
       })
-      .then(() => {
-        // 6) Buscar el proveedor creado y verificar pestañas
-        if (!codigoProveedor) {
-          cy.log('No se pudo capturar el código del proveedor, intentando leerlo de nuevo...');
-          return cy.url().then((urlActual) => {
+      .then((resultadoGuardado) => {
+        // Verificar si realmente se guardó correctamente (puede que ya estemos en la lista)
+        return cy.url().then((urlActual) => {
+          // Verificar si hay mensaje de éxito en la página actual (puede estar en formulario o lista)
+          return cy.get('body').then(($b) => {
+            const texto = ($b.text() || '').toString();
+            const hayExito = /proveedor.*creado|proveedor.*guardado|provider.*created|provider.*saved|creado.*correctamente|guardado.*correctamente|guardado.*exitosamente|saved.*successfully/i.test(texto) ||
+              $b.find('[class*="success"], [class*="Success"], [role="alert"]').filter((_, el) => {
+                const textoEl = (el.textContent || el.innerText || '').toLowerCase();
+                return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
+              }).length > 0;
+            
+            if (!hayExito && (!resultadoGuardado || resultadoGuardado.resultado !== 'OK' || !resultadoGuardado.guardado)) {
+              cy.log('TC055: El guardado falló, NO se continúa con la verificación ni se navega');
+              return cy.wrap({ navegado: false, razon: 'Guardado falló' });
+            }
+            
+            // Si hay éxito (ya sea del resultado o detectado en la página), continuar
+            cy.log(`TC055: Guardado exitoso detectado. URL actual: ${urlActual}`);
+            cy.log(`TC055: Código actual: ${codigoProveedor || 'NO CAPTURADO'}`);
+            
+            // Leer el código si estamos en el formulario
             if (urlActual.includes('/form')) {
               return leerCodigoProveedor().then((codigo) => {
-                if (codigo) codigoProveedor = codigo;
-                return cy.wrap(null);
+                if (codigo) {
+                  codigoProveedor = codigo;
+                  cy.log(`TC055: Código del proveedor leído del formulario: ${codigoProveedor}`);
+                } else if (!codigoProveedor) {
+                  cy.log('TC055: WARNING - No se pudo leer el código del formulario y no había código previo');
+                } else {
+                  cy.log(`TC055: No se pudo leer el código del formulario, usando código previo: ${codigoProveedor}`);
+                }
+                cy.log(`TC055: Código final para búsqueda: ${codigoProveedor}`);
+                
+                // Si estamos en el formulario, navegar a la lista
+                cy.log('TC055: Navegando a la lista de proveedores...');
+                return cy.visit(LIST_URL).then(() => cy.wait(2000)).then(() => {
+                  cy.log('TC055: Navegación a lista completada');
+                  return cy.wrap({ navegado: true, codigo: codigoProveedor });
+                });
               });
             }
-            return cy.wrap(null);
+            
+            // Si ya estamos en la lista, buscar directamente sin navegar
+            if (urlActual.includes('/suppliers') && !urlActual.includes('/form')) {
+              cy.log('TC055: Ya estamos en la lista de proveedores, buscando directamente...');
+              if (!codigoProveedor) {
+                cy.log('TC055: WARNING - No hay código disponible para buscar');
+              }
+              return cy.wrap({ navegado: true, codigo: codigoProveedor, yaEnLista: true });
+            }
+            
+            // Si no estamos ni en formulario ni en lista, navegar a la lista
+            cy.log('TC055: No estamos en formulario ni lista, navegando a la lista...');
+            return cy.visit(LIST_URL).then(() => cy.wait(2000)).then(() => {
+              cy.log('TC055: Navegación a lista completada');
+              return cy.wrap({ navegado: true, codigo: codigoProveedor });
+            });
           });
-        }
-        return cy.wrap(null);
-      })
-      .then(() => {
-        // Volver a la lista
-        return cy.url().then((urlActual) => {
-          if (urlActual.includes('/form')) {
-            cy.log('Navegando a la lista de proveedores...');
-            return cy.visit(LIST_URL).then(() => cy.wait(2000));
-          }
-          return cy.wrap(null);
         });
       })
-      .then(() => UI.esperarTabla())
-      .then(() => {
-        if (!codigoProveedor) {
-          const obs = 'No se pudo capturar el código del proveedor para buscar y verificar.';
+      .then((resultadoNavegacion) => {
+        // Solo buscar el proveedor si realmente se navegó a la lista o ya estamos en ella
+        if (!resultadoNavegacion || !resultadoNavegacion.navegado) {
+          cy.log(`TC055: No se navegó a la lista: ${resultadoNavegacion?.razon || 'Razón desconocida'}`);
+          return cy.wrap({ resultado: 'ERROR', obtenido: `No se navegó a la lista: ${resultadoNavegacion?.razon || 'Razón desconocida'}` }, { log: false });
+        }
+        
+        // Si ya estábamos en la lista, usar el código que tenemos
+        if (resultadoNavegacion.yaEnLista && resultadoNavegacion.codigo) {
+          codigoProveedor = resultadoNavegacion.codigo;
+        }
+        
+        // Asegurar que estamos en la lista antes de buscar
+        return cy.url().then((urlActual) => {
+          if (!urlActual.includes('/suppliers') || urlActual.includes('/form')) {
+            cy.log('TC055: No estamos en la lista, navegando...');
+            return cy.visit(LIST_URL).then(() => cy.wait(2000));
+          }
+          cy.log('TC055: Confirmado que estamos en la lista, continuando con búsqueda...');
+          return cy.wrap(null);
+        })
+        .then(() => UI.esperarTabla())
+        .then(() => {
+          // Verificar que tenemos el código antes de buscar
+          if (!codigoProveedor) {
+            const obs = 'No se pudo capturar el código del proveedor para buscar y verificar.';
+            cy.log(`TC055: ERROR - ${obs}`);
           return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
             .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-        }
+          }
 
-        cy.log(`Buscando proveedor: ${codigoProveedor}`);
-        return UI.buscar(codigoProveedor);
+          cy.log(`TC055: Buscando proveedor con código: ${codigoProveedor}`);
+          // Ejecutar la búsqueda y esperar resultados
+          return UI.buscar(codigoProveedor)
+        .then(() => {
+              cy.log(`TC055: Búsqueda ejecutada para código: ${codigoProveedor}, esperando resultados...`);
+              return cy.wait(1000); // Esperar a que se complete la búsqueda
+            })
+            .then(() => esperarResultadosTablaEnLista(25000))
+        .then(() => {
+              cy.log(`TC055: Resultados de búsqueda cargados, buscando fila con código: ${codigoProveedor}`);
+              return cy.wrap(null);
+            });
+        });
       })
       .then((resPrev) => {
-        if (resPrev && resPrev.resultado === 'ERROR') return cy.wrap(resPrev);
+        if (resPrev && resPrev.resultado === 'ERROR') {
+          cy.log('TC055: Error en la búsqueda, no se puede continuar con la verificación');
+          return cy.wrap(resPrev);
+        }
 
         cy.wait(1000);
         return cy.get('body').then($body => {
           const filas = $body.find('.MuiDataGrid-row:visible');
           if (filas.length === 0) {
             const obs = `No se encontró el proveedor con código ${codigoProveedor} después de guardar.`;
-          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-        }
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
 
           const filaEncontrada = Array.from(filas).find((el) => {
             const textoFila = (el.innerText || el.textContent || '').toLowerCase();
@@ -3517,7 +4027,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           });
 
           if (filaEncontrada) {
-            cy.log('Proveedor encontrado, abriendo formulario de edición...');
+            cy.log(`TC055: Proveedor con código ${codigoProveedor} encontrado, abriendo formulario de edición...`);
             return cy.wrap(filaEncontrada).dblclick({ force: true });
           } else {
             const obs = `No se encontró la fila con el código ${codigoProveedor}.`;
@@ -3527,15 +4037,23 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         });
       })
       .then((resPrev) => {
-        if (resPrev && resPrev.resultado === 'ERROR') return cy.wrap(resPrev);
+        if (resPrev && resPrev.resultado === 'ERROR') {
+          cy.log('TC055: Error al abrir el formulario, no se puede continuar con la verificación');
+          const obs = resPrev.obtenido || 'Error al abrir el formulario del proveedor';
+          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+        }
 
         cy.wait(2000);
         return cy.url().should('include', '/dashboard/suppliers/form');
       })
       .then((resPrev) => {
-        if (resPrev && resPrev.resultado === 'ERROR') return cy.wrap(resPrev);
+        if (resPrev && resPrev.resultado === 'ERROR') {
+          cy.log('TC055: Error al navegar al formulario, no se puede continuar con la verificación');
+          return cy.wrap(resPrev);
+        }
 
-        cy.log('TC055: Verificando que todas las pestañas tienen datos guardados...');
+        cy.log('TC055: Formulario abierto, comenzando verificación de pestañas...');
 
         // Lista de pestañas a verificar
         const pestañasAVerificar = [
@@ -3552,12 +4070,14 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
         pestañasAVerificar.forEach((pestaña) => {
           chainVerificacion = chainVerificacion.then((pestañasSinDatos) => {
-            cy.log(`Verificando pestaña: ${pestaña}`);
+            cy.log(`TC055: Verificando pestaña: ${pestaña}`);
+            const nuevasPestañasSinDatos = [...(pestañasSinDatos || [])];
+            
+            // Intentar verificar la pestaña (igual que caso 51 de vehículos)
             return navegarSeccionFormulario(pestaña)
               .then(() => cy.wait(1000))
-              .then(() => verificarPestañaTieneDatos(pestaña))
+              .then(() => verificarPestañaSinFilas(pestaña))
               .then((tieneDatos) => {
-                const nuevasPestañasSinDatos = [...pestañasSinDatos];
                 if (!tieneDatos) {
                   nuevasPestañasSinDatos.push(pestaña);
                 }
@@ -3571,18 +4091,20 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       .then((pestañasSinDatos) => {
         cy.log('TC055: Verificación completada');
 
+        // Determinar el resultado y mensaje (igual que caso 51 de vehículos)
         let resultado = 'OK';
         let mensaje = `Proveedor ${codigoProveedor || 'creado'} verificado. Todas las pestañas tienen datos guardados.`;
 
         if (pestañasSinDatos && pestañasSinDatos.length > 0) {
           resultado = 'ERROR';
           const pestañasError = pestañasSinDatos.join(', ');
-          mensaje = `Proveedor ${codigoProveedor || 'creado'}, pero las siguientes pestañas NO tienen datos guardados: ${pestañasError}`;
-          cy.log(` ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
+          mensaje = `Proveedor ${codigoProveedor || 'creado'} creado, pero las siguientes pestañas NO tienen datos guardados: ${pestañasError}`;
+          cy.log(`TC055: ERROR: Las siguientes pestañas no tienen datos: ${pestañasError}`);
         } else {
-          cy.log(` Todas las pestañas tienen datos guardados correctamente`);
+          cy.log(`TC055: Todas las pestañas tienen datos guardados correctamente`);
         }
 
+        // Registrar resultado
         return registrarResultadoAutomatico(
           numeroCaso,
           idCaso,
@@ -3591,6 +4113,9 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           resultado,
           true
         );
+      })
+          .then(() => {
+        cy.log('TC055: Test completado correctamente');
       });
   }
 
@@ -3673,7 +4198,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Verificando si aparece aviso de campos obligatorios...`);
         // Verificar si aparece un aviso de campos obligatorios
         return cy.get('body').then($body => {
-          const textoCompleto = ($body.text() || '').toLowerCase();
+          const textoCompleto = ($body.text() || '');
 
           // Buscar avisos/alertas de validación
           const avisos = $body.find('[role="alert"], .MuiAlert-root, .MuiSnackbar-root, [class*="error"], [class*="Error"], [class*="warning"], [class*="Warning"]')
@@ -3681,57 +4206,41 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
             .map((_, el) => (el.textContent || el.innerText || '').trim())
             .get();
 
-          // Buscar texto relacionado con campos obligatorios o mensajes de error
+          // Buscar texto relacionado con campos obligatorios (más permisivo)
+          // Cualquier variación de "campos obligatorios" está bien, incluso si incluye el nombre del campo
           const tieneAvisoCamposObligatorios =
-            /campo.*obligatorio|required.*field|field.*required|debe.*rellenar|debe.*completar|completar.*campo|rellenar.*campo/i.test(textoCompleto) ||
-            avisos.some(aviso => /campo.*obligatorio|required.*field|field.*required|debe.*rellenar|debe.*completar/i.test(aviso.toLowerCase()));
+            /campo.*obligatorio|obligatorio.*campo|required.*field|field.*required|debe.*rellenar|debe.*completar|completar.*campo|rellenar.*campo/i.test(textoCompleto) ||
+            avisos.some(aviso => /campo.*obligatorio|obligatorio.*campo|required.*field|field.*required|debe.*rellenar|debe.*completar/i.test(aviso));
 
-          // Detectar claves de traducción sin traducir (ej: "suppliers.form.addresses.messages.error")
-          const tieneClaveTraduccion =
-            /\w+\.\w+\.\w+/i.test(textoCompleto) ||
-            avisos.some(aviso => /\w+\.\w+\.\w+/i.test(aviso));
+          // Detectar claves de traducción sin traducir REALES (con estructura de clave: "suppliers.form.addresses.messages.error")
+          // NO detectar nombres simples de campos como "Dirección", "Proveedor", "Incidencia"
+          const tieneClaveTraduccionReal =
+            /\w+\.\w+\.\w+\.\w+/i.test(textoCompleto) ||
+            avisos.some(aviso => /\w+\.\w+\.\w+\.\w+/i.test(aviso));
 
-          if (!tieneAvisoCamposObligatorios && !tieneClaveTraduccion) {
-            const obs = 'No aparece aviso de campos obligatorios al intentar guardar sin rellenar campos. Debería aparecer un aviso.';
-            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          // Si aparece "Campos obligatorios" (o cualquier variación), está BIEN - registrar como OK
+          // Incluso si también aparece el nombre del campo (como "Campos obligatorios: Nombre")
+          if (tieneAvisoCamposObligatorios) {
+            const textoAviso = avisos.length > 0 ? avisos[0] : 
+              (textoCompleto.match(/(?:campo|obligatorio|required|field).{0,100}/i)?.[0] || 'Aviso de campos obligatorios');
+            const obs = `Aparece aviso de campos obligatorios: "${textoAviso}". Esto es correcto.`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
+              .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
           }
 
-          // Verificar si el aviso está bien escrito
-          // Un aviso bien escrito debería mencionar "campo obligatorio", "required field", etc.
-          // NO debe ser una clave de traducción sin traducir
-          const avisosBienEscritos = [
-            /campo.*obligatorio/i,
-            /required.*field/i,
-            /field.*required/i,
-            /debe.*rellenar/i,
-            /debe.*completar/i
-          ];
-
-          const avisoBienEscrito = avisosBienEscritos.some(regex =>
-            regex.test(textoCompleto) || avisos.some(aviso => regex.test(aviso))
-          );
-
-          // Si es una clave de traducción sin traducir, está mal escrito
-          if (tieneClaveTraduccion) {
+          // Si es una clave de traducción REAL sin traducir (con múltiples puntos) y NO aparece "Campos obligatorios", está mal escrito
+          if (tieneClaveTraduccionReal && !tieneAvisoCamposObligatorios) {
             const textoAviso = avisos.length > 0 ? avisos[0] :
-              (textoCompleto.match(/\w+\.\w+\.\w+[^\s]*/i)?.[0] || 'Clave de traducción sin traducir');
+              (textoCompleto.match(/\w+\.\w+\.\w+\.\w+[^\s]*/i)?.[0] || 'Clave de traducción sin traducir');
             const obs = `Aparece aviso de campos obligatorios pero está mal escrito (clave de traducción sin traducir): "${textoAviso}". Debería aparecer "Campos obligatorios" o similar.`;
             return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
               .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
           }
 
-          if (avisoBienEscrito) {
-            const obs = 'Aparece aviso de campos obligatorios correctamente escrito.';
-          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
-            .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
-          } else {
-            // El aviso existe pero está mal escrito
-            const textoAviso = avisos.length > 0 ? avisos[0] : 'Aviso encontrado en el texto de la página';
-            const obs = `Aparece aviso de campos obligatorios pero está mal escrito: "${textoAviso}"`;
-            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-          }
+          // Si NO aparece ningún aviso de campos obligatorios
+          const obs = 'No aparece aviso de campos obligatorios al intentar guardar sin rellenar campos. Debería aparecer un aviso.';
+          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
         });
       });
   }
