@@ -414,16 +414,16 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
   function ordenarColumnaDesdeExcel(caso, numero) {
     // Mapa de casos a columnas (siempre usar el mapa, no leer del Excel)
-      const mapa = {
-        16: 'Código',
-        17: 'NIF/CIF',
-        18: 'Nombre',
-        19: 'Razón Social',
-        20: 'Teléfono',
-        21: 'Tipo Proveedor',
-        22: 'Email',
-        23: 'Código Contable'
-      };
+    const mapa = {
+      16: 'Código',
+      17: 'NIF/CIF',
+      18: 'Nombre',
+      19: 'Razón Social',
+      20: 'Teléfono',
+      21: 'Tipo Proveedor',
+      22: 'Email',
+      23: 'Código Contable'
+    };
 
     // Siempre usar el mapa si existe el caso, si no usar fallback
     const col = mapa[numero] || 'Código';
@@ -577,169 +577,6 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     return UI.abrirPantalla().then(() =>
       cy.cambiarIdiomaCompleto(PANTALLA, 'Proveedores', 'Providers', 'Providers', 53)
     );
-  }
-
-  function seleccionarFechasFiltroValidandoFilas(caso, numero, casoId) {
-    const nombre = caso?.nombre || 'Seleccionar Fecha';
-
-    return UI.abrirPantalla().then(() => {
-      cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
-
-      // Abrir selector de rango
-      cy.contains('button', /^Todos$/i).first().click({ force: true });
-      cy.wait(300);
-
-      //  Fechas (puedes dejarlas fijas o leer de Excel si quieres)
-      const fechaDesde = '01/01/2026';
-      const fechaHasta = '16/01/2026';
-
-      cy.log(`Seleccionando rango de fechas desde ${fechaDesde} hasta ${fechaHasta}`);
-
-      const parseDDMMYYYY = (str) => {
-        const [dd, mm, yyyy] = String(str).split('/').map(n => parseInt(n, 10));
-        return { dd, mm, yyyy };
-      };
-
-      const inicio = parseDDMMYYYY(fechaDesde);
-      const fin = parseDDMMYYYY(fechaHasta);
-
-      // HELPERS MUI CALENDAR
-      const monthNamesEs = [
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-      ];
-      const monthNamesEn = [
-        'january', 'february', 'march', 'april', 'may', 'june',
-        'july', 'august', 'september', 'october', 'november', 'december'
-      ];
-
-      const normalizar = (t) => (t || '')
-        .toString()
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      const headerEsObjetivo = (headerText, targetMonth, targetYear) => {
-        const h = normalizar(headerText);
-        const mesEs = monthNamesEs[targetMonth - 1];
-        const mesEn = monthNamesEn[targetMonth - 1];
-        return (
-          (h.includes(mesEs) && h.includes(String(targetYear))) ||
-          (h.includes(mesEn) && h.includes(String(targetYear)))
-        );
-      };
-
-      const irAMesAnio = (targetMonth, targetYear, maxSteps = 24) => {
-        const step = (i = 0) => {
-          return cy.get('body').then($b => {
-            const headerSel = '.MuiPickersCalendarHeader-label, .MuiPickersToolbarText-root, .MuiPickersFadeTransitionGroup-root';
-            const header = $b.find(headerSel).first().text();
-
-            if (header && headerEsObjetivo(header, targetMonth, targetYear)) {
-              return cy.wrap(true);
-            }
-
-            if (i >= maxSteps) {
-              cy.log(` No se pudo llegar al mes/año objetivo. Header actual: "${header}"`);
-              return cy.wrap(true);
-            }
-
-            const nextBtnSel = 'button[title*="Next"], button[aria-label*="Next"], button[aria-label*="Siguiente"], button.MuiPickersArrowSwitcher-button';
-            if ($b.find(nextBtnSel).length > 0) {
-              cy.get(nextBtnSel).last().click({ force: true });
-              cy.wait(200);
-              return step(i + 1);
-            }
-
-            cy.log(' No se encontró botón de siguiente mes');
-            return cy.wrap(true);
-          });
-        };
-        return step(0);
-      };
-
-      const clickDia = (dayNumber) => {
-        const daySelectors = [
-          'button[role="gridcell"]',
-          '[role="gridcell"] button',
-          '.MuiPickersDay-root',
-          'button.MuiPickersDay-root'
-        ].join(',');
-
-        return cy.get('body').then($b => {
-          const candidates = $b.find(daySelectors).filter((_, el) => {
-            const t = (el.textContent || '').trim();
-            return t === String(dayNumber);
-          });
-
-          if (candidates.length) {
-            cy.wrap(candidates[0]).click({ force: true });
-            cy.wait(200);
-            return cy.wrap(true);
-          }
-
-          cy.get(daySelectors).contains(new RegExp(`^${dayNumber}$`)).click({ force: true });
-          cy.wait(200);
-          return cy.wrap(true);
-        });
-      };
-
-      const seleccionarFecha = ({ dd, mm, yyyy }) => {
-        cy.get('[role="dialog"], .MuiPickersPopper-root, .MuiPopover-root', { timeout: 10000 }).should('exist');
-        return irAMesAnio(mm, yyyy).then(() => clickDia(dd));
-      };
-
-      // FECHA INICIO
-      cy.get('button[label="Fecha de inicio"], button[aria-label*="Fecha de inicio"], button[aria-label*="start"], button[aria-label*="Start"], button[aria-label*="date"]')
-        .first()
-        .click({ force: true });
-
-      cy.wait(250);
-      seleccionarFecha(inicio);
-
-      // FECHA FIN
-      cy.get('button[label="Fecha de fin"], button[aria-label*="Fecha de fin"], button[aria-label*="end"], button[aria-label*="End"], button[aria-label*="date"]')
-        .last()
-        .click({ force: true });
-
-      cy.wait(250);
-      seleccionarFecha(fin);
-
-      //  NO pulsar "Aplicar"
-      cy.log('Filtro de fechas aplicado (sin pulsar "Aplicar")');
-
-      //  Esperar y validar filas
-      return cy.wait(900)
-        .then(() => UI.esperarTabla())
-        .then(() => cy.wait(700))
-        .then(() => {
-          return cy.get('body').then(($b) => {
-            const filas = $b.find('.MuiDataGrid-row:visible').length;
-            const texto = ($b.text() || '');
-            const tieneNoRows = /No rows|Sin resultados|No se encontraron|No results|Sin filas/i.test(texto);
-
-            if (filas > 0 && !tieneNoRows) {
-              return registrarResultadoAutomatico(
-                numero,
-                casoId || `TC${String(numero).padStart(3, '0')}`,
-                nombre,
-                `Se muestran ${filas} filas tras aplicar el filtro de fechas`,
-                'OK',
-                false
-              );
-            }
-
-            return registrarResultadoAutomatico(
-              numero,
-              casoId || `TC${String(numero).padStart(3, '0')}`,
-              nombre,
-              'No se muestran filas tras aplicar el filtro de fechas (debería devolver resultados en Proveedores)',
-              'ERROR',
-              true
-            );
-          });
-        });
-    });
   }
 
   // -------------------- ALTAS --------------------
@@ -1129,7 +966,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         // Continúa hasta que se pueda guardar (sin límite fijo de intentos)
         const intentarGuardarConReintentos = (intentos = 0) => {
           return clickGuardarPrincipalSiExiste({ requerido: true })
-      .then((clicado) => {
+            .then((clicado) => {
               if (!clicado) {
                 const obs = 'No se pudo pulsar Guardar (botón no visible/habilitado)';
                 return registrarResultadoAutomatico(numero, casoId || `TC${String(numero).padStart(3, '0')}`, nombre, obs, 'ERROR', true)
@@ -1137,7 +974,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               }
               return cy.wait(2000);
             })
-      .then(() => {
+            .then(() => {
               // PRIMERO verificar si el guardado fue exitoso (si es así, no hacer nada más)
               return cy.wait(500).then(() => cy.get('body').then(($b) => {
                 const texto = ($b.text() || '').toString();
@@ -1147,12 +984,12 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                     const textoEl = (el.textContent || el.innerText || '').toLowerCase();
                     return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
                   }).length > 0;
-                
+
                 if (hayExito) {
                   cy.log(`TC027: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
                   return cy.wrap(true); // Éxito, retornar true
                 }
-                
+
                 return cy.wrap(false); // No hay éxito, continuar con verificación de errores
               }));
             })
@@ -1160,7 +997,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               if (hayExito) {
                 return cy.wrap(null); // Éxito, no hacer nada más
               }
-              
+
               // Si no hay éxito, verificar errores
               // 1. Verificar error de cliente ya asociado (tiene prioridad sobre código)
               return hayErrorClienteAsociado().then((hayErrorCliente) => {
@@ -1199,29 +1036,29 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                   // 3. Si no hay errores conocidos, verificar error 500 (esperado en TC027)
                   return cy.wait(800)
                     .then(() => {
-        return cy.get('body').then(($b) => {
-          const texto = ($b.text() || '').toString();
-          const hay500 =
-            /Request failed with status code 500/i.test(texto) ||
-            /status code 500/i.test(texto) ||
-            /Error al guardar el proveedor/i.test(texto) ||
-            /Error saving (the )?provider/i.test(texto);
-          if (hay500) {
-            return registrarResultadoAutomatico(
-              numero,
-              casoId || `TC${String(numero).padStart(3, '0')}`,
-              nombre,
-              // Usar el texto más informativo posible
-              /Error al guardar el proveedor/i.test(texto)
-                ? 'Error al guardar el proveedor (status code 500)'
-                : 'Request failed with status code 500',
-              'ERROR',
-              true
-            );
-          }
-          // Si no se vio el mensaje, no forzamos ERROR (puede haber cambiado el texto).
-          return cy.wrap(null);
-        });
+                      return cy.get('body').then(($b) => {
+                        const texto = ($b.text() || '').toString();
+                        const hay500 =
+                          /Request failed with status code 500/i.test(texto) ||
+                          /status code 500/i.test(texto) ||
+                          /Error al guardar el proveedor/i.test(texto) ||
+                          /Error saving (the )?provider/i.test(texto);
+                        if (hay500) {
+                          return registrarResultadoAutomatico(
+                            numero,
+                            casoId || `TC${String(numero).padStart(3, '0')}`,
+                            nombre,
+                            // Usar el texto más informativo posible
+                            /Error al guardar el proveedor/i.test(texto)
+                              ? 'Error al guardar el proveedor (status code 500)'
+                              : 'Request failed with status code 500',
+                            'ERROR',
+                            true
+                          );
+                        }
+                        // Si no se vio el mensaje, no forzamos ERROR (puede haber cambiado el texto).
+                        return cy.wrap(null);
+                      });
                     });
                 });
               });
@@ -1442,7 +1279,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                     .clear({ force: true })
                     .type('{downArrow}', { force: true }) // Abrir desplegable
                     .then(() => cy.wait(300))
-          .then(() => {
+                    .then(() => {
                       // Buscar una opción diferente en el listbox, haciendo scroll si es necesario
                       return cy.get('ul[role="listbox"]', { timeout: 10000 })
                         .filter(':visible')
@@ -1494,8 +1331,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                                 .scrollIntoView({ block: 'center' })
                                 .wait(200)
                                 .click({ force: true })
-                              .then(() => cy.wait(500))
-                              .then(() => cy.wrap(true));
+                                .then(() => cy.wait(500))
+                                .then(() => cy.wrap(true));
                             }
 
                             return cy.wrap(false);
@@ -1531,12 +1368,12 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                     const textoEl = (el.textContent || el.innerText || '').toLowerCase();
                     return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
                   }).length > 0;
-                
+
                 if (hayExito) {
                   cy.log(`TC028: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
                   return cy.wrap(true); // Éxito, retornar true
                 }
-                
+
                 return cy.wrap(false); // No hay éxito, continuar con verificación de errores
               }));
             })
@@ -1544,7 +1381,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               if (hayExito) {
                 return cy.wrap(null); // Éxito, no hacer nada más
               }
-              
+
               // Si no hay éxito, verificar errores
               // 1. Verificar error de cliente ya asociado (tiene prioridad sobre código)
               return hayErrorClienteAsociado().then((hayErrorCliente) => {
@@ -1594,10 +1431,10 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                       }
                       // Si no hay error 500, asumir éxito
                       cy.log(`TC028: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
-              return cy.wrap(null);
-            });
-          });
-      });
+                      return cy.wrap(null);
+                    });
+                });
+              });
             });
         };
 
@@ -2137,16 +1974,16 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
             .should('exist')
             .then(($input) => {
               return escribirInput($input, valor)
-            .then(() => {
-              //  A veces el listbox tarda, pero si aparece lo selecciono.
-              // Si no aparece, intento confirmación con teclado.
-              return cy.get('body').then(($b) => {
-                const hayList = $b.find('ul[role="listbox"]:visible').length > 0;
-                if (hayList) return seleccionarOpcionListboxRobusta(valor);
-                return cy.wrap($input).type('{downArrow}{enter}', { force: true });
-              });
-            })
-            .then(() => cy.get('body').type('{esc}', { force: true, log: false }));
+                .then(() => {
+                  //  A veces el listbox tarda, pero si aparece lo selecciono.
+                  // Si no aparece, intento confirmación con teclado.
+                  return cy.get('body').then(($b) => {
+                    const hayList = $b.find('ul[role="listbox"]:visible').length > 0;
+                    if (hayList) return seleccionarOpcionListboxRobusta(valor);
+                    return cy.wrap($input).type('{downArrow}{enter}', { force: true });
+                  });
+                })
+                .then(() => cy.get('body').type('{esc}', { force: true, log: false }));
             });
         });
     };
@@ -3392,7 +3229,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
     // Función para leer el código del proveedor
     const leerCodigoProveedor = () => {
-    return cy.get('body').then(($body) => {
+      return cy.get('body').then(($body) => {
         // Buscar campo "Código" por label
         const $label = $body.find('label').filter((_, el) => {
           const t = (el.textContent || el.innerText || '').trim().toLowerCase();
@@ -3453,7 +3290,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
     const codigo4 = generarNumeroAleatorio(4);
     const codigo3 = generarNumeroAleatorio(3);
     const caso28Normalizado = sustituirPlaceholders(casoDatosGenerales, codigo4, codigo3);
-    
+
     // Asegurar que el campo "Código" siempre tenga 4 números aleatorios (no "Fiscal" u otro valor del Excel)
     const totalCampos = Number(caso28Normalizado?.__totalCamposExcel) || 40;
     for (let i = 1; i <= totalCampos; i++) {
@@ -3466,7 +3303,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
         break;
       }
     }
-    
+
     const nombreProveedor = extraerDatoPorEtiquetaOSelector(caso28Normalizado, /(^name$|^nombre$|nombre)/i) || `ProveedorPrueba${codigo4}`;
 
     const tc30Normalizado = tc30 ? sustituirPlaceholders(tc30, codigo4, codigo3) : null;
@@ -3488,10 +3325,10 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       if (!/\/form/i.test(u)) {
         return abrirFormularioNuevoProveedor();
       }
-        return cy.wrap(null);
+      return cy.wrap(null);
     })
       .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
-        .then(() => {
+      .then(() => {
         cy.log('Rellenando DATOS GENERALES usando datos del caso 28...');
         // Rellenar DATOS GENERALES (igual que crearConTodo - caso 28)
         return navegarSeccionFormulario('Datos generales')
@@ -3508,8 +3345,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                 cy.log(`TC055: Código del proveedor capturado: ${codigoProveedor}`);
               }
               return cy.wrap(null);
-        });
-    });
+            });
+          });
       })
       .then(() => {
         cy.log('Rellenando DATOS FINANCIEROS usando datos del caso 28...');
@@ -3556,7 +3393,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               // anadirProveedor ya navega a la sección y luego llama a abrirModalSeccion
               // Pero como ya estamos en el formulario, solo necesitamos navegar y luego hacer lo mismo
               return navegarSeccionFormulario('Zonas de carga')
-        .then(() => {
+                .then(() => {
                   cy.log('TC055: Sección detectada: ZONAS DE CARGA');
                   // Hacer exactamente lo mismo que anadirProveedor hace para zonas de carga
                   return abrirModalSeccion('Zonas de carga', true)
@@ -3569,8 +3406,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               return anadirProveedor(item.caso, item.num, `TC${String(item.num).padStart(3, '0')}`)
                 .then(() => cy.wait(500));
             }
+          });
         });
-    });
         return chain;
       })
       .then(() => {
@@ -3646,10 +3483,10 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
 
                   // Escribir el nuevo código
                   return cy.wrap($inp)
-        .scrollIntoView()
+                    .scrollIntoView()
                     .clear({ force: true })
                     .type(nuevoCodigo, { force: true })
-        .then(() => {
+                    .then(() => {
                       // Actualizar la variable codigoProveedor con el nuevo código
                       codigoProveedor = nuevoCodigo;
                       cy.log(`TC055: Código actualizado en variable: ${codigoProveedor}`);
@@ -3708,7 +3545,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                 if (sel) return cy.get(sel, { timeout: 15000 }).filter(':visible').first();
                 return cy
                   .get('input[role="combobox"], input[aria-autocomplete="list"]', { timeout: 15000 })
-      .filter(':visible')
+                  .filter(':visible')
                   .first();
               };
 
@@ -3781,8 +3618,8 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                                 .scrollIntoView({ block: 'center' })
                                 .wait(200)
                                 .click({ force: true })
-                              .then(() => cy.wait(500))
-                              .then(() => cy.wrap(true));
+                                .then(() => cy.wait(500))
+                                .then(() => cy.wrap(true));
                             }
 
                             return cy.wrap(false);
@@ -3804,9 +3641,9 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
             .then((clicado) => {
               if (!clicado) {
                 const obs = 'No se pudo pulsar Guardar (botón no visible/habilitado)';
-        return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-          .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-      }
+                return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                  .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+              }
               return cy.wait(2000);
             })
             .then(() => {
@@ -3814,14 +3651,14 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               // Esperar un poco para que aparezcan los mensajes
               return cy.wait(1000).then(() => {
                 cy.log(`TC055: Verificando errores después de guardar (intento ${intentos + 1})...`);
-                
+
                 // Verificar ambas alertas simultáneamente para detectar cuál aparece
                 return cy.wrap(null).then(() => {
                   return hayErrorCodigoExiste().then((hayErrorCodigo) => {
                     return hayErrorClienteAsociado().then((hayErrorCliente) => {
                       cy.log(`TC055: Resultado verificación código: ${hayErrorCodigo}`);
                       cy.log(`TC055: Resultado verificación cliente: ${hayErrorCliente}`);
-                      
+
                       // PRIMERO: Si hay error de cliente, cambiar cliente (no código)
                       if (hayErrorCliente) {
                         cy.log(`TC055: Error detectado - Cliente ya vinculado/asociado (intento ${intentos + 1})`);
@@ -3845,7 +3682,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                             });
                         });
                       }
-                      
+
                       // SEGUNDO: Si hay error de código (y NO hay error de cliente), cambiar código
                       if (hayErrorCodigo) {
                         cy.log(`TC055: Error detectado - Código ya existe (intento ${intentos + 1})`);
@@ -3869,7 +3706,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                             });
                         });
                       }
-                      
+
                       // Si NO hay errores, verificar si el guardado fue exitoso
                       return cy.wait(500).then(() => cy.get('body').then(($b) => {
                         const texto = ($b.text() || '').toString();
@@ -3879,13 +3716,13 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                             const textoEl = (el.textContent || el.innerText || '').toLowerCase();
                             return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
                           }).length > 0;
-                        
+
                         if (hayExito) {
                           // Si hay mensaje de éxito y no hay errores, considerar que se guardó correctamente
                           cy.log(`TC055: Proveedor guardado correctamente${intentos > 0 ? ` (después de ${intentos} reintentos)` : ''}`);
                           return cy.wrap({ resultado: 'OK', guardado: true });
                         }
-                        
+
                         // Si no hay éxito ni errores conocidos, registrar como error
                         const obs = 'No se pudo guardar el proveedor y no se detectó un error conocido';
                         return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
@@ -3911,16 +3748,16 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                 const textoEl = (el.textContent || el.innerText || '').toLowerCase();
                 return /guardado|creado|saved|created/.test(textoEl) && /correcto|exitoso|success/.test(textoEl);
               }).length > 0;
-            
+
             if (!hayExito && (!resultadoGuardado || resultadoGuardado.resultado !== 'OK' || !resultadoGuardado.guardado)) {
               cy.log('TC055: El guardado falló, NO se continúa con la verificación ni se navega');
               return cy.wrap({ navegado: false, razon: 'Guardado falló' });
             }
-            
+
             // Si hay éxito (ya sea del resultado o detectado en la página), continuar
             cy.log(`TC055: Guardado exitoso detectado. URL actual: ${urlActual}`);
             cy.log(`TC055: Código actual: ${codigoProveedor || 'NO CAPTURADO'}`);
-            
+
             // Leer el código si estamos en el formulario
             if (urlActual.includes('/form')) {
               return leerCodigoProveedor().then((codigo) => {
@@ -3933,7 +3770,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                   cy.log(`TC055: No se pudo leer el código del formulario, usando código previo: ${codigoProveedor}`);
                 }
                 cy.log(`TC055: Código final para búsqueda: ${codigoProveedor}`);
-                
+
                 // Si estamos en el formulario, navegar a la lista
                 cy.log('TC055: Navegando a la lista de proveedores...');
                 return cy.visit(LIST_URL).then(() => cy.wait(2000)).then(() => {
@@ -3942,7 +3779,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
                 });
               });
             }
-            
+
             // Si ya estamos en la lista, buscar directamente sin navegar
             if (urlActual.includes('/suppliers') && !urlActual.includes('/form')) {
               cy.log('TC055: Ya estamos en la lista de proveedores, buscando directamente...');
@@ -3951,7 +3788,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
               }
               return cy.wrap({ navegado: true, codigo: codigoProveedor, yaEnLista: true });
             }
-            
+
             // Si no estamos ni en formulario ni en lista, navegar a la lista
             cy.log('TC055: No estamos en formulario ni lista, navegando a la lista...');
             return cy.visit(LIST_URL).then(() => cy.wait(2000)).then(() => {
@@ -3967,12 +3804,12 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           cy.log(`TC055: No se navegó a la lista: ${resultadoNavegacion?.razon || 'Razón desconocida'}`);
           return cy.wrap({ resultado: 'ERROR', obtenido: `No se navegó a la lista: ${resultadoNavegacion?.razon || 'Razón desconocida'}` }, { log: false });
         }
-        
+
         // Si ya estábamos en la lista, usar el código que tenemos
         if (resultadoNavegacion.yaEnLista && resultadoNavegacion.codigo) {
           codigoProveedor = resultadoNavegacion.codigo;
         }
-        
+
         // Asegurar que estamos en la lista antes de buscar
         return cy.url().then((urlActual) => {
           if (!urlActual.includes('/suppliers') || urlActual.includes('/form')) {
@@ -3982,29 +3819,29 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           cy.log('TC055: Confirmado que estamos en la lista, continuando con búsqueda...');
           return cy.wrap(null);
         })
-        .then(() => UI.esperarTabla())
-        .then(() => {
-          // Verificar que tenemos el código antes de buscar
-          if (!codigoProveedor) {
-            const obs = 'No se pudo capturar el código del proveedor para buscar y verificar.';
-            cy.log(`TC055: ERROR - ${obs}`);
-          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
-            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
-          }
+          .then(() => UI.esperarTabla())
+          .then(() => {
+            // Verificar que tenemos el código antes de buscar
+            if (!codigoProveedor) {
+              const obs = 'No se pudo capturar el código del proveedor para buscar y verificar.';
+              cy.log(`TC055: ERROR - ${obs}`);
+              return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+                .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+            }
 
-          cy.log(`TC055: Buscando proveedor con código: ${codigoProveedor}`);
-          // Ejecutar la búsqueda y esperar resultados
-          return UI.buscar(codigoProveedor)
-        .then(() => {
-              cy.log(`TC055: Búsqueda ejecutada para código: ${codigoProveedor}, esperando resultados...`);
-              return cy.wait(1000); // Esperar a que se complete la búsqueda
-            })
-            .then(() => esperarResultadosTablaEnLista(25000))
-        .then(() => {
-              cy.log(`TC055: Resultados de búsqueda cargados, buscando fila con código: ${codigoProveedor}`);
-              return cy.wrap(null);
-            });
-        });
+            cy.log(`TC055: Buscando proveedor con código: ${codigoProveedor}`);
+            // Ejecutar la búsqueda y esperar resultados
+            return UI.buscar(codigoProveedor)
+              .then(() => {
+                cy.log(`TC055: Búsqueda ejecutada para código: ${codigoProveedor}, esperando resultados...`);
+                return cy.wait(1000); // Esperar a que se complete la búsqueda
+              })
+              .then(() => esperarResultadosTablaEnLista(25000))
+              .then(() => {
+                cy.log(`TC055: Resultados de búsqueda cargados, buscando fila con código: ${codigoProveedor}`);
+                return cy.wrap(null);
+              });
+          });
       })
       .then((resPrev) => {
         if (resPrev && resPrev.resultado === 'ERROR') {
@@ -4072,7 +3909,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           chainVerificacion = chainVerificacion.then((pestañasSinDatos) => {
             cy.log(`TC055: Verificando pestaña: ${pestaña}`);
             const nuevasPestañasSinDatos = [...(pestañasSinDatos || [])];
-            
+
             // Intentar verificar la pestaña (igual que caso 51 de vehículos)
             return navegarSeccionFormulario(pestaña)
               .then(() => cy.wait(1000))
@@ -4114,7 +3951,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           true
         );
       })
-          .then(() => {
+      .then(() => {
         cy.log('TC055: Test completado correctamente');
       });
   }
@@ -4150,7 +3987,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
       return cy.wrap(null);
     })
       .then(() => cy.url().should('include', '/dashboard/suppliers/form'))
-        .then(() => {
+      .then(() => {
         cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Navegando a la pestaña ${nombreSeccion}...`);
         return navegarSeccionFormulario(nombreSeccion);
       })
@@ -4221,7 +4058,7 @@ describe('FICHEROS (PROVEEDORES) - Validación dinámica desde Excel', () => {
           // Si aparece "Campos obligatorios" (o cualquier variación), está BIEN - registrar como OK
           // Incluso si también aparece el nombre del campo (como "Campos obligatorios: Nombre")
           if (tieneAvisoCamposObligatorios) {
-            const textoAviso = avisos.length > 0 ? avisos[0] : 
+            const textoAviso = avisos.length > 0 ? avisos[0] :
               (textoCompleto.match(/(?:campo|obligatorio|required|field).{0,100}/i)?.[0] || 'Aviso de campos obligatorios');
             const obs = `Aparece aviso de campos obligatorios: "${textoAviso}". Esto es correcto.`;
             return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
