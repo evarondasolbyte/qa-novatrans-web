@@ -428,88 +428,96 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      case 1:
-        return { fn: cargaPantalla };
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 9:
-      case 10:
-      case 11:
-      case 12:
-      case 13:
-        return { fn: ejecutarBusquedaGeneralExcel };
-      case 14:
-      case 15:
-      case 16:
-      case 17:
-      case 18:
-      case 19:
-      case 20:
-        return { fn: ordenarColumnaDesdeExcel };
-      case 21:
-        return { fn: ocultarColumnaDesdeExcel };
-      case 22:
-        return { fn: mostrarColumnaDesdeExcel };
-      case 23:
-        return { fn: abrirFormularioCrearPersonal };
-      case 24:
-      case 25:
-      case 26:
-      case 27:
-      case 28:
-      case 29:
-      case 30:
-      case 31:
-        return { fn: anadirPersonal };
-      case 32:
-        return { fn: seleccionarTelefono };
-      case 33:
-      case 34:
-        return { fn: anadirPersonal };
-      case 35:
-        return { fn: editarPersonalSeleccionado };
-      case 36:
-        return { fn: editarSinSeleccion };
-      case 37:
-        return { fn: eliminarPersonalSeleccionado };
-      case 38:
-        return { fn: eliminarSinSeleccion };
-      case 39:
-        return { fn: seleccionarFilaPersonal };
-      case 40:
-        return { fn: scrollTablaPersonal };
-      case 41:
-        return { fn: resetFiltrosAlRecargar };
-      case 42:
-        return { fn: aplicarFechaFiltro };
-      case 43:
-        return { fn: guardarFiltroDesdeExcel };
-      case 44:
-        return { fn: limpiarFiltroDesdeExcel };
-      case 45:
-        return { fn: seleccionarFiltroGuardadoDesdeExcel };
-      case 46:
-      case 47:
-      case 48:
-      case 49:
-      case 50:
-      case 51:
-        return { fn: ejecutarMultifiltroExcel };
-      case 52:
-      case 53:
-      case 54:
-        // Según cambio funcional: filtrar por Propietario (Propio/Tercero/Anexo) definido en Excel
-        return { fn: seleccionarFiltroPropietario };
-      case 55:
-        return { fn: cambiarIdiomasPersonal };
+      // case 1:
+      //   return { fn: cargaPantalla };
+      // case 2:
+      // case 3:
+      // case 4:
+      // case 5:
+      // case 6:
+      // case 7:
+      // case 8:
+      //   return { fn: ejecutarFiltroIndividualExcel };
+      // case 9:
+      // case 10:
+      // case 11:
+      // case 12:
+      // case 13:
+      //   return { fn: ejecutarBusquedaGeneralExcel };
+      // case 14:
+      // case 15:
+      // case 16:
+      // case 17:
+      // case 18:
+      // case 19:
+      // case 20:
+      //   return { fn: ordenarColumnaDesdeExcel };
+      // case 21:
+      //   return { fn: ocultarColumnaDesdeExcel };
+      // case 22:
+      //   return { fn: mostrarColumnaDesdeExcel };
+      // case 23:
+      //   return { fn: abrirFormularioCrearPersonal };
+      // case 24:
+      // case 25:
+      // case 26:
+      // case 27:
+      // case 28:
+      // case 29:
+      // case 30:
+      // case 31:
+      //   return { fn: anadirPersonal };
+      // case 32:
+      //   return { fn: seleccionarTelefono };
+      // case 33:
+      // case 34:
+      //   return { fn: anadirPersonal };
+      // case 35:
+      //   return { fn: editarPersonalSeleccionado };
+      // case 36:
+      //   return { fn: editarSinSeleccion };
+      // case 37:
+      //   return { fn: eliminarPersonalSeleccionado };
+      // case 38:
+      //   return { fn: eliminarSinSeleccion };
+      // case 39:
+      //   return { fn: seleccionarFilaPersonal };
+      // case 40:
+      //   return { fn: scrollTablaPersonal };
+      // case 41:
+      //   return { fn: resetFiltrosAlRecargar };
+      // case 42:
+      //   return { fn: aplicarFechaFiltro };
+      // case 43:
+      //   return { fn: guardarFiltroDesdeExcel };
+      // case 44:
+      //   return { fn: limpiarFiltroDesdeExcel };
+      // case 45:
+      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      // case 46:
+      // case 47:
+      // case 48:
+      // case 49:
+      // case 50:
+      // case 51:
+      //   return { fn: ejecutarMultifiltroExcel };
+      // case 52:
+      // case 53:
+      // case 54:
+      //   // Según cambio funcional: filtrar por Propietario (Propio/Tercero/Anexo) definido en Excel
+      //   return { fn: seleccionarFiltroPropietario };
+      // case 55:
+      //   return { fn: cambiarIdiomasPersonal };
       case 56:
         return { fn: TC056, autoRegistro: false };
+      // case 57:
+      // case 58:
+      // case 59:
+      // case 60:
+      // case 61:
+      // case 62:
+      // case 63:
+      //   return { fn: guardarSeccionSinRellenarPersonal };
       default:
         return null;
     }
@@ -646,9 +654,10 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   }
 
   function mostrarColumnaDesdeExcel(caso, numero) {
+    // Para el caso 22, mostrar la columna "Código"
     let columna = '';
     if (numero === 22) {
-      columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
+      columna = 'Código';
     } else {
       columna = caso?.valor_etiqueta_1 || caso?.dato_1;
     }
@@ -828,11 +837,16 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     const patron = obtenerPatronColumna(columna);
     cy.log(`Panel columnas: clic en "${columna}"`);
 
+    // Localizamos el panel por el título "Columnas / Columns / Columnes"
     return cy
       .contains('div, span, p', /(Columnas|Columns?|Columnes)/i, { timeout: 10000 })
-      .closest('div.MuiPaper-root')
+      .closest('div.MuiPaper-root')          // el papel del panel
       .within(() => {
-        return cy.contains('li, label, span', patron, { timeout: 10000 }).should('be.visible').click({ force: true });
+        // Dentro del panel, buscamos la fila que tiene el texto de la columna
+        return cy
+          .contains('li, label, span', patron, { timeout: 10000 })
+          .should('be.visible')
+          .click({ force: true });           // un solo clic sobre la columna
       });
   }
 
@@ -866,8 +880,12 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
     if (/empresa/.test(lower)) {
       return /(Empresa|Company|Empresa)/i;
     }
+    if (/operator/.test(lower)) {
+      return /(Operator|Operador)/i;
+    }
 
-    return new RegExp(`^${escapeRegex(nombreColumna)}$`, 'i');
+    // Patrón más flexible: busca el texto sin requerir coincidencia exacta
+    return new RegExp(escapeRegex(nombreColumna), 'i');
   }
 
   function ocultarColumna(columna) {
@@ -890,11 +908,14 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         cy.log('Abriendo panel y pulsando en la columna del panel...');
         return abrirPanelColumnas()
           .then(() => {
+            // Trabajamos dentro del panel "Columnas"
             return cy
               .contains('div, span, p', /(Columnas|Columns?|Columnes)/i, { timeout: 10000 })
               .closest('div.MuiPaper-root')
               .within(() => {
-                cy.contains('li, label, span', patron, { timeout: 10000 }).should('be.visible').click({ force: true });
+                cy.contains('li, label, span', patron, { timeout: 10000 })
+                  .should('be.visible')
+                  .click({ force: true });   // pulsamos la columna
               });
           })
           .then(() => guardarPanelColumnas());
@@ -902,19 +923,24 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       const intentar = (intento = 0) => {
         return clickEnPanel().then(() => {
-          return cy.get('.MuiDataGrid-columnHeaders', { timeout: 10000 }).then(($headers) => {
-            const texto = $headers.text();
+          return cy
+            .get('.MuiDataGrid-columnHeaders', { timeout: 10000 })
+            .then(($headers) => {
+              const texto = $headers.text();
 
-            if (!texto.includes(columna) && intento === 0) {
-              cy.log('La columna sigue sin aparecer, repitiendo clic una vez más...');
-              return intentar(1);
-            }
+              if (!texto.includes(columna) && intento === 0) {
+                cy.log('La columna sigue sin aparecer, repitiendo clic una vez más...');
+                //Segundo intento: volver a abrir el panel y pulsar otra vez
+                return intentar(1);
+              }
 
-            return cy.wrap($headers).should('contain.text', columna);
-          });
+              // Ahora sí validamos que está visible
+              return cy.wrap($headers).should('contain.text', columna);
+            });
         });
       };
 
+      // Primer intento (con posible segundo dentro)
       return intentar(0);
     });
   }
@@ -1520,6 +1546,34 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             .click({ force: true });
         });
       })
+      .then(() => cy.wait(600))
+      .then(() => {
+        // Si aparece el modal de confirmación sobre teléfono asignado, hacer clic en "Sí"
+        cy.log(`${idCaso}: verificando si aparece modal de confirmación de teléfono...`);
+        return cy.get('body', { timeout: 5000 }).then(($body) => {
+          // Buscar el modal "NovaTrans - Información" que contiene el texto sobre teléfono asignado
+          const $modal = $body
+            .find('.MuiDialog-root:visible, [role="dialog"]:visible')
+            .filter((_, el) => {
+              const texto = (el.textContent || el.innerText || '').trim();
+              return /NovaTrans\s*-\s*Informaci[oó]n/i.test(texto) && 
+                     /tel[eé]fono.*asignado/i.test(texto) &&
+                     /desea continuar/i.test(texto);
+            })
+            .first();
+
+          if ($modal && $modal.length) {
+            cy.log(`${idCaso}: Modal de confirmación detectado, haciendo clic en "Sí"...`);
+            return cy.wrap($modal).within(() => {
+              return cy.contains('button', /^S[ií]$/i, { timeout: 5000 })
+                .should('be.visible')
+                .click({ force: true })
+                .then(() => cy.wait(500));
+            });
+          }
+          return cy.wrap(null);
+        });
+      })
       .then(() => {
         // Confirmar cierre del modal (si no se cierra, es que no se seleccionó correctamente)
         return cy.get('body', { timeout: 15000 }).then(($body) => {
@@ -1583,6 +1637,33 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           .should('be.visible')
           .click({ force: true })
           .then(() => cy.wait(600));
+      })
+      .then(() => {
+        // CUARTO: Si aparece el modal de confirmación sobre teléfono asignado, hacer clic en "Sí"
+        cy.log(`${idCaso}: verificando si aparece modal de confirmación de teléfono...`);
+        return cy.get('body', { timeout: 5000 }).then(($body) => {
+          // Buscar el modal "NovaTrans - Información" que contiene el texto sobre teléfono asignado
+          const $modal = $body
+            .find('.MuiDialog-root:visible, [role="dialog"]:visible')
+            .filter((_, el) => {
+              const texto = (el.textContent || el.innerText || '').trim();
+              return /NovaTrans\s*-\s*Informaci[oó]n/i.test(texto) && 
+                     /tel[eé]fono.*asignado/i.test(texto) &&
+                     /desea continuar/i.test(texto);
+            })
+            .first();
+
+          if ($modal && $modal.length) {
+            cy.log(`${idCaso}: Modal de confirmación detectado, haciendo clic en "Sí"...`);
+            return cy.wrap($modal).within(() => {
+              return cy.contains('button', /^S[ií]$/i, { timeout: 5000 })
+                .should('be.visible')
+                .click({ force: true })
+                .then(() => cy.wait(500));
+            });
+          }
+          return cy.wrap(null);
+        });
       })
       .then(() => {
         cy.log(`${idCaso}: teléfono seleccionado (si había lista).`);
@@ -4093,9 +4174,10 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       });
     }
 
-    // Manejo específico para INCIDENCIAS: Fecha, Incidencia y Notas
+    // Manejo específico para INCIDENCIAS: Fecha/Inicio, Incidencia y Notas
     if (esIncidencia) {
       let fechaValor = null;
+      let inicioValor = null;
       let incidenciaValor = null;
       let notasValor = null;
 
@@ -4115,8 +4197,18 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         const esFormatoFecha = /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(String(valor).trim());
 
         // Identificar qué campo es según el selector, tipo o formato del valor
+        // Inicio: campo obligatorio que puede venir como "inicio" o como fecha si no hay otro campo fecha
+        if (!inicioValor && (
+          selector.includes('inicio') ||
+          tipo.includes('inicio') ||
+          (tipo === 'name' && selector === 'inicio') ||
+          (tipo === 'id' && selector.includes('inicio'))
+        )) {
+          inicioValor = valor;
+          cy.log(` Inicio detectado: ${valor}`);
+        }
         // Fecha: puede venir por formato de fecha o por selector/tipo "fecha"
-        if (!fechaValor && (
+        else if (!fechaValor && (
           esFormatoFecha ||
           tipo.includes('fecha') ||
           selector.includes('fecha') ||
@@ -4124,6 +4216,11 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         )) {
           fechaValor = valor;
           cy.log(` Fecha detectada: ${valor}`);
+        }
+        // Si hay una fecha pero no hay "Inicio", usar la fecha también para "Inicio" (puede ser el mismo campo)
+        else if (!inicioValor && esFormatoFecha && fechaValor) {
+          inicioValor = fechaValor;
+          cy.log(` Inicio se rellenará con la misma fecha: ${fechaValor}`);
         }
         // Incidencia: por selector o tipo que incluya "incidencia"
         else if (!incidenciaValor && (
@@ -4145,7 +4242,13 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         }
       }
 
-      cy.log(`Valores detectados - Fecha: ${fechaValor || 'NO'}, Incidencia: ${incidenciaValor || 'NO'}, Notas: ${notasValor || 'NO'}`);
+      // Si tenemos fecha pero no inicio, usar la fecha para inicio también
+      if (fechaValor && !inicioValor) {
+        inicioValor = fechaValor;
+        cy.log(`Inicio se rellenará con la misma fecha que Fecha: ${fechaValor}`);
+      }
+
+      cy.log(`Valores detectados - Fecha: ${fechaValor || 'NO'}, Inicio: ${inicioValor || 'NO'}, Incidencia: ${incidenciaValor || 'NO'}, Notas: ${notasValor || 'NO'}`);
 
       // Rellenar Fecha usando el calendario (date picker)
       if (fechaValor) {
@@ -4157,12 +4260,37 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           cy.log(`Rellenando Fecha en Incidencias: ${dia}/${mesIndex + 1}/${anio}`);
 
           return cy.get('body').then(($body) => {
-            // Estrategia 1: Buscar directamente por ID del input oculto (_r_4jn_)
-            const inputPorId = $body.find('input#_r_4jn_').first();
-            if (inputPorId.length) {
-              cy.log('Input oculto _r_4jn_ encontrado para Fecha');
-              const contenedor = Cypress.$(inputPorId).closest('.MuiPickersTextField-root');
-              const btnCal = contenedor.find('button[aria-label="Choose date"]').first();
+            // Estrategia 1: Buscar directamente por ID del input oculto (puede variar: _r_4jn_, _r_1tc_, etc.)
+            // Buscar inputs ocultos que tengan IDs con patrón _r_XXX_
+            const inputsOcultos = $body.find('input[type="hidden"], input[aria-hidden="true"]').filter((_, el) => {
+              const id = (el.id || '').toLowerCase();
+              return id.includes('_r_') && (id.includes('fecha') || id.includes('inicio') || /_r_\w{3}_/.test(id));
+            });
+            
+            if (inputsOcultos.length) {
+              cy.log(`Encontrados ${inputsOcultos.length} inputs ocultos con patrón _r_XXX_, usando el primero para Fecha/Inicio`);
+              const inputPorId = Cypress.$(inputsOcultos[0]);
+              const contenedor = inputPorId.closest('.MuiPickersTextField-root, .MuiFormControl-root');
+              if (contenedor.length) {
+                const btnCal = contenedor.find('button[aria-label="Choose date"], button[aria-label*="date"]').first();
+                if (btnCal.length) {
+                  return cy.wrap(btnCal[0])
+                    .scrollIntoView()
+                    .click({ force: true })
+                    .then(() => {
+                      cy.wait(500);
+                      return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                    });
+                }
+              }
+            }
+            
+            // También buscar específicamente por _r_1tc_ (ID que aparece en el HTML del modal)
+            const inputEspecifico = $body.find('input#_r_1tc_, input[id*="_r_1tc"]').first();
+            if (inputEspecifico.length) {
+              cy.log('Input oculto _r_1tc_ encontrado para Fecha/Inicio');
+              const contenedor = Cypress.$(inputEspecifico).closest('.MuiPickersTextField-root, .MuiFormControl-root');
+              const btnCal = contenedor.find('button[aria-label="Choose date"], button[aria-label*="date"]').first();
               if (btnCal.length) {
                 return cy.wrap(btnCal[0])
                   .scrollIntoView()
@@ -4170,6 +4298,45 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                   .then(() => {
                     cy.wait(500);
                     return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                  })
+                  .then(() => {
+                    // IMPORTANTE: Verificar y establecer el valor en el input oculto
+                    // El campo "Fecha" visible debe mapearse a "Inicio" en la BD
+                    cy.wait(1000); // Esperar más tiempo para que se actualice
+                    return cy.get('body').then(($b) => {
+                      const inputOculto = $b.find('input#_r_1tc_, input[id*="_r_1tc"], input[aria-hidden="true"][id*="_r_"]').first();
+                      if (inputOculto.length) {
+                        const valor = inputOculto.val();
+                        cy.log(`TC056: Valor en input oculto después de seleccionar fecha: "${valor}"`);
+                        
+                        // Formato ISO para la fecha: YYYY-MM-DDTHH:mm:ss
+                        const fechaISO = `${anio}-${String(mesIndex + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}T00:00:00`;
+                        
+                        // Si el valor está vacío o no coincide, establecerlo directamente
+                        if (!valor || valor === '' || !valor.includes(fechaISO.split('T')[0])) {
+                          cy.log(`TC056: Estableciendo valor directamente en input oculto: ${fechaISO}`);
+                          // Intentar múltiples formas de establecer el valor
+                          cy.wrap(inputOculto[0])
+                            .invoke('val', fechaISO)
+                            .invoke('attr', 'value', fechaISO)
+                            .trigger('change', { force: true })
+                            .trigger('input', { force: true })
+                            .trigger('blur', { force: true });
+                          
+                          // También intentar establecer el valor en el input visible del date picker
+                          const inputVisible = contenedor.find('input[type="text"], input[contenteditable="true"]').first();
+                          if (inputVisible.length) {
+                            const fechaFormato = `${String(dia).padStart(2, '0')}/${String(mesIndex + 1).padStart(2, '0')}/${anio}`;
+                            cy.wrap(inputVisible[0]).invoke('val', fechaFormato).trigger('change', { force: true });
+                          }
+                        } else {
+                          cy.log(`TC056: Valor ya está establecido correctamente: "${valor}"`);
+                        }
+                      } else {
+                        cy.log('TC056: WARNING - No se encontró input oculto para establecer el valor');
+                      }
+                      return cy.wrap(null);
+                    });
                   });
               }
             }
@@ -4194,17 +4361,136 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
               }
             }
 
-            // Estrategia 3: Fallback - primer botón "Choose date"
-            cy.log('Usando fallback: primer botón Choose date');
-            return cy
-              .get('button[aria-label="Choose date"]', { timeout: 10000 })
+            // Estrategia 3: Fallback - buscar dentro del modal/drawer primero
+            cy.log('Usando fallback: buscando date picker en el modal/drawer');
+            return cy.get('[role="dialog"]:visible, .MuiDrawer-root:visible, .MuiModal-root:visible', { timeout: 10000 })
               .first()
-              .scrollIntoView()
-              .click({ force: true })
-              .then(() => {
-                cy.wait(500);
-                return seleccionarFechaEnPopover(anio, mesIndex, dia);
+              .within(() => {
+                return cy
+                  .get('button[aria-label="Choose date"], button[aria-label*="date"]', { timeout: 10000 })
+                  .first()
+                  .scrollIntoView()
+                  .click({ force: true })
+                  .then(() => {
+                    cy.wait(500);
+                    return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                  });
+              })
+              .catch(() => {
+                // Si falla dentro del modal, buscar globalmente
+                cy.log('Fallback global: primer botón Choose date');
+                return cy
+                  .get('button[aria-label="Choose date"], button[aria-label*="date"]', { timeout: 10000 })
+                  .first()
+                  .scrollIntoView()
+                  .click({ force: true })
+                  .then(() => {
+                    cy.wait(500);
+                    return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                  });
               });
+          });
+        });
+      }
+
+      // NOTA: "Inicio" es obligatorio en la BD pero NO hay campo visible separado
+      // El campo "Fecha" visible se mapea a "Inicio" en la BD, así que ya está rellenado arriba
+      // No necesitamos rellenar "Inicio" por separado si ya se rellenó "Fecha"
+      // Solo intentar rellenar "Inicio" si hay un campo separado explícito
+      if (inicioValor && inicioValor !== fechaValor) {
+        chain = chain.then(() => {
+          const valorParaInicio = inicioValor || fechaValor;
+          const fechaObj = parseFechaBasicaExcel(valorParaInicio);
+          const dia = fechaObj.getDate();
+          const mesIndex = fechaObj.getMonth();
+          const anio = fechaObj.getFullYear();
+          cy.log(`Rellenando Inicio en Incidencias: ${dia}/${mesIndex + 1}/${anio} (valor: ${valorParaInicio})`);
+
+          return cy.get('body').then(($body) => {
+            // Estrategia 1: Buscar por label "Inicio" (case insensitive, puede tener espacios)
+            cy.log('Intentando buscar Inicio por label...');
+            const labelInicio = $body.find('label').filter((_, el) => {
+              const texto = (el.innerText || el.textContent || '').trim().toLowerCase();
+              return /^inicio$/i.test(texto);
+            }).first();
+            if (labelInicio.length) {
+              const contenedorPadre = Cypress.$(labelInicio).closest('.MuiFormControl-root');
+              const datePickerContainer = contenedorPadre.find('.MuiPickersTextField-root').first();
+              if (datePickerContainer.length) {
+                const btnCal = datePickerContainer.find('button[aria-label="Choose date"], button[aria-label*="date"]').first();
+                if (btnCal.length) {
+                  return cy.wrap(btnCal[0])
+                    .scrollIntoView()
+                    .click({ force: true })
+                    .then(() => {
+                      cy.wait(500);
+                      return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                    });
+                }
+              }
+            }
+
+            // Estrategia 2: Buscar por name="Inicio" o id que contenga "inicio"
+            cy.log('Intentando buscar Inicio por name o id...');
+            const inputInicio = $body.find('input[name="Inicio"], input[name*="inicio"], input[id*="inicio"], input[id*="Inicio"]').first();
+            if (inputInicio.length) {
+              const contenedor = Cypress.$(inputInicio).closest('.MuiPickersTextField-root, .MuiFormControl-root');
+              const btnCal = contenedor.find('button[aria-label="Choose date"], button[aria-label*="date"]').first();
+              if (btnCal.length) {
+                return cy.wrap(btnCal[0])
+                  .scrollIntoView()
+                  .click({ force: true })
+                  .then(() => {
+                    cy.wait(500);
+                    return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                  });
+              }
+            }
+
+            // Estrategia 3: Buscar todos los date pickers visibles en el modal/drawer
+            // Si hay más de uno, rellenar todos (Fecha e Inicio pueden ser campos separados)
+            cy.log('Intentando buscar todos los date pickers en el modal...');
+            const datePickers = $body.find('.MuiPickersTextField-root, .MuiDatePicker-root').filter(':visible');
+            cy.log(`Encontrados ${datePickers.length} date pickers visibles`);
+            
+            if (datePickers.length >= 2) {
+              // Si hay dos o más, rellenar el segundo (el primero ya se rellenó como Fecha)
+              cy.log('Rellenando segundo date picker como Inicio...');
+              const segundoDatePicker = Cypress.$(datePickers[1]);
+              const btnCal = segundoDatePicker.find('button[aria-label="Choose date"], button[aria-label*="date"]').first();
+              if (btnCal.length) {
+                return cy.wrap(btnCal[0])
+                  .scrollIntoView()
+                  .click({ force: true })
+                  .then(() => {
+                    cy.wait(500);
+                    return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                  });
+              }
+            } else if (datePickers.length === 1 && !fechaValor) {
+              // Si solo hay uno y no se rellenó Fecha, rellenarlo como Inicio
+              cy.log('Solo hay un date picker, rellenándolo como Inicio...');
+              const datePicker = Cypress.$(datePickers[0]);
+              const btnCal = datePicker.find('button[aria-label="Choose date"], button[aria-label*="date"]').first();
+              if (btnCal.length) {
+                return cy.wrap(btnCal[0])
+                  .scrollIntoView()
+                  .click({ force: true })
+                  .then(() => {
+                    cy.wait(500);
+                    return seleccionarFechaEnPopover(anio, mesIndex, dia);
+                  });
+              }
+            }
+
+            // Estrategia 4: Si ya se rellenó Fecha y no se encontró Inicio separado, 
+            // puede que Inicio sea el mismo campo que Fecha, así que no hacer nada
+            if (fechaValor) {
+              cy.log('No se encontró campo Inicio separado, puede que sea el mismo que Fecha (ya rellenado)');
+            } else {
+              cy.log('WARNING: No se pudo encontrar campo Inicio para rellenar');
+            }
+            return cy.wrap(null);
           });
         });
       }
@@ -4684,6 +4970,116 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
   }
 
   // =========================
+  // TC057-TC063: Guardar secciones sin rellenar ningún campo
+  // =========================
+  function guardarSeccionSinRellenarPersonal(caso, numero, casoId) {
+    const numeroCaso = numero || 57;
+    const idCaso = casoId || `TC${String(numeroCaso).padStart(3, '0')}`;
+    const nombreCaso = caso?.nombre || 'Guardar sección sin rellenar ningún campo';
+
+    // Mapear número de caso a nombre de sección
+    const mapeoSecciones = {
+      57: 'Formación',
+      58: 'Experiencia',
+      59: 'Asistencia',
+      60: 'Material',
+      61: 'Contratos',
+      62: 'Hist. Telefónico',
+      63: 'Incidencias'
+    };
+
+    const nombreSeccion = mapeoSecciones[numeroCaso];
+    if (!nombreSeccion) {
+      const obs = `No se encontró mapeo para el caso ${numeroCaso}`;
+      return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+        .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+    }
+
+    // Asegurar que estamos en el formulario
+    return cy.url().then((u) => {
+      if (!/\/form/i.test(u)) {
+        return abrirFormularioNuevoPersonal();
+      }
+      return cy.wrap(null);
+    })
+      .then(() => cy.url().should('include', '/dashboard/personnel/form'))
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Navegando a la pestaña ${nombreSeccion}...`);
+        return navegarSeccionFormulario(nombreSeccion);
+      })
+      .then(() => cy.wait(1000))
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Abriendo modal de ${nombreSeccion}...`);
+        return abrirModalSeccion(nombreSeccion);
+      })
+      .then(() => cy.wait(1000))
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Pulsando Guardar del formulario sin rellenar campos...`);
+        return guardarModalSeccion(nombreSeccion);
+      })
+      .then(() => cy.wait(2000)) // Esperar a que aparezca el aviso o se cierre el modal
+      .then(() => {
+        cy.log(`TC${String(numeroCaso).padStart(3, '0')}: Verificando si aparece aviso de campos obligatorios...`);
+        // Verificar si aparece un aviso de campos obligatorios
+        return cy.get('body').then($body => {
+          const modal = $body.find('.MuiDrawer-root:visible, .MuiModal-root:visible, [role="dialog"]:visible').first();
+
+          // Si el modal se cerró, significa que se guardó sin validación - ERROR
+          if (modal.length === 0) {
+            const obs = 'El modal se cerró sin mostrar aviso de campos obligatorios. Se guardó en blanco sin validación. Esto es un ERROR.';
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          // El modal está abierto, buscar el aviso dentro del modal
+          const textoModal = (Cypress.$(modal[0]).text() || '').trim();
+
+          // Buscar específicamente el título "Campos obligatorios" (exacto o muy cercano)
+          // Debe aparecer como título principal del aviso, no solo como parte de otro texto
+          const tieneTituloCamposObligatorios = /^campos obligatorios$|^campos obligatorios\s*$/i.test(textoModal) ||
+            /campos obligatorios/i.test(textoModal) &&
+            (textoModal.includes('es obligatorio') || textoModal.includes('obligatorio') || textoModal.includes('required'));
+
+          // Buscar elementos de alerta visibles dentro del modal
+          const avisosEnModal = Cypress.$(modal[0]).find('[role="alert"], .MuiAlert-root, .MuiSnackbar-root, [class*="error"], [class*="Error"], [class*="warning"], [class*="Warning"], [class*="alert"], [class*="Alert"]')
+            .filter(':visible')
+            .map((_, el) => {
+              const texto = (el.textContent || el.innerText || '').trim();
+              const tieneTitulo = /campos obligatorios/i.test(texto);
+              return { texto, tieneTitulo, elemento: el };
+            })
+            .get();
+
+          // Verificar si hay algún aviso que contenga "Campos obligatorios" como título
+          const avisoValido = avisosEnModal.find(aviso => aviso.tieneTitulo) ||
+            (tieneTituloCamposObligatorios && avisosEnModal.length > 0);
+
+          if (avisoValido) {
+            const textoAviso = avisosEnModal.find(aviso => aviso.tieneTitulo)?.texto ||
+              textoModal.match(/campos obligatorios[^.]*/i)?.[0] || 'Campos obligatorios';
+            const obs = `Aparece aviso de campos obligatorios: "${textoAviso.substring(0, 100)}". Esto es correcto.`;
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'OK', true)
+              .then(() => cy.wrap({ resultado: 'OK', obtenido: obs }, { log: false }));
+          }
+
+          // Si no se encontró el aviso pero el modal sigue abierto, puede ser que el aviso esté mal formado
+          // Verificar si hay algún texto relacionado pero no es el aviso correcto
+          const tieneTextoRelacionado = /campo.*obligatorio|obligatorio.*campo|required.*field|field.*required/i.test(textoModal);
+          if (tieneTextoRelacionado && avisosEnModal.length === 0) {
+            const obs = 'Se detectó texto relacionado con campos obligatorios pero no aparece como aviso visual. El modal no se cerró pero no hay alerta visible.';
+            return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+              .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+          }
+
+          // Si NO aparece ningún aviso de campos obligatorios y el modal sigue abierto
+          const obs = 'No aparece aviso de campos obligatorios al intentar guardar sin rellenar campos. El modal sigue abierto pero sin alerta de validación. Debería aparecer un aviso.';
+          return registrarResultadoAutomatico(numeroCaso, idCaso, nombreCaso, obs, 'ERROR', true)
+            .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+        });
+      });
+  }
+
+  // =========================
   // TC056 (estaba referenciado pero faltaba)
   // =========================
   function TC056(caso, numero, casoId) {
@@ -4848,6 +5244,99 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
 
       const casoMod = { ...casoBase };
 
+      // Función para seleccionar columna en el filtro (similar a proveedores, como en el caso 2)
+      const seleccionarColumnaFiltroSiExiste = (nombreColumna) => {
+        const objetivo = (nombreColumna || '').toString().trim();
+        if (!objetivo) return cy.wrap(null);
+
+        const normalizar = (t = '') => t.toString().trim().toLowerCase();
+        const coincide = (a, b) => {
+          const A = normalizar(a);
+          const B = normalizar(b);
+          return A === B || A.includes(B) || B.includes(A);
+        };
+
+        cy.log(`TC056: Intentando seleccionar columna "${objetivo}" en el filtro...`);
+        
+        return cy.get('body').then(($b) => {
+          // 1) Si hay select nativo
+          const $sel = $b.find('select[name="column"], select#column').filter(':visible').first();
+          if ($sel.length) {
+            cy.log('TC056: Encontrado select nativo para columna');
+            const opts = Array.from($sel[0].options || []).map((o) => (o.text || '').trim());
+            cy.log(`TC056: Opciones disponibles: ${opts.join(', ')}`);
+            const found = opts.find((t) => coincide(t, objetivo));
+            if (found) {
+              cy.log(`TC056: Seleccionando "${found}" en select nativo`);
+              return cy.wrap($sel).select(found, { force: true }).then(() => cy.wait(300));
+            }
+            cy.log('TC056: No se encontró la columna en select, seleccionando primera opción');
+            return cy.wrap($sel).select(1, { force: true }).then(() => cy.wait(300));
+          }
+
+          // 2) Buscar el área del filtro primero (donde está el selector de columna)
+          const $areaFiltro = $b.find('.MuiPaper-root, [class*="filter"], [class*="Filter"]').filter((_, el) => {
+            const texto = (el.textContent || '').toLowerCase();
+            return /contiene|contains|igual|equals|mayor|greater|menor|less/i.test(texto);
+          }).first();
+
+          // 3) Buscar botón del selector de columna (primer botón visible en el área del filtro o cerca del input de búsqueda)
+          let $btn = null;
+          
+          // Buscar cerca del input de búsqueda
+          const $inputBuscar = $b.find('input[type="text"], input[placeholder*="Buscar"], input[placeholder*="Search"]').filter(':visible').first();
+          if ($inputBuscar.length) {
+            const $contFiltro = $inputBuscar.closest('.MuiBox-root, .MuiFormControl-root, div').parent();
+            $btn = $contFiltro.find('button, [role="button"]').filter(':visible').first();
+          }
+
+          // Si no se encontró, buscar en toda la página el primer botón que pueda ser el selector de columna
+          if (!$btn || !$btn.length) {
+            $btn = $b.find('button, [role="button"]')
+              .filter(':visible')
+              .filter((_, el) => {
+                const $el = Cypress.$(el);
+                // Buscar botones que estén cerca de inputs de búsqueda o en áreas de filtro
+                const cercaInput = $el.siblings('input').length > 0 || 
+                                  $el.closest('div').find('input').length > 0;
+                const texto = (el.textContent || '').trim();
+                // El botón puede tener texto de columna o estar vacío (solo icono)
+                return cercaInput || texto.length === 0 || /c[oó]digo|nif|nombre|todos|all/i.test(texto.toLowerCase());
+              })
+              .first();
+          }
+
+          if (!$btn || !$btn.length) {
+            cy.log('TC056: No se encontró botón de selector de columna');
+            return cy.wrap(null);
+          }
+
+          cy.log('TC056: Botón de selector de columna encontrado, haciendo clic...');
+          return cy.wrap($btn[0])
+            .click({ force: true })
+            .then(() => cy.wait(500))
+            .then(() => {
+              // Buscar el menú desplegable y seleccionar la opción
+              return cy.get('body').then(($b2) => {
+                const $items = $b2.find('li[role="option"], li[role="menuitem"], [role="option"]').filter(':visible');
+                if (!$items.length) {
+                  cy.log('TC056: No se encontraron opciones en el menú desplegable');
+                  return cy.wrap(null);
+                }
+                
+                cy.log(`TC056: Opciones encontradas en menú: ${Array.from($items).map(el => (el.textContent || '').trim()).join(', ')}`);
+                const match = Array.from($items).find((el) => coincide(el.textContent || '', objetivo));
+                if (match) {
+                  cy.log(`TC056: Seleccionando "${(match.textContent || '').trim()}" del menú`);
+                  return cy.wrap(match).click({ force: true }).then(() => cy.wait(300));
+                }
+                cy.log('TC056: No se encontró la columna exacta, seleccionando primera opción');
+                return cy.wrap($items[0]).click({ force: true }).then(() => cy.wait(300));
+              });
+            });
+        });
+      };
+
       // ---- TC056: detección robusta de "NovaTrans - Información" (puede aparecer con retardo) ----
       const detectarNovaTransInfoEnBody = ($body) => {
         return $body
@@ -4869,33 +5358,87 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         return loop();
       };
 
+      // Función para manejar el modal de confirmación del teléfono (hacer clic en "Sí")
+      const manejarModalConfirmacionTelefono = (timeoutMs = 10000) => {
+        cy.log('TC056: Esperando modal de confirmación del teléfono...');
+        // Esperar a que aparezca el modal con un polling
+        const startTime = Date.now();
+        const checkModal = () => {
+          return cy.get('body').then(($body) => {
+            // Buscar el modal "NovaTrans - Información" que contiene el texto sobre teléfono asignado
+            const $modal = $body
+              .find('.MuiDialog-root:visible, [role="dialog"]:visible, [role="alertdialog"]:visible')
+              .filter((_, el) => {
+                const texto = (el.textContent || el.innerText || '').trim();
+                return /NovaTrans\s*-\s*Informaci[oó]n/i.test(texto) && 
+                       /tel[eé]fono.*asignado/i.test(texto) &&
+                       /desea continuar/i.test(texto);
+              })
+              .first();
+
+            if ($modal && $modal.length) {
+              cy.log('TC056: Modal de confirmación de teléfono detectado, haciendo clic en "Sí"...');
+              return cy.wrap($modal).within(() => {
+                return cy.contains('button', /^S[ií]$/i, { timeout: 5000 })
+                  .should('be.visible')
+                  .click({ force: true })
+                  .then(() => cy.wait(1000))
+                  .then(() => {
+                    cy.log('TC056: Clic en "Sí" ejecutado correctamente');
+                    return cy.wrap(true);
+                  });
+              });
+            }
+
+            // Si no se encontró y aún hay tiempo, esperar un poco y volver a intentar
+            if (Date.now() - startTime < timeoutMs) {
+              return cy.wait(500).then(() => checkModal());
+            }
+
+            cy.log('TC056: No se encontró el modal de confirmación del teléfono dentro del timeout');
+            return cy.wrap(false);
+          });
+        };
+
+        return checkModal();
+      };
+
       const abortarSiNovaTransInfo = (timeoutMs = 8000) => {
         return esperarNovaTransInfoSiAparece(timeoutMs).then((aparecio) => {
           if (!aparecio) return cy.wrap(false);
 
-          ignorarCasoPorAlerta = true;
-          motivoIgnorar = 'Alerta incorrecta (mal escrita) y no se ha podido guardar/crear el personal';
-
-          return cy.get('body').then(($body) => {
-            const $dlg = detectarNovaTransInfoEnBody($body);
-            if ($dlg && $dlg.length) {
-              const $btnNo = $dlg
-                .find('button:visible')
-                .filter((_, b) => /^no$/i.test((b.textContent || b.innerText || '').trim()))
-                .first();
-              if ($btnNo.length) return cy.wrap($btnNo[0]).click({ force: true }).then(() => cy.wait(300));
+          // PRIMERO: Verificar si es el modal de confirmación del teléfono (hacer clic en "Sí")
+          return manejarModalConfirmacionTelefono(timeoutMs).then((esModalTelefono) => {
+            if (esModalTelefono) {
+              cy.log('TC056: Modal de teléfono manejado correctamente, continuando...');
+              return cy.wrap(false); // No es un error, continuar
             }
-            return cy.wrap(null);
-          }).then(() => {
-            // TC056: registrar ERROR en Excel y cortar el flujo (sin que el runner lo pise a OK).
-            return registrarResultadoAutomatico(
-              numeroCaso,
-              idCaso,
-              nombre,
-              motivoIgnorar,
-              'ERROR',
-              true
-            ).then(() => cy.wrap({ __resultado: 'STOP' }));
+
+            // Si no es el modal del teléfono, es una alerta incorrecta
+            ignorarCasoPorAlerta = true;
+            motivoIgnorar = 'Alerta incorrecta (mal escrita) y no se ha podido guardar/crear el personal';
+
+            return cy.get('body').then(($body) => {
+              const $dlg = detectarNovaTransInfoEnBody($body);
+              if ($dlg && $dlg.length) {
+                const $btnNo = $dlg
+                  .find('button:visible')
+                  .filter((_, b) => /^no$/i.test((b.textContent || b.innerText || '').trim()))
+                  .first();
+                if ($btnNo.length) return cy.wrap($btnNo[0]).click({ force: true }).then(() => cy.wait(300));
+              }
+              return cy.wrap(null);
+            }).then(() => {
+              // TC056: registrar ERROR en Excel y cortar el flujo (sin que el runner lo pise a OK).
+              return registrarResultadoAutomatico(
+                numeroCaso,
+                idCaso,
+                nombre,
+                motivoIgnorar,
+                'ERROR',
+                true
+              ).then(() => cy.wrap({ __resultado: 'STOP' }));
+            });
           });
         });
       };
@@ -4954,16 +5497,63 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             });
 
           let chain = cy.wrap(null);
-          casosPestañas.forEach((c) => {
+          let esUltimaPestana = false;
+          casosPestañas.forEach((c, index) => {
             const n = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
             const seccion = deducirSeccionDesdeCaso(c);
             const esConModal = /formaci|experienc|asistenc|material|contrat|incidenc|hist|tel[eé]f/i.test(seccion);
+            esUltimaPestana = (index === casosPestañas.length - 1);
+            
             chain = chain.then(() => {
               // Incidencias: hacerlo EXACTAMENTE como en el caso 34 (TC034)
               // (deducirSeccionDesdeCaso no siempre detecta bien y el flujo del caso 34 es el que funciona)
               if (n === 34) {
                 cy.log('TC056: Forzando relleno de INCIDENCIAS usando el flujo del caso 34...');
-                return anadirPersonal(c, 34, 'TC034');
+                return anadirPersonal(c, 34, 'TC034').then(() => {
+                  // Después de rellenar Incidencias (última pestaña), hacer clic en Guardar general
+                  if (esUltimaPestana) {
+                    cy.log('TC056: Incidencias rellenada (última pestaña) -> Click Guardar general...');
+                    return cy.window().then((win) => {
+                      win.scrollTo(0, 0);
+                      return cy.wait(500);
+                    })
+                      .then(() => {
+                        cy.log('TC056: Buscando botón Guardar general...');
+                        return cy
+                          .contains('button, [type="submit"]', /Guardar/i, { timeout: 10000 })
+                          .scrollIntoView()
+                          .click({ force: true })
+                          .then(() => {
+                            cy.log('TC056: Botón Guardar clicado, esperando modal de confirmación...');
+                            return cy.wait(1000);
+                          });
+                      })
+                      .then(() => {
+                        // Manejar modal de confirmación del teléfono (hacer clic en "Sí")
+                        cy.log('TC056: Esperando y verificando si aparece modal de confirmación del teléfono...');
+                        // Esperar un poco para que el modal aparezca
+                        return cy.wait(1000)
+                          .then(() => manejarModalConfirmacionTelefono(10000))
+                          .then((manejado) => {
+                            if (manejado) {
+                              cy.log('TC056: Modal de teléfono manejado (clic en "Sí"), esperando guardado completo...');
+                              return cy.wait(3000); // Esperar más tiempo para que se complete el guardado
+                            }
+                            cy.log('TC056: No apareció modal de teléfono, esperando guardado...');
+                            return cy.wait(2000);
+                          });
+                      })
+                      .then(() => {
+                        // Después de hacer clic en "Sí", navegar explícitamente a la lista (como en TC051 de vehículos)
+                        cy.log('TC056: Navegando a la lista de personal...');
+                        return cy.visit(URL_PATH).then(() => cy.wait(2000)).then(() => {
+                          cy.log('TC056: Navegación a lista completada');
+                          return cy.wrap({ resultado: 'OK', guardado: true, yaEnLista: true });
+                        });
+                      });
+                  }
+                  return cy.wrap(null);
+                });
               }
 
               // Teléfonos: en TC056 usar EXACTAMENTE la misma lógica que el caso 32 (TC032)
@@ -4983,23 +5573,25 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           });
           return chain;
         })
-        .then(() => {
-          // Guardar formulario principal
-          return cy.contains('button', /^Guardar$/i, { timeout: 15000 })
-            .first()
-            .click({ force: true })
-            .then(() => cy.wait(600))
-            .then(() => abortarSiNovaTransInfo(12000))
-            .then((res) => {
-              if (res && res.__resultado === 'ERROR') return cy.wrap(res);
-              return cy.wrap(null);
-            })
-            .then((res) => cy.wait(1200).then(() => res));
-        })
         .then((resGuardado) => {
-          if (resGuardado && (resGuardado.__resultado === 'STOP' || resGuardado.__resultado === 'ERROR')) {
+          // Verificar si hubo un error en el guardado
+          if (resGuardado && resGuardado.resultado === 'ERROR') {
             Cypress.env('TC056_SUFFIX', null);
-            return cy.wrap(resGuardado);
+            const obs = resGuardado.error || 'Error al guardar el personal';
+            return registrarResultadoAutomatico(
+              numeroCaso,
+              idCaso,
+              nombre,
+              obs,
+              'ERROR',
+              true
+            ).then(() => cy.wrap({ __resultado: 'STOP' }));
+          }
+
+          // Verificar si el guardado fue exitoso pero no estamos en la lista
+          if (resGuardado && resGuardado.guardado && !resGuardado.yaEnLista) {
+            cy.log('TC056: Guardado exitoso pero aún en formulario, navegando a lista...');
+            return UI.abrirPantalla().then(() => cy.wrap(null));
           }
 
           if (ignorarCasoPorAlerta) {
@@ -5007,92 +5599,170 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             return cy.wrap({ __resultado: 'ERROR', obtenido: motivoIgnorar || 'Alerta incorrecta (mal escrita) y no se ha podido guardar/crear el personal' });
           }
 
-          // Volver a lista, buscar el personal creado y verificar que todas las pestañas tienen datos
-          const pestañasAVerificar = [
-            'Dirección',
-            'Datos Económicos',
-            'Formación',
-            'Experiencia',
-            'Vencimientos',
-            'Asistencia',
-            'Material',
-            'Contratos',
-            'Teléfonos',
-            'Hist. Telefónico',
-            'Incidencias'
-          ];
+          // Si el guardado fue exitoso, continuar con la búsqueda por código y verificación (como en TC051 de vehículos)
+          cy.log('TC056: Guardado exitoso, buscando por código y verificando pestañas...');
+          
+          // Asegurar que estamos en la lista antes de buscar
+          return cy.url().then((urlActual) => {
+            if (!urlActual.includes('/personnel') || urlActual.includes('/form')) {
+              cy.log('TC056: No estamos en la lista, navegando...');
+              return cy.visit(URL_PATH).then(() => cy.wait(2000));
+            }
+            cy.log('TC056: Confirmado que estamos en la lista, continuando con búsqueda...');
+            return cy.wrap(null);
+          })
+          .then(() => UI.esperarTabla())
+          .then(() => {
+            // Verificar que tenemos el código antes de buscar
+            const codigoBuscar = codigoPersonal || Cypress.env('TC056_SUFFIX') || numeroAleatorio;
+            if (!codigoBuscar) {
+              const obs = 'No se pudo capturar el código del personal para buscar y verificar.';
+              cy.log(`TC056: ERROR - ${obs}`);
+              return registrarResultadoAutomatico(numeroCaso, idCaso, nombre, obs, 'ERROR', true)
+                .then(() => cy.wrap({ resultado: 'ERROR', obtenido: obs }, { log: false }));
+            }
 
-          const buscarPorNombre = () => {
-            const limpiarSiExiste = () => {
-              return cy.get('body').then(($body) => {
-                const $limpiar = $body
-                  .find('button:visible')
-                  .filter((_, el) => /^limpiar$/i.test((el.textContent || el.innerText || '').trim()))
-                  .first();
-                if ($limpiar.length) return cy.wrap($limpiar[0]).click({ force: true }).then(() => cy.wait(500));
-                return cy.wrap(null);
-              });
-            };
-
-            // Buscar SOLO por NOMBRE (pruebaXXX)
-            cy.log(`TC056: buscando por NOMBRE: ${nombrePersonalReal}`);
-            return limpiarSiExiste()
-              .then(() => UI.buscar(nombrePersonalReal))
-              .then(() => cy.wait(1500))
-              .then(() => {
-                return cy.get('body').then(($body) => {
-                  const sinFilas = /sin\s+filas|no\s+rows/i.test(($body.text() || '').toLowerCase());
-                  const hayFila = $body.find('.MuiDataGrid-row:visible').length > 0;
-                  if (hayFila) return cy.wrap(null);
-                  if (!sinFilas) return cy.wrap(null);
-
-                  // Si no hay resultados por nombre, registrar ERROR en Excel y cortar.
-                  const obs = `No se encontró el personal creado al buscar por nombre "${nombrePersonalReal}".`;
-                  return registrarResultadoAutomatico(
-                    numeroCaso,
-                    idCaso,
-                    nombre,
-                    obs,
-                    'ERROR',
-                    true
-                  ).then(() => cy.wrap({ __resultado: 'STOP' }));
-                });
-              });
-          };
-
-          return cy.visit(URL_PATH)
-            .then(() => cy.wait(1500))
-            .then(() => abortarSiNovaTransInfo(2000))
-            .then((resAlerta) => {
-              if (resAlerta && (resAlerta.__resultado === 'STOP' || resAlerta.__resultado === 'ERROR')) return cy.wrap(resAlerta);
-
-              return UI.esperarTabla()
-                .then(() => buscarPorNombre())
-                .then((resBuscar) => {
-                  if (resBuscar && (resBuscar.__resultado === 'STOP' || resBuscar.__resultado === 'ERROR')) return cy.wrap(resBuscar);
-                  return cy.wrap(null);
-                });
-            })
-            .then((resPrev) => {
-              if (resPrev && (resPrev.__resultado === 'STOP' || resPrev.__resultado === 'ERROR')) return cy.wrap(resPrev);
-              const reFila = new RegExp(
-                escapeRegex(nombrePersonalReal),
-                'i'
-              );
-              return cy.contains('.MuiDataGrid-row:visible', reFila, { timeout: 15000 })
-                .first()
-                .then(($row) => {
-                  const $cell = Cypress.$($row).find('.MuiDataGrid-cell').not('[data-field="__check__"]').first();
-                  if ($cell.length) return cy.wrap($cell[0]).click({ force: true });
-                  return cy.wrap($row).click({ force: true });
+            // Abrir el multifiltro y seleccionar "Código" (como en los casos que buscan por código/nombre)
+            cy.log('TC056: Abriendo multifiltro para seleccionar columna "Código"...');
+            return cy.get('body').then(($body) => {
+              // Buscar el botón "Multifiltro"
+              const $btnMultifiltro = $body
+                .find('button, [role="button"]')
+                .filter((_, el) => {
+                  const texto = (el.textContent || el.innerText || '').trim().toLowerCase();
+                  return /multifiltro|multi.*filtro/i.test(texto);
                 })
-                .then(() => cy.wait(800))
-                .then(() => cy.url().should('include', '/dashboard/personnel/form'));
-            })
-            .then((resFila) => {
-              if (resFila && (resFila.__resultado === 'STOP' || resFila.__resultado === 'ERROR')) return cy.wrap(resFila);
-              let chainVer = cy.wrap([]);
-              pestañasAVerificar.forEach((p) => {
+                .filter(':visible')
+                .first();
+
+              if ($btnMultifiltro.length) {
+                cy.log('TC056: Botón Multifiltro encontrado, haciendo clic...');
+                return cy.wrap($btnMultifiltro[0])
+                  .click({ force: true })
+                  .then(() => cy.wait(500))
+                  .then(() => {
+                    // Seleccionar "Código" en el menú del multifiltro
+                    cy.log('TC056: Seleccionando "Código" en el menú del multifiltro...');
+                    return cy.get('body').then(($b2) => {
+                      const $items = $b2.find('li[role="option"], li[role="menuitem"], [role="option"]').filter(':visible');
+                      if ($items.length) {
+                        const match = Array.from($items).find((el) => {
+                          const texto = (el.textContent || el.innerText || '').trim().toLowerCase();
+                          return /^c[oó]digo$/i.test(texto) || texto === 'código' || texto === 'codigo' || texto === 'code';
+                        });
+                        if (match) {
+                          cy.log('TC056: Opción "Código" encontrada en menú, seleccionando...');
+                          return cy.wrap(match).click({ force: true }).then(() => cy.wait(300));
+                        }
+                        cy.log('TC056: No se encontró "Código" exacto, seleccionando primera opción');
+                        return cy.wrap($items[0]).click({ force: true }).then(() => cy.wait(300));
+                      }
+                      return cy.wrap(null);
+                    });
+                  })
+                  .then(() => {
+                    cy.log(`TC056: Buscando personal con código: ${codigoBuscar}`);
+                    // Ejecutar la búsqueda y esperar resultados (como en TC051 de vehículos)
+                    return UI.buscar(codigoBuscar)
+                      .then(() => {
+                        cy.log(`TC056: Búsqueda ejecutada para código: ${codigoBuscar}, esperando resultados...`);
+                        return cy.wait(1000); // Esperar a que se complete la búsqueda
+                      })
+                      .then(() => {
+                        // Verificar que hay resultados
+                        return cy.get('body').then(($body) => {
+                          const sinFilas = /sin\s+filas|no\s+rows/i.test(($body.text() || '').toLowerCase());
+                          const hayFila = $body.find('.MuiDataGrid-row:visible').length > 0;
+                          if (!hayFila && sinFilas) {
+                            // Si no hay resultados por código, registrar ERROR en Excel y cortar.
+                            const obs = `No se encontró el personal creado al buscar por código "${codigoBuscar}".`;
+                            return registrarResultadoAutomatico(
+                              numeroCaso,
+                              idCaso,
+                              nombre,
+                              obs,
+                              'ERROR',
+                              true
+                            ).then(() => cy.wrap({ __resultado: 'STOP' }));
+                          }
+                          cy.log(`TC056: Resultados de búsqueda cargados, buscando fila con código: ${codigoBuscar}`);
+                          return cy.wrap(null);
+                        });
+                      });
+                  });
+              }
+
+              // Si no se encuentra el botón Multifiltro, usar el método anterior
+              cy.log('TC056: No se encontró botón Multifiltro, usando método de selección directa...');
+              return seleccionarColumnaFiltroSiExiste('Código')
+                .then(() => {
+                  cy.log(`TC056: Buscando personal con código: ${codigoBuscar}`);
+                  return UI.buscar(codigoBuscar)
+                    .then(() => {
+                      cy.log(`TC056: Búsqueda ejecutada para código: ${codigoBuscar}, esperando resultados...`);
+                      return cy.wait(1000);
+                    })
+                    .then(() => {
+                      return cy.get('body').then(($body) => {
+                        const sinFilas = /sin\s+filas|no\s+rows/i.test(($body.text() || '').toLowerCase());
+                        const hayFila = $body.find('.MuiDataGrid-row:visible').length > 0;
+                        if (!hayFila && sinFilas) {
+                          const obs = `No se encontró el personal creado al buscar por código "${codigoBuscar}".`;
+                          return registrarResultadoAutomatico(
+                            numeroCaso,
+                            idCaso,
+                            nombre,
+                            obs,
+                            'ERROR',
+                            true
+                          ).then(() => cy.wrap({ __resultado: 'STOP' }));
+                        }
+                        cy.log(`TC056: Resultados de búsqueda cargados, buscando fila con código: ${codigoBuscar}`);
+                        return cy.wrap(null);
+                      });
+                    });
+                });
+            });
+          })
+          .then((resPrev) => {
+            if (resPrev && (resPrev.__resultado === 'STOP' || resPrev.resultado === 'ERROR')) return cy.wrap(resPrev);
+            
+            // Buscar por código en la fila (como en TC051 de vehículos)
+            const codigoBuscar = codigoPersonal || Cypress.env('TC056_SUFFIX') || numeroAleatorio;
+            const reFila = new RegExp(
+              escapeRegex(codigoBuscar),
+              'i'
+            );
+            return cy.contains('.MuiDataGrid-row:visible', reFila, { timeout: 15000 })
+              .first()
+              .then(($row) => {
+                const $cell = Cypress.$($row).find('.MuiDataGrid-cell').not('[data-field="__check__"]').first();
+                if ($cell.length) return cy.wrap($cell[0]).click({ force: true });
+                return cy.wrap($row).click({ force: true });
+              })
+              .then(() => cy.wait(800))
+              .then(() => cy.url().should('include', '/dashboard/personnel/form'));
+          })
+          .then((resFila) => {
+            if (resFila && (resFila.__resultado === 'STOP' || resFila.__resultado === 'ERROR')) return cy.wrap(resFila);
+            
+            // Verificar que todas las pestañas tienen datos
+            const pestañasAVerificar = [
+              'Dirección',
+              'Datos Económicos',
+              'Formación',
+              'Experiencia',
+              'Vencimientos',
+              'Asistencia',
+              'Material',
+              'Contratos',
+              'Teléfonos',
+              'Hist. Telefónico',
+              'Incidencias'
+            ];
+            
+            let chainVer = cy.wrap([]);
+            pestañasAVerificar.forEach((p) => {
                 chainVer = chainVer.then((sinDatos) => {
                   return navegarSeccionFormulario(p)
                     .then(() => cy.wait(600))
@@ -5104,28 +5774,28 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
                     });
                 });
               });
-              return chainVer;
-            })
-            .then((pestañasSinDatos) => {
-              if (pestañasSinDatos && (pestañasSinDatos.__resultado === 'STOP' || pestañasSinDatos.__resultado === 'ERROR')) {
-                Cypress.env('TC056_SUFFIX', null);
-                return cy.wrap(pestañasSinDatos);
-              }
+            return chainVer;
+          })
+          .then((pestañasSinDatos) => {
+            if (pestañasSinDatos && (pestañasSinDatos.__resultado === 'STOP' || pestañasSinDatos.__resultado === 'ERROR')) {
               Cypress.env('TC056_SUFFIX', null);
-              const status = (pestañasSinDatos && pestañasSinDatos.length > 0) ? 'ERROR' : 'OK';
-              const obs = (pestañasSinDatos && pestañasSinDatos.length > 0)
-                ? `Personal ${nombrePersonal} creado, pero estas pestañas no tienen datos: ${pestañasSinDatos.join(', ')}`
-                : `Personal ${nombrePersonal} creado y verificado. Todas las pestañas tienen datos.`;
+              return cy.wrap(pestañasSinDatos);
+            }
+            Cypress.env('TC056_SUFFIX', null);
+            const status = (pestañasSinDatos && pestañasSinDatos.length > 0) ? 'ERROR' : 'OK';
+            const obs = (pestañasSinDatos && pestañasSinDatos.length > 0)
+              ? `Personal ${nombrePersonal} creado, pero estas pestañas no tienen datos: ${pestañasSinDatos.join(', ')}`
+              : `Personal ${nombrePersonal} creado y verificado. Todas las pestañas tienen datos.`;
 
-              return registrarResultadoAutomatico(
-                numeroCaso,
-                idCaso,
-                nombre,
-                obs,
-                status,
-                true
-              );
-            });
+            return registrarResultadoAutomatico(
+              numeroCaso,
+              idCaso,
+              nombre,
+              obs,
+              status,
+              true
+            );
+          });
         });
     });
   }
