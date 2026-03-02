@@ -5093,7 +5093,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
       const caso24 = todosLosCasos.find((c) => parseInt(String(c.caso || '').replace(/\D/g, ''), 10) === 24);
       const caso56 = todosLosCasos.find((c) => parseInt(String(c.caso || '').replace(/\D/g, ''), 10) === 56);
       const casoBase = caso24 || caso56 || caso;
-      const numeroAleatorio = Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // XXX fallback
+      const numeroAleatorio = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // XXXX fallback
       const nombrePersonal = `prueba${numeroAleatorio}`;
       let codigoPersonal = null;
       let nombrePersonalReal = nombrePersonal;
@@ -5205,40 +5205,106 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
             return cy.wrap(false);
           }
 
-          // DataGrid (si aplica)
+          // Primero verificar si hay tablas/grids (pestañas que deberían tener filas)
+          const tabla = $scope.find('.MuiDataGrid-root:visible, .MuiTableContainer:visible, table:visible').first();
+          
+          if (tabla.length > 0) {
+            // Verificar si la tabla tiene filas de datos
+            const filas = tabla.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible').filter((_, el) => {
+              // Excluir filas vacías o que solo contengan "Sin filas"
+              const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
+              return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos|sin\s+datos|no\s+rows|no\s+results/i.test(textoFila);
+            });
+
+            if (filas.length > 0) {
+              cy.log(`✅ TC056: La pestaña ${nombrePestaña} tiene ${filas.length} fila(s) de datos`);
+              return cy.wrap(true);
+            } else {
+              // Verificar si hay mensaje "Sin filas" en la tabla
+              const mensajeSinFilas = tabla.find('*').filter((_, el) => {
+                const texto = (el.textContent || '').toLowerCase();
+                return /sin\s+filas|no\s+hay\s+datos|sin\s+datos|no\s+rows|no\s+results/i.test(texto);
+              });
+
+              if (mensajeSinFilas.length > 0) {
+                cy.log(`❌ TC056: La pestaña ${nombrePestaña} muestra "Sin filas" - los datos no se guardaron`);
+                return cy.wrap(false);
+              } else {
+                // Si no hay filas pero tampoco hay mensaje "Sin filas", puede que la tabla esté vacía
+                cy.log(`❌ TC056: La pestaña ${nombrePestaña} no tiene filas visibles`);
+                return cy.wrap(false);
+              }
+            }
+          }
+
+          // Si no hay tabla visible, verificar DataGrid específicamente
           const dg = $scope.find('.MuiDataGrid-root').first();
           if (dg.length) {
             const grid = dg.find('[role="grid"]').first();
             const rc = parseInt(String(grid.attr('aria-rowcount') || ''), 10);
-            if (Number.isFinite(rc) && rc > 1) return cy.wrap(true);
+            if (Number.isFinite(rc) && rc > 1) {
+              cy.log(`✅ TC056: La pestaña ${nombrePestaña} tiene ${rc - 1} fila(s) (DataGrid)`);
+              return cy.wrap(true);
+            }
 
-            const filasDG = dg.find('.MuiDataGrid-row[data-rowindex], [role="row"][data-rowindex]');
-            if (filasDG.length > 0) return cy.wrap(true);
+            const filasDG = dg.find('.MuiDataGrid-row[data-rowindex], [role="row"][data-rowindex]').filter((_, el) => {
+              const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
+              return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos/i.test(textoFila);
+            });
+            if (filasDG.length > 0) {
+              cy.log(`✅ TC056: La pestaña ${nombrePestaña} tiene ${filasDG.length} fila(s) (DataGrid)`);
+              return cy.wrap(true);
+            }
 
             const txt = (dg.text() || '').toLowerCase();
-            if (/sin\s+filas|no\s+hay\s+datos|sin\s+datos|no\s+rows|no\s+results/i.test(txt)) return cy.wrap(false);
+            if (/sin\s+filas|no\s+hay\s+datos|sin\s+datos|no\s+rows|no\s+results/i.test(txt)) {
+              cy.log(`❌ TC056: La pestaña ${nombrePestaña} muestra "Sin filas" (DataGrid)`);
+              return cy.wrap(false);
+            }
           }
 
           // Tabla HTML
-          const filasTabla = $scope.find('table tbody tr, tbody tr').filter((_, el) => (el.textContent || '').trim().length > 0);
-          if (filasTabla.length > 0) return cy.wrap(true);
+          const filasTabla = $scope.find('table tbody tr, tbody tr').filter((_, el) => {
+            const textoFila = (el.textContent || '').trim().toLowerCase();
+            return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos/i.test(textoFila);
+          });
+          if (filasTabla.length > 0) {
+            cy.log(`✅ TC056: La pestaña ${nombrePestaña} tiene ${filasTabla.length} fila(s) (Tabla HTML)`);
+            return cy.wrap(true);
+          }
 
-          // Formulario (inputs/selects)
-          const inputs = $scope.find('input:visible, textarea:visible');
-          const combos = $scope.find('[role="combobox"]:visible, .MuiSelect-select:visible, [aria-haspopup="listbox"]:visible');
-          const hayValorInput = Array.from(inputs).some((el) => {
-            const v = String(el.value || '').trim();
-            if (!v) return false;
-            if (v === '0') return false;
-            return true;
-          });
-          const hayValorCombo = Array.from(combos).some((el) => {
-            const t = (el.innerText || el.textContent || '').trim();
-            if (!t) return false;
-            if (/selecciona|select|elige|choose/i.test(t)) return false;
-            return true;
-          });
-          return cy.wrap(hayValorInput || hayValorCombo);
+          // Formulario (inputs/selects) - solo para pestañas que no deberían tener tablas
+          const esPestañaConFormulario = /direcci[oó]n|datos\s+econ[oó]micos/i.test(nombrePestaña);
+          if (esPestañaConFormulario) {
+            const inputs = $scope.find('input:visible, textarea:visible');
+            const combos = $scope.find('[role="combobox"]:visible, .MuiSelect-select:visible, [aria-haspopup="listbox"]:visible');
+            const hayValorInput = Array.from(inputs).some((el) => {
+              const v = String(el.value || '').trim();
+              if (!v) return false;
+              if (v === '0') return false;
+              return true;
+            });
+            const hayValorCombo = Array.from(combos).some((el) => {
+              const t = (el.innerText || el.textContent || '').trim();
+              if (!t) return false;
+              if (/selecciona|select|elige|choose/i.test(t)) return false;
+              return true;
+            });
+            if (hayValorInput || hayValorCombo) {
+              cy.log(`✅ TC056: La pestaña ${nombrePestaña} tiene datos en formulario`);
+              return cy.wrap(true);
+            }
+          }
+
+          // Si llegamos aquí y es una pestaña que debería tener filas, es un error
+          const esPestañaConTabla = /formaci[oó]n|experienc|vencimientos|asistenc|material|contrat|tel[eé]fon|hist.*telef|incidenc/i.test(nombrePestaña);
+          if (esPestañaConTabla) {
+            cy.log(`❌ TC056: La pestaña ${nombrePestaña} debería tener filas pero no se encontraron`);
+            return cy.wrap(false);
+          }
+
+          cy.log(`⚠️ TC056: La pestaña ${nombrePestaña} no tiene datos visibles`);
+          return cy.wrap(false);
         });
       };
 
@@ -5449,7 +5515,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
         .then(() => abrirFormularioNuevoPersonal())
         .then(() => cy.url().should('include', '/dashboard/personnel/form'))
         .then(() => {
-          // Para el Excel "pruebaXXX": XXX son 3 dígitos aleatorios del caso
+          // Para el Excel "pruebaXXXX": XXXX son 4 dígitos aleatorios del caso
           Cypress.env('TC056_SUFFIX', numeroAleatorio);
           return cy.wrap(null);
         })
@@ -5459,13 +5525,13 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           return llenarFormularioDatosPersonalesDesdeExcel(casoMod, numBase, false, { modoCompleto: true });
         })
         .then(() => {
-          // Capturar CÓDIGO real y derivar XXX de ese código (últimos 3 dígitos)
+          // Capturar CÓDIGO real y derivar XXXX de ese código (últimos 4 dígitos)
           return leerValorCampoPorLabelExacto('Código').then((v) => {
             if (v) {
               codigoPersonal = String(v).replace(/\D/g, '');
-              const suf = (codigoPersonal.padStart(3, '0')).slice(-3);
+              const suf = (codigoPersonal.padStart(4, '0')).slice(-4);
               Cypress.env('TC056_SUFFIX', suf);
-              cy.log(`TC056: Código capturado=${codigoPersonal} -> sufijo XXX=${suf}`);
+              cy.log(`TC056: Código capturado=${codigoPersonal} -> sufijo XXXX=${suf}`);
             } else {
               cy.log('TC056: ⚠️ no pude capturar Código; se mantiene sufijo aleatorio.');
             }
@@ -5473,7 +5539,7 @@ describe('FICHEROS (PERSONAL) - Validación dinámica desde Excel', () => {
           });
         })
         .then(() => {
-          // Forzar NOMBRE final a pruebaXXX usando el sufijo actual (codigo o fallback)
+          // Forzar NOMBRE final a pruebaXXXX usando el sufijo actual (codigo o fallback)
           const suf = Cypress.env('TC056_SUFFIX') || numeroAleatorio;
           const nombreFinal = `prueba${suf}`;
           cy.log(`TC056: Forzando Nombre="${nombreFinal}"...`);

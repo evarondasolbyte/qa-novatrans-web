@@ -40,12 +40,18 @@ module.exports = defineConfig({
     baseUrl: 'https://novatrans-web-2mhoc.ondigitalocean.app',
     // Entornos lentos: a veces el evento `load` tarda mucho (scripts/estilos).
     pageLoadTimeout: 180000,
+    // Configurar carpeta de descargas para que los archivos se guarden en cypress/downloads
+    downloadsFolder: path.resolve(__dirname, 'cypress/downloads'),
 
     setupNodeEvents(on, config) {
       // Carpeta local para reportes Excel cuando RESULT_SINK=excel (fallback o offline).
       // Importante en local: aseguro que la ruta exista para no fallar al escribir.
       const carpetaResultados = path.resolve(__dirname, 'cypress/resultados');
       if (!fs.existsSync(carpetaResultados)) fs.mkdirSync(carpetaResultados, { recursive: true });
+
+      // Asegurar que la carpeta de descargas existe
+      const carpetaDownloads = path.resolve(__dirname, 'cypress/downloads');
+      if (!fs.existsSync(carpetaDownloads)) fs.mkdirSync(carpetaDownloads, { recursive: true });
 
       on('task', {
         /**
@@ -64,10 +70,10 @@ module.exports = defineConfig({
             const ext = (path.extname(name) || '').toLowerCase();
             const mime =
               ext === '.txt' ? 'text/plain' :
-              ext === '.pdf' ? 'application/pdf' :
-              ext === '.png' ? 'image/png' :
-              ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
-              'application/octet-stream';
+                ext === '.pdf' ? 'application/pdf' :
+                  ext === '.png' ? 'image/png' :
+                    ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+                      'application/octet-stream';
             return { base64: buf.toString('base64'), name, mime };
           } catch (e) {
             return null;
@@ -271,7 +277,7 @@ Start-Sleep -Milliseconds 200
           // Determinar qué hoja usar basado en el parámetro 'pantalla'
           if (pantalla === 'Resultados Pruebas') {
             console.log(`Guardando en "Resultados Pruebas": numero=${numero}, nombre=${nombre}, esperado=${esperado}, obtenido=${obtenido}, resultado=${resultado}, ok=${ok}, warning=${warning}, error=${error}`);
-            
+
             if (workbook.SheetNames.includes('Resultados Pruebas')) {
               worksheet = workbook.Sheets['Resultados Pruebas'];
             } else {
@@ -280,7 +286,7 @@ Start-Sleep -Milliseconds 200
               ]]);
               xlsx.utils.book_append_sheet(workbook, worksheet, 'Resultados Pruebas');
             }
-            
+
             const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
             data.push([numero, fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19), esperado, obtenido, resultado, ok || '', warning || '', error || '']);
             const nuevaHoja = xlsx.utils.aoa_to_sheet(data);
@@ -294,7 +300,7 @@ Start-Sleep -Milliseconds 200
               ]]);
               xlsx.utils.book_append_sheet(workbook, worksheet, 'Log');
             }
-            
+
             const fechaHoraFinal = fechaHora || new Date().toISOString().replace('T', ' ').substring(0, 19);
             const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
             data.push([numero, nombre, esperado, obtenido, resultado, fechaHoraFinal, pantalla || '', observacion || '']);
@@ -424,7 +430,7 @@ Start-Sleep -Milliseconds 200
         async leerDatosGoogleSheetsAPI({ hoja = 'Datos' }) {
           try {
             const spreadsheetId = process.env.GS_SPREADSHEET_ID || '1m3B_HFT8fJduBxloh8Kj36bVr0hwnj5TioUHAq5O7Zs';
-            
+
             // Mapa de GIDs por hoja (mismo que en excelReader.js)
             const SHEET_GIDS = {
               'LOGIN': '1766248160',
@@ -467,12 +473,12 @@ Start-Sleep -Milliseconds 200
 
             // Obtener el GID de la hoja
             const gid = SHEET_GIDS[hoja] || '0';
-            
+
             // Leer datos usando la API de Google Sheets
             // Usamos un rango amplio para asegurar que leemos todas las columnas
             const range = `${hoja}!A1:CV1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?majorDimension=ROWS`;
-            
+
             const res = await fetchCompat(url, {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -486,7 +492,7 @@ Start-Sleep -Milliseconds 200
 
             const json = await res.json();
             const rows = json.values || [];
-            
+
             // Normalizar el ancho de todas las filas
             const maxCols = rows.reduce((max, row) => Math.max(max, row ? row.length : 0), 0);
             const normalized = rows.map(row => {
@@ -499,6 +505,205 @@ Start-Sleep -Milliseconds 200
           } catch (error) {
             console.error('[leerDatosGoogleSheetsAPI] Error:', error);
             throw error;
+          }
+        },
+
+        /**
+         * limpiarArchivosDescargados
+         * Limpia todos los archivos .xlsx y .csv de la carpeta downloads (útil antes de una descarga nueva)
+         */
+        limpiarArchivosDescargados() {
+          try {
+            const downloadsDir = path.resolve(__dirname, 'cypress/downloads');
+            if (!fs.existsSync(downloadsDir)) {
+              fs.mkdirSync(downloadsDir, { recursive: true });
+              return { deleted: 0 };
+            }
+
+            const files = fs.readdirSync(downloadsDir)
+              .filter(f => {
+                const lower = f.toLowerCase();
+                return lower.endsWith('.xlsx') || lower.endsWith('.csv');
+              });
+
+            let deleted = 0;
+            files.forEach(file => {
+              try {
+                fs.unlinkSync(path.join(downloadsDir, file));
+                deleted++;
+              } catch (e) {
+                console.log(`[limpiarArchivosDescargados] No se pudo eliminar ${file}: ${e.message}`);
+              }
+            });
+
+            console.log(`[limpiarArchivosDescargados] Eliminados ${deleted} archivos .xlsx/.csv`);
+            return { deleted };
+          } catch (error) {
+            console.error('[limpiarArchivosDescargados] Error:', error);
+            return { deleted: 0, error: error.message };
+          }
+        },
+
+        /**
+         * listarArchivosDescargados
+         * Lista todos los archivos .xlsx y .csv en la carpeta downloads
+         * Retorna: array de nombres de archivos
+         */
+        listarArchivosDescargados() {
+          try {
+            const downloadsDir = path.resolve(__dirname, 'cypress/downloads');
+            console.log(`[listarArchivosDescargados] Buscando en: ${downloadsDir}`);
+            
+            if (!fs.existsSync(downloadsDir)) {
+              fs.mkdirSync(downloadsDir, { recursive: true });
+              console.log(`[listarArchivosDescargados] Carpeta creada: ${downloadsDir}`);
+              return [];
+            }
+
+            const allFiles = fs.readdirSync(downloadsDir);
+            console.log(`[listarArchivosDescargados] Todos los archivos en carpeta: ${allFiles.join(', ')}`);
+            
+            // Buscar tanto .xlsx como .csv
+            const files = allFiles.filter(f => {
+              const lower = f.toLowerCase();
+              return lower.endsWith('.xlsx') || lower.endsWith('.csv');
+            });
+            console.log(`[listarArchivosDescargados] Archivos .xlsx/.csv encontrados: ${files.length} - ${files.join(', ')}`);
+            
+            return files;
+          } catch (error) {
+            console.error('[listarArchivosDescargados] Error:', error);
+            return [];
+          }
+        },
+
+        /**
+         * leerUltimoExcelDescargado
+         * Lee el último archivo Excel (.xlsx) o CSV (.csv) descargado en la carpeta downloads de Cypress
+         * y devuelve las filas de datos (sin la cabecera si existe).
+         * Retorna: { rows: [...], totalRows: N, fileName: '...' } o null si no hay archivos
+         */
+        leerUltimoExcelDescargado({ filePath = null } = {}) {
+          try {
+            // Helper para parsear CSV
+            const parseCsvRespectingQuotes = (csv) => {
+              if (csv && csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1); // quita BOM
+              const lines = (csv || '').split(/\r?\n/).filter(l => l.trim() !== '');
+              const rows = lines.map(line => {
+                const cells = [];
+                let cur = '', inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                  const ch = line[i];
+                  if (ch === '"') {
+                    if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                  } else if (ch === ',' && !inQuotes) {
+                    cells.push(cur);
+                    cur = '';
+                  } else {
+                    cur += ch;
+                  }
+                }
+                cells.push(cur);
+                return cells.map(c => c.trim());
+              });
+              return rows;
+            };
+
+            const downloadsDir = path.resolve(__dirname, 'cypress/downloads');
+            // Crear la carpeta si no existe
+            if (!fs.existsSync(downloadsDir)) {
+              fs.mkdirSync(downloadsDir, { recursive: true });
+              console.log('[leerUltimoExcelDescargado] Carpeta downloads creada');
+            }
+
+            let archivoPath;
+
+            // Si se proporciona una ruta específica, usarla
+            if (filePath) {
+              archivoPath = filePath;
+            } else {
+              // Buscar todos los archivos .xlsx y .csv, ordenarlos por fecha de modificación (más reciente primero)
+              // Priorizar archivos que empiecen con "clientes_" (para exportaciones de clientes)
+              const files = fs.readdirSync(downloadsDir)
+                .filter(f => {
+                  const lower = f.toLowerCase();
+                  return lower.endsWith('.xlsx') || lower.endsWith('.csv');
+                })
+                .map(name => {
+                  const filePath = path.join(downloadsDir, name);
+                  const stats = fs.statSync(filePath);
+                  const lowerName = name.toLowerCase();
+                  // Priorizar archivos que empiecen con "clientes_" (para exportaciones de clientes)
+                  const isClientesFile = lowerName.startsWith('clientes_');
+                  return {
+                    name,
+                    path: filePath,
+                    time: stats.mtimeMs,
+                    isClientesFile: isClientesFile
+                  };
+                })
+                .sort((a, b) => {
+                  // Primero ordenar por si es archivo de clientes (prioridad)
+                  if (a.isClientesFile && !b.isClientesFile) return -1;
+                  if (!a.isClientesFile && b.isClientesFile) return 1;
+                  // Si ambos son del mismo tipo, ordenar por fecha (más reciente primero)
+                  return b.time - a.time;
+                });
+
+              if (!files.length) {
+                console.log('[leerUltimoExcelDescargado] No se encontraron archivos .xlsx o .csv');
+                return null;
+              }
+
+              archivoPath = files[0].path;
+              console.log(`[leerUltimoExcelDescargado] Archivo seleccionado: ${files[0].name} (modificado: ${new Date(files[0].time).toISOString()})`);
+            }
+
+            const fileName = path.basename(archivoPath);
+            const isCsv = fileName.toLowerCase().endsWith('.csv');
+            
+            console.log(`[leerUltimoExcelDescargado] Leyendo: ${fileName} (${isCsv ? 'CSV' : 'Excel'})`);
+
+            let rows = [];
+            let sheetName = '';
+
+            if (isCsv) {
+              // Leer CSV
+              const csvContent = fs.readFileSync(archivoPath, 'utf-8');
+              const csvRows = parseCsvRespectingQuotes(csvContent);
+              
+              // Convertir array de arrays a array de objetos (usando primera fila como headers)
+              if (csvRows.length > 0) {
+                const headers = csvRows[0];
+                rows = csvRows.slice(1).map(row => {
+                  const obj = {};
+                  headers.forEach((header, idx) => {
+                    obj[header] = row[idx] || '';
+                  });
+                  return obj;
+                });
+              }
+              sheetName = 'CSV';
+            } else {
+              // Leer Excel
+              const workbook = xlsx.readFile(archivoPath);
+              sheetName = workbook.SheetNames[0] || ''; // Primera hoja
+              const worksheet = workbook.Sheets[sheetName];
+              
+              // Convertir a JSON (array de objetos)
+              rows = xlsx.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+            }
+
+            return {
+              rows,
+              totalRows: rows.length,
+              fileName: fileName,
+              sheetName: sheetName
+            };
+          } catch (error) {
+            console.error('[leerUltimoExcelDescargado] Error:', error);
+            return null;
           }
         },
 
