@@ -684,11 +684,116 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
   });
 });
 
+// ===== VALIDAR TRADUCCIONES (solo UI visible, evita falsos positivos en tablas/datos) =====
+Cypress.Commands.add('validarTraducciones', (idiomaActual) => {
+
+  // Palabras UI típicas en español que NO deberían verse cuando el idioma es inglés
+  const palabrasEspanolUI = [
+    'crear', 'nuevo', 'nueva', 'editar', 'eliminar', 'borrar', 'guardar', 'cancelar',
+    'buscar', 'filtros', 'aplicar', 'limpiar', 'columnas', 'ordenar', 'ascendente', 'descendente',
+    'obligatorio', 'requerido', 'completar', 'rellenar',
+    'seleccionar', 'aceptar', 'cerrar', 'confirmar',
+    'éxito', 'advertencia', 'información', 'mensaje', 'aviso', 'notificación',
+    'siguiente', 'anterior', 'primera', 'última',
+    'sin resultados', 'cargando', 'espera', 'por favor'
+  ];
+
+  // Claves tipo planification.common.vehicles
+  const patronClaveTraduccion = /\b[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*\b/g;
+
+  // Scope: SOLO elementos visibles típicos de UI (y fuera DataGrid/tabla)
+  const uiSelectors = [
+    'button:visible',
+    '[role="button"]:visible',
+    '[role="menuitem"]:visible',
+    '[role="tab"]:visible',
+    'label:visible',
+    'h1:visible,h2:visible,h3:visible',
+    '.MuiTypography-root:visible',
+    '.MuiFormLabel-root:visible',
+    '.MuiInputLabel-root:visible',
+    '.MuiTooltip-tooltip:visible',
+    '[aria-label]:visible',
+    '[title]:visible',
+    '[placeholder]:visible'
+  ].join(',');
+
+  // Excluir datos/tablas (MUY importante)
+  const excludeSelectors = [
+    '.MuiDataGrid-root',
+    '[role="grid"]',
+    'table',
+    '[role="row"]',
+    '[role="gridcell"]',
+    '[role="cell"]'
+  ].join(',');
+
+  return cy.get('body').then($body => {
+    const errores = [];
+
+    // UI visible “real” (excluyendo grids/tablas)
+    const $ui = $body.find(uiSelectors).filter((_, el) => {
+      return Cypress.$(el).closest(excludeSelectors).length === 0;
+    });
+
+    // Extraer texto visible + atributos típicos (solo de UI)
+    let textoUI = '';
+    $ui.each((_, el) => {
+      const t = (el.textContent || el.innerText || '').trim();
+      if (t) textoUI += t + ' ';
+
+      const title = el.getAttribute?.('title') || '';
+      const aria = el.getAttribute?.('aria-label') || '';
+      const ph = el.getAttribute?.('placeholder') || '';
+      if (title) textoUI += title + ' ';
+      if (aria) textoUI += aria + ' ';
+      if (ph) textoUI += ph + ' ';
+    });
+
+    // 1) Claves con puntos: SIEMPRE ERROR (en cualquier idioma)
+    const claves = textoUI.match(patronClaveTraduccion) || [];
+    const clavesUnicas = [...new Set(claves)]
+      .filter(k => k.length <= 60)
+      .filter(k => !k.includes('/') && !k.includes('\\') && !k.includes('@'))
+      .filter(k => !/^\d+\.\d+\.\d+/.test(k)); // evita versiones
+
+    clavesUnicas.forEach(k => errores.push(`Clave sin traducir: "${k}"`));
+
+    // (opcional) Si quieres mantener un “hard-check” SOLO para este caso concreto:
+    // si apareciera, ya lo pillaría el regex, pero lo dejamos por seguridad.
+    if (textoUI.includes('planification.common.vehicles')) {
+      errores.push('Clave sin traducir: "planification.common.vehicles"');
+    }
+
+    // 2) Palabras españolas: SOLO cuando idioma es inglés
+    if (idiomaActual === 'en') {
+      palabrasEspanolUI.forEach(palabra => {
+        const rx = new RegExp(`\\b${palabra}\\b`, 'i');
+        if (rx.test(textoUI)) {
+          errores.push(`Palabra en español: "${palabra}"`);
+        }
+      });
+    }
+
+    const erroresUnicos = [...new Set(errores)];
+    cy.log(`ValidarTraducciones (${idiomaActual}) -> ${erroresUnicos.length}: ${erroresUnicos.join(' | ')}`);
+
+    return cy.wrap({
+      tieneErrores: erroresUnicos.length > 0,
+      errores: erroresUnicos,
+      cantidad: erroresUnicos.length
+    });
+  });
+});
+
+
+// ===== FILTRO PERFILES =====
 Cypress.Commands.add('ejecutarFiltroPerfiles', (valorBusqueda) => {
   cy.get('input[placeholder*="Buscar"], input[placeholder*="Search"], input[placeholder*="Cerc"]')
     .should('be.visible')
     .clear({ force: true })
     .type(`${valorBusqueda}{enter}`, { force: true });
+
   cy.wait(2000);
 
   return cy.get('body').then($body => {

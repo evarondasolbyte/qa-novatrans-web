@@ -987,8 +987,8 @@ describe('PROCESOS - ÓRDENES DE CARGA - Validación completa con errores y repo
       // Función para navegar a pestaña
       const irATabSeguroLocal = (tabRegex) => {
         return cy.contains('[role="tab"]', tabRegex, { timeout: 15000 })
-      .should('be.visible')
-      .click({ force: true });
+          .should('be.visible')
+          .click({ force: true });
       };
 
       // Función para guardar interno de Cargas/Descargas
@@ -1670,42 +1670,42 @@ describe('PROCESOS - ÓRDENES DE CARGA - Validación completa con errores y repo
       }
 
       // Casos 38, 41: Rellenar múltiples pestañas
-    return UI.abrirPantalla()
-      .then(() => abrirFormularioCreacion())
+      return UI.abrirPantalla()
+        .then(() => abrirFormularioCreacion())
 
         // PARTE DE TRABAJO
-      .then(() => irATabSeguroLocal(/Parte\s*de\s*Trabajo/i))
-      .then(() => cy.wait(800))
-      .then(() => cy.contains('[role="tab"]', /Parte\s*de\s*Trabajo/i).should('have.attr', 'aria-selected', 'true'))
-      .then(() => rellenarFormularioConDatosExcel(casoPT_OC_PCV, delayGeneral, (t) => esDeParteDeTrabajo(t)))
-      .then(() => {
-        if (nCaso === 41) return rellenarParteTrabajoTC41();
-        return cy.wrap(null);
-      })
-      .then(() => cy.wait(300))
+        .then(() => irATabSeguroLocal(/Parte\s*de\s*Trabajo/i))
+        .then(() => cy.wait(800))
+        .then(() => cy.contains('[role="tab"]', /Parte\s*de\s*Trabajo/i).should('have.attr', 'aria-selected', 'true'))
+        .then(() => rellenarFormularioConDatosExcel(casoPT_OC_PCV, delayGeneral, (t) => esDeParteDeTrabajo(t)))
+        .then(() => {
+          if (nCaso === 41) return rellenarParteTrabajoTC41();
+          return cy.wrap(null);
+        })
+        .then(() => cy.wait(300))
 
-      // leer código para buscar después
-      .then(() => cy.wait(400))
-      .then(() => getCodigoParteTrabajo().then((c) => { codigoCreado = c; }))
+        // leer código para buscar después
+        .then(() => cy.wait(400))
+        .then(() => getCodigoParteTrabajo().then((c) => { codigoCreado = c; }))
 
         // ORDEN DE CARGA 
-      .then(() => irATabSeguroLocal(/Orden\s*de\s*Carga/i))
-      .then(() => cy.wait(800))
-      .then(() => cy.contains('[role="tab"]', /Orden\s*de\s*Carga/i).should('have.attr', 'aria-selected', 'true'))
-      .then(() => completarRemitenteDestinatarioYGestorSiVacios())
-      .then(() => rellenarFechasOrdenCargaDesdeExcel(casoPT_OC_PCV))
-      .then(() => rellenarPesoEstimadoDesdeExcel(casoPT_OC_PCV))
-      .then(() => rellenarCamposContenedorDesdeExcel(casoPT_OC_PCV))
-      .then(() => cy.wait(300))
-      .then(() => rellenarFormularioConDatosExcel(casoPT_OC_PCV, delayGeneral, (t) => esDeOrdenDeCarga(t)))
+        .then(() => irATabSeguroLocal(/Orden\s*de\s*Carga/i))
+        .then(() => cy.wait(800))
+        .then(() => cy.contains('[role="tab"]', /Orden\s*de\s*Carga/i).should('have.attr', 'aria-selected', 'true'))
+        .then(() => completarRemitenteDestinatarioYGestorSiVacios())
+        .then(() => rellenarFechasOrdenCargaDesdeExcel(casoPT_OC_PCV))
+        .then(() => rellenarPesoEstimadoDesdeExcel(casoPT_OC_PCV))
+        .then(() => rellenarCamposContenedorDesdeExcel(casoPT_OC_PCV))
+        .then(() => cy.wait(300))
+        .then(() => rellenarFormularioConDatosExcel(casoPT_OC_PCV, delayGeneral, (t) => esDeOrdenDeCarga(t)))
 
         //PRECIO COMPRA/VENTA 
-      .then(() => irATabSeguroLocal(/Precio\s*Compra\/Venta/i))
-      .then(() => cy.wait(800))
-      .then(() => cy.contains('[role="tab"]', /Precio\s*Compra\/Venta/i).should('have.attr', 'aria-selected', 'true'))
-      .then(() => rellenarPrecioCompraProveedorDesdeExcel(casoPT_OC_PCV))
-      .then(() => cy.wait(300))
-      .then(() => rellenarFormularioConDatosExcel(casoPT_OC_PCV, delayGeneral, (t) => esDePrecioCompraVenta(t)))
+        .then(() => irATabSeguroLocal(/Precio\s*Compra\/Venta/i))
+        .then(() => cy.wait(800))
+        .then(() => cy.contains('[role="tab"]', /Precio\s*Compra\/Venta/i).should('have.attr', 'aria-selected', 'true'))
+        .then(() => rellenarPrecioCompraProveedorDesdeExcel(casoPT_OC_PCV))
+        .then(() => cy.wait(300))
+        .then(() => rellenarFormularioConDatosExcel(casoPT_OC_PCV, delayGeneral, (t) => esDePrecioCompraVenta(t)))
         .then(() => {
           // Caso 38: Solo rellenar Parte de Trabajo, Orden de Carga y Precio Compra/Venta, luego guardar
           if (nCaso === 38) {
@@ -1726,14 +1726,14 @@ describe('PROCESOS - ÓRDENES DE CARGA - Validación completa con errores y repo
         .then(() => {
           // Si es caso 38, ya terminó, no continuar
           if (nCaso === 38) return cy.wrap(null);
-          
+
           //CARGAS / DESCARGAS (solo para caso 41)
           return irATabSeguroLocal(/Cargas\s*\/\s*Descargas/i)
-      .then(() => cy.wait(800))
-      .then(() => cy.contains('[role="tab"]', /Cargas\s*\/\s*Descargas/i).should('have.attr', 'aria-selected', 'true'))
-      .then(() => rellenarCargasDescargasFechaHorasYMercDesdeExcel(casoCD))
-      .then(() => cy.wait(200))
-      .then(() => rellenarFormularioConDatosExcel(casoCD, delayGeneral, (t) => esDeCargasDescargas(t)))
+            .then(() => cy.wait(800))
+            .then(() => cy.contains('[role="tab"]', /Cargas\s*\/\s*Descargas/i).should('have.attr', 'aria-selected', 'true'))
+            .then(() => rellenarCargasDescargasFechaHorasYMercDesdeExcel(casoCD))
+            .then(() => cy.wait(200))
+            .then(() => rellenarFormularioConDatosExcel(casoCD, delayGeneral, (t) => esDeCargasDescargas(t)))
             //GUARDAR INTERNO de Cargas/Descargas
             .then(() => clickGuardarInternoCargasDescargas())
             .then(() => cy.wait(300))
@@ -1772,15 +1772,15 @@ describe('PROCESOS - ÓRDENES DE CARGA - Validación completa con errores y repo
         .then(() => cy.wait(1000))
         // Buscar el código
         .then(() => UI.buscar(codigo))
-      .then(() => cy.wait(1500))
+        .then(() => cy.wait(1500))
         // Encontrar la fila que contiene el código y abrirla
         .then(() => {
           return cy.get('body').then($body => {
             const filas = $body.find('.MuiDataGrid-row:visible');
             if (filas.length === 0) {
               cy.log('No se encontraron filas en la tabla');
-          return cy.wrap(null);
-        }
+              return cy.wrap(null);
+            }
 
             // Buscar la fila que contiene el código
             const filaEncontrada = Array.from(filas).find((el) => {
@@ -1797,13 +1797,13 @@ describe('PROCESOS - ÓRDENES DE CARGA - Validación completa con errores y repo
             }
           });
         })
-          .then(() => cy.wait(2000))
+        .then(() => cy.wait(2000))
         // Verificar que estamos en el formulario de edición
         .then(() => {
           return cy.url().should('include', '/dashboard/');
-      })
+        })
         // Verificar que todas las pestañas tienen datos
-      .then(() => {
+        .then(() => {
           cy.log('TC41: Verificando que todas las pestañas tienen datos guardados...');
 
           const pestañas = [
@@ -1864,7 +1864,7 @@ describe('PROCESOS - ÓRDENES DE CARGA - Validación completa con errores y repo
                   pantalla: PANTALLA
                 });
               }
-        return cy.wrap(null);
+              return cy.wrap(null);
             });
           } else {
             cy.log('TC41: Todas las pestañas tienen datos guardados correctamente');
