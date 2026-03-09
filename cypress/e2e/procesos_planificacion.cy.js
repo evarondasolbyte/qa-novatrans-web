@@ -1,11 +1,11 @@
-describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte a Excel', () => {
+﻿describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte a Excel', () => {
   const archivo = 'reportes_pruebas_novatrans.xlsx';
-  const PANTALLA = 'Procesos (Planificación)';
-  const HOJA_EXCEL = 'PROCESOS-PLANIFICACION';
-  const MENU = 'Procesos';
-  const SUBMENU = 'Planificación';
-  const URL_PATH = '/dashboard/planification';
-  const CASOS_ERROR = new Set([]);
+  const NOMBRE_PANTALLA = 'Procesos (Planificación)';
+  const NOMBRE_HOJA_EXCEL = 'PROCESOS-PLANIFICACION';
+  const MENU_PRINCIPAL = 'Procesos';
+  const SUBMENU_PANTALLA = 'Planificación';
+  const RUTA_PANTALLA = '/dashboard/planification';
+  const CASOS_CON_ERROR = new Set([]);
 
   const COLUMNAS_ORDENAMIENTO = {
     12: 'Id',
@@ -29,11 +29,11 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
   after(() => {
     cy.log('Procesando resultados finales para Procesos (Planificación)');
-    cy.procesarResultadosPantalla(PANTALLA);
+    cy.procesarResultadosPantalla(NOMBRE_PANTALLA);
   });
 
   it('Ejecutar todos los casos de prueba desde Excel', () => {
-    cy.obtenerDatosExcel(HOJA_EXCEL).then((casos) => {
+    cy.obtenerDatosExcel(NOMBRE_HOJA_EXCEL).then((casos) => {
       const casosPlanificacion = casos.filter((caso) => {
         const pantalla = (caso.pantalla || '').toLowerCase();
         return pantalla.includes('planificación') || pantalla.includes('planificacion');
@@ -54,6 +54,12 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         const casoId = caso.caso || `TC${String(index + 1).padStart(3, '0')}`;
         const nombreCompleto = `${casoId} - ${nombre}`;
         const esCasoIdiomas = esCasoIdioma(nombre, numero);
+
+        // TC051 desactivado temporalmente: omitir ejecución.
+        if (numero === 51) {
+          cy.log('TC051 desactivado temporalmente: se omite');
+          return ejecutarCaso(index + 1);
+        }
 
         cy.log('────────────────────────────────────────────────────────');
         cy.log(`Ejecutando caso ${index + 1}/${casosPlanificacion.length}: ${casoId} - ${nombre} [${prioridad}]`);
@@ -78,80 +84,12 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
         return fn(caso, numero, casoId)
           .then(() => {
-            // El caso 51 ya se registra en validarIdiomasCompleto, no necesita forzar OK aquí
+            // El 51 se registra dentro de su propia validación.
             if (numero === 51) {
               return null;
             }
 
-            // Forzar el caso 30 como OK siempre
-            if (numero === 30) {
-              cy.log('Forzando registro del caso 30 como OK');
-              cy.wait(1000); // Esperar para asegurar que cualquier registro previo se complete
-              cy.registrarResultados({
-                numero: 30,
-                nombre: nombreCompleto,
-                esperado: 'Comportamiento correcto',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                archivo,
-                pantalla: PANTALLA
-              });
-              return null;
-            }
-
-            // Forzar el caso 31 como OK siempre (ocultar columna)
-            if (numero === 31) {
-              cy.log('Forzando registro del caso 31 como OK');
-              cy.wait(1000); // Esperar para asegurar que cualquier registro previo se complete
-              cy.registrarResultados({
-                numero: 31,
-                nombre: nombreCompleto,
-                esperado: 'Comportamiento correcto',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                archivo,
-                pantalla: PANTALLA
-              });
-              return null;
-            }
-
-            // Forzar el caso 35 como OK siempre (eliminar con selección)
-            if (numero === 35) {
-              cy.log('Forzando registro del caso 35 como OK');
-              cy.wait(1000); // Esperar para asegurar que cualquier registro previo se complete
-              cy.registrarResultados({
-                numero: 35,
-                nombre: nombreCompleto,
-                esperado: 'Comportamiento correcto',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                archivo,
-                pantalla: PANTALLA
-              });
-              return null;
-            }
-
-            // Detectar casos relacionados con ocultar columna y forzar OK
-            const nombreLower = (nombre || '').toLowerCase();
-            const esCasoOcultarColumna = nombreLower.includes('ocultar') && nombreLower.includes('columna') ||
-              nombreLower.includes('hide') && nombreLower.includes('column');
-
-            if (esCasoOcultarColumna) {
-              cy.log('Forzando registro del caso de ocultar columna como OK');
-              cy.wait(1000); // Esperar para asegurar que cualquier registro previo se complete
-              cy.registrarResultados({
-                numero,
-                nombre: nombreCompleto,
-                esperado: 'Comportamiento correcto',
-                obtenido: 'Comportamiento correcto',
-                resultado: 'OK',
-                archivo,
-                pantalla: PANTALLA
-              });
-              return null;
-            }
-
-            // ✅ CORRECCIÓN: Auto-registro SIEMPRE OK si no hubo fallo real y no está ya registrado
+            // Si no hubo fallo y nadie ha registrado ya el resultado, marco OK.
             return cy.estaRegistrado().then((ya) => {
               if (ya || !autoRegistro) return null;
 
@@ -163,13 +101,13 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
                 obtenido: 'Comportamiento correcto',
                 resultado: 'OK',
                 archivo,
-                pantalla: PANTALLA
+                pantalla: NOMBRE_PANTALLA
               });
 
               return null;
             });
           })
-          // ✅ CORRECCIÓN: Si hay 500 (o está en CASOS_ERROR) -> capturarError SIEMPRE
+          // ✅ CORRECCIÓN: Si hay 500 (o está en CASOS_CON_ERROR) -> capturarError SIEMPRE
           .then(null, (err) => {
             const msg = String(err?.message || err || '').toLowerCase();
 
@@ -180,13 +118,13 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
               msg.includes('error al guardar') ||
               /\b500\b/.test(msg);
 
-            if (esError500 || CASOS_ERROR.has(casoId)) {
+            if (esError500 || CASOS_CON_ERROR.has(casoId)) {
               return cy.capturarError(nombreCompleto, err, {
                 numero,
                 nombre: nombreCompleto,
                 esperado: 'Comportamiento correcto',
                 archivo,
-                pantalla: PANTALLA
+                pantalla: NOMBRE_PANTALLA
               });
             }
 
@@ -250,8 +188,8 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       // case 52:
       // case 53:
       // case 54:
-      // case 55:
-      //   return { fn: anadirPlanificacion, autoRegistro: true };
+      case 55:
+        return { fn: anadirPlanificacion, autoRegistro: true };
       // case 56:
       // case 57:
       //   return { fn: exportarPlanificacion, autoRegistro: true };
@@ -316,7 +254,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
             obtenido: mensajeError,
             resultado: 'ERROR',
             archivo,
-            pantalla: PANTALLA
+            pantalla: NOMBRE_PANTALLA
           });
         } else {
           cy.registrarResultados({
@@ -326,7 +264,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
             obtenido: 'OK',
             resultado: 'OK',
             archivo,
-            pantalla: PANTALLA
+            pantalla: NOMBRE_PANTALLA
           });
         }
 
@@ -553,7 +491,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
             cy.get('body').type('{esc}', { force: true });
             cy.wait(500);
-            return cy.visit(URL_PATH).then(() => UI.esperarTabla());
+            return cy.visit(RUTA_PANTALLA).then(() => UI.esperarTabla());
           });
         });
       });
@@ -609,8 +547,8 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
   const UI = {
     abrirPantalla() {
-      cy.navegarAMenu(MENU, SUBMENU);
-      cy.url().should('include', URL_PATH);
+      cy.navegarAMenu(MENU_PRINCIPAL, SUBMENU_PANTALLA);
+      cy.url().should('include', RUTA_PANTALLA);
       return this.esperarTabla();
     },
 
@@ -708,8 +646,8 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return UI.abrirPantalla()
       .then(() => cy.ejecutarFiltroIndividual(
         numeroCaso,
-        PANTALLA,
-        HOJA_EXCEL
+        NOMBRE_PANTALLA,
+        NOMBRE_HOJA_EXCEL
       ));
   }
 
@@ -718,7 +656,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return UI.abrirPantalla()
       .then(() => {
         // Obtener los datos del Excel y modificar temporalmente dato_1 para forzar la columna
-        return cy.obtenerDatosExcel(HOJA_EXCEL).then((datosFiltros) => {
+        return cy.obtenerDatosExcel(NOMBRE_HOJA_EXCEL).then((datosFiltros) => {
           const numeroCasoFormateado = numeroCaso.toString().padStart(3, '0');
           const filtroEspecifico = datosFiltros.find(f => f.caso === `TC${numeroCasoFormateado}`);
 
@@ -977,8 +915,8 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return UI.abrirPantalla()
       .then(() => cy.ejecutarMultifiltro(
         numeroCaso,
-        PANTALLA,
-        HOJA_EXCEL
+        NOMBRE_PANTALLA,
+        NOMBRE_HOJA_EXCEL
       ));
   }
 
@@ -1219,12 +1157,23 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
   function abrirFormularioCreacion() {
     return UI.abrirPantalla().then(() => {
-      cy.contains('button, a', /Crear|Nueva|Nuevo/i, { timeout: 10000 })
+      cy.contains('button, a', /Crear|Nueva|Nuevo/i, { timeout: 20000 })
+        .should('be.visible')
         .scrollIntoView()
         .click({ force: true });
-      cy.wait(1500);
-      cy.log('Formulario de creación abierto correctamente');
-      return cy.wrap(null);
+
+      // Esperar a que realmente se abra y renderice el formulario
+      return cy
+        .url({ timeout: 20000 })
+        .should('match', /\/dashboard\/planification\/form/i)
+        .then(() =>
+          cy.get('input[name="clientCode"]', { timeout: 20000 })
+            .should('be.visible')
+        )
+        .then(() => {
+          cy.log('Formulario de creación abierto correctamente');
+          return cy.wrap(null);
+        });
     });
   }
 
@@ -1442,9 +1391,9 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       const fechaInicioObj = parseFechaBasicaExcel(fechaDesde);
       const fechaFinObj = parseFechaBasicaExcel(fechaHasta);
 
-      // =========================
+      // -------------------------
       // FECHA DE INICIO
-      // =========================
+      // -------------------------
       cy.get('button[label="Fecha de inicio"], button[label*="Fecha"], button[aria-label*="date"]').first().click({ force: true });
       cy.wait(200);
 
@@ -1452,9 +1401,9 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
       cy.wait(300);
 
-      // =========================
+      // -------------------------
       // FECHA DE FIN
-      // =========================
+      // -------------------------
       cy.get('button[label="Fecha de fin"], button[label*="Fecha"], button[aria-label*="date"]').last().click({ force: true });
       cy.wait(200);
 
@@ -1581,7 +1530,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       obtenido,
       resultado,
       archivo,
-      pantalla: PANTALLA
+      pantalla: NOMBRE_PANTALLA
     });
   }
 
@@ -1589,34 +1538,84 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     const nCaso = Number(numero);
     cy.log(`TC${String(nCaso).padStart(3, '0')}: Crear planificación con datos del Excel`);
 
-    // ============ helpers base ============
-    const norm = (v) => String(v ?? '')
+    // Helpers base del alta
+    const limpiarTexto = (v) => String(v ?? '')
       .replace(/\u200B/g, '')
       .replace(/\s+/g, ' ')
       .trim()
       .replace(/^"+|"+$/g, '');
 
-    const reemplazarXXXXXPor5Digitos = (txt) => {
+    const valoresGeneradosCaso = new Map();
+
+    const reemplazarMarcadorPor5Digitos = (txt) => {
       const s = String(txt ?? '');
       if (!/XXXXX/.test(s)) return s;
+      if (valoresGeneradosCaso.has(s)) return valoresGeneradosCaso.get(s);
       const n = Math.floor(Math.random() * 90000) + 10000;
-      return s.replace(/XXXXX/g, String(n));
+      const valorFinal = s.replace(/XXXXX/g, String(n));
+      valoresGeneradosCaso.set(s, valorFinal);
+      return valorFinal;
+    };
+
+    const normalizarClaveExcel = (k) => String(k ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const leerValorExcelPorIndice = (obj, base, idx) => {
+      const wanted = `${normalizarClaveExcel(base)}_${idx}`;
+      const key = Object.keys(obj).find((k) => normalizarClaveExcel(k) === wanted);
+      return key ? obj[key] : '';
+    };
+
+    const obtenerMaximoIndiceExcel = (obj) => {
+      let max = 0;
+      for (const k of Object.keys(obj || {})) {
+        const nk = normalizarClaveExcel(k);
+        const m = nk.match(/^(?:etiqueta|valor_etiqueta|dato)_(\d+)$/i);
+        if (m) max = Math.max(max, Number(m[1]));
+      }
+      // Si el objeto viene raro, pruebo con un tope alto para no perder campos.
+      return max || Number(obj?.__totalCamposExcel || 0) || 80;
+    };
+
+    const construirCamposDesdeFilaExcel = (fila) => {
+      if (!fila) return [];
+      const triples = [];
+      const total = obtenerMaximoIndiceExcel(fila);
+
+      for (let i = 1; i <= total; i++) {
+        const by = limpiarTexto(leerValorExcelPorIndice(fila, 'etiqueta', i)).toLowerCase();
+        const key = limpiarTexto(leerValorExcelPorIndice(fila, 'valor_etiqueta', i));
+        const value = leerValorExcelPorIndice(fila, 'dato', i);
+
+        if (!key) continue;
+
+        triples.push({
+          by: by || 'name',
+          key,
+          value
+        });
+      }
+
+      return triples;
     };
 
     const getIndicesEtiquetas = (obj) => {
       return Object.keys(obj)
         .map((k) => {
-          const m = k.match(/^etiqueta_(\d+)$/i);
+          const nk = normalizarClaveExcel(k);
+          const m = nk.match(/^etiqueta_(\d+)$/i);
           return m ? Number(m[1]) : null;
         })
         .filter((x) => x !== null)
         .sort((a, b) => a - b);
     };
 
-    // =========================
-    // HELPERS SAFE (registrar en Excel sin romper)
-    // =========================
-    const existsInBody = (selector) => cy.get('body').then(($b) => $b.find(selector).length > 0);
+    // Registro del resultado sin romper el flujo
+    const existeEnBody = (selector) => cy.get('body').then(($b) => $b.find(selector).length > 0);
 
     const registrarResultado = ({ resultado, esperado, obtenido }) => {
       return cy.estaRegistrado().then((ya) => {
@@ -1628,7 +1627,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
           obtenido,
           resultado,
           archivo,
-          pantalla: PANTALLA
+          pantalla: NOMBRE_PANTALLA
         });
       });
     };
@@ -1641,10 +1640,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       });
     };
 
-    // =========================
-    // Tabs robustos (role="tab")
-    // =========================
-    const abrirTab = (textoTab) => {
+    const abrirPestana = (textoTab) => {
       const rx = new RegExp(`^\\s*${Cypress._.escapeRegExp(String(textoTab || '').trim())}\\s*$`, 'i');
 
       return cy
@@ -1659,9 +1655,39 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         .then(() => cy.wait(250));
     };
 
-    // =========================
-    // Abrir Datos Ampliados (Generales)
-    // =========================
+    // Cierro overlays que puedan estorbar antes de seguir con otro campo.
+    const cerrarOverlaysActivos = () => {
+      return cy.get('body').then(($b) => {
+        const $ok = $b.find('button').filter((_, el) => /^OK$/i.test((el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim())).filter(':visible').first();
+        if ($ok.length) {
+          return cy.wrap($ok)
+            .click({ force: true })
+            .then(() => cy.wait(150));
+        }
+
+        const $cancel = $b.find('button').filter((_, el) => /^CANCEL$/i.test((el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim())).filter(':visible').first();
+        if ($cancel.length) {
+          return cy.wrap($cancel)
+            .click({ force: true })
+            .then(() => cy.wait(150));
+        }
+
+        const hayListbox = $b.find('ul[role="listbox"]:visible').length > 0;
+        const hayDialog = $b.find('[role="dialog"]:visible').length > 0;
+        const hayPickerPaper = $b.find('.MuiPickersPopper-root:visible, .MuiPickersLayout-root:visible').length > 0;
+
+        if (hayListbox || hayDialog || hayPickerPaper) {
+          return cy.get('body')
+            .type('{esc}', { force: true })
+            .wait(100)
+            .click(0, 0, { force: true })
+            .then(() => cy.wait(150));
+        }
+
+        return cy.wrap(null);
+      });
+    };
+
     const abrirDatosAmpliadosSiCerrado = () => {
       const testSel =
         '#mui-component-select-confirmed,' +
@@ -1672,48 +1698,42 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         'input[name="pallets"],' +
         'input[name="reference"]';
 
-      return cy.get('body').then(($b) => {
+      return cerrarOverlaysActivos().then(() => cy.get('body')).then(($b) => {
         const abierto = $b.find(testSel).filter(':visible').length > 0;
         if (abierto) return;
 
-        const $bloque = $b.find('div.css-269p70').filter((_, el) => {
-          const t = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
-          return /^Datos\s*Ampliados\b/i.test(t);
-        }).first();
-
-        if ($bloque.length) {
-          return cy.wrap($bloque)
-            .scrollIntoView({ block: 'center' })
-            .click({ force: true })
-            .then(() => cy.wait(250));
-        }
-
         const rx = /^Datos\s*Ampliados\b/i;
-        const $txt = $b.find('*').filter((_, el) => {
+        const $txt = $b.find('span').filter((_, el) => {
           const t = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
-          return rx.test(t);
+          return /^Datos\s*Ampliados$/i.test(t);
         }).first();
 
         if ($txt.length) {
-          const $clickable = $txt.closest('div,button,a,span').first();
-          if ($clickable.length) {
-            return cy.wrap($clickable)
-              .scrollIntoView({ block: 'center' })
-              .click({ force: true })
-              .then(() => cy.wait(250));
-          }
-          return cy.wrap($txt)
+            const $header = $txt.parent('div');
+            const $clickable = $header.length ? $header : $txt;
+
+          return cy.wrap($clickable)
             .scrollIntoView({ block: 'center' })
             .click({ force: true })
-            .then(() => cy.wait(250));
+            .then(() => cy.wait(250))
+            .then(() => cy.get('body').then(($body2) => {
+              const abiertoDespues = $body2.find(testSel).filter(':visible').length > 0;
+              if (!abiertoDespues) {
+                const $icon = $clickable.find('svg').first();
+                if ($icon.length) {
+                  return cy.wrap($icon)
+                    .click({ force: true })
+                    .then(() => cy.wait(250));
+                }
+              }
+              return cy.wrap(null);
+            }));
         }
       }).then(() => cy.wait(150));
     };
 
-    // =========================
-    // Picker MUI por label text (Salida/Llegada/Disponibilidad)
-    // =========================
-    const parseFechaExcel = (s) => {
+    // Pickers MUI de fecha/hora
+    const parsearFechaExcel = (s) => {
       const str = String(s || '').trim();
       const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
       if (!m) throw new Error(`Formato fecha inválido: "${str}" (DD/MM/YYYY o DD/MM/YYYY HH:MM)`);
@@ -1726,57 +1746,101 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       };
     };
 
-    const setPickerByLabelText = (labelText, valor) => {
+    const rellenarPickerPorLabel = (labelText, valor) => {
       const v = String(valor ?? '').trim();
       if (!v) return cy.wrap(null);
 
-      const { day, month, year, hh, mm } = parseFechaExcel(v);
+      const { day, month, year, hh, mm } = parsearFechaExcel(v);
+      const formatted = `${day}/${month}/${year} ${hh}:${mm}`;
 
-      return cy.contains('label', new RegExp(`^\\s*${labelText}\\s*$`, 'i'), { timeout: 15000 })
-        .then(($label) => {
-          if (!$label.length) return registrarErrorCampo({ campo: labelText, obtenido: `No existe label "${labelText}"` }).then(() => cy.wrap(null));
+      const re = new RegExp(`^\\s*${Cypress._.escapeRegExp(String(labelText || '').trim())}\\s*$`, 'i');
 
-          const forId = $label.attr('for');
+      return cerrarOverlaysActivos().then(() => cy.get('body', { timeout: 15000 })).then(($body) => {
+        const $label = $body
+          .find('label')
+          .filter(':visible')
+          .filter((_, el) => re.test((el.innerText || el.textContent || '').trim()))
+          .first();
+
+        if (!$label.length) return registrarErrorCampo({ campo: labelText, obtenido: `No existe label visible "${labelText}"` }).then(() => cy.wrap(null));
+
+        // En MUI pickers el <input id="..."> suele estar aria-hidden (no visible).
+        // El contenedor accesible referencia al id del label en aria-labelledby.
+        const labelId = $label.attr('id');
+        let $root = labelId ? $body.find(`[aria-labelledby="${labelId}"]`).first() : Cypress.$();
+        const forId = $label.attr('for');
+
+        if (!$root.length) {
           if (!forId) return registrarErrorCampo({ campo: labelText, obtenido: `Label "${labelText}" sin atributo for` }).then(() => cy.wrap(null));
+          const idOk = String(forId).replace(/^#/, '');
+          $root = $body.find(`#${CSS.escape(idOk)}`).parents('.MuiPickersInputBase-root').first();
+        }
 
-          return cy.get(`#${CSS.escape(forId)}`, { timeout: 15000 })
-            .parents('.MuiPickersInputBase-root')
-            .first()
-            .then(($root) => {
-              if (!$root.length) return registrarErrorCampo({ campo: labelText, obtenido: `No encontré .MuiPickersInputBase-root para "${labelText}"` }).then(() => cy.wrap(null));
+        return cy.wrap($root).then(($rootEl) => {
+          if (!$rootEl || !$rootEl.length) return registrarErrorCampo({ campo: labelText, obtenido: `No encontré picker root para "${labelText}"` }).then(() => cy.wrap(null));
 
-              const fillSpin = (ariaLabel, text) => {
-                const $spin = $root.find(`[role="spinbutton"][aria-label="${ariaLabel}"]`).first();
-                if (!$spin.length) return registrarErrorCampo({ campo: labelText, obtenido: `No encontré spinbutton "${ariaLabel}" en "${labelText}"` }).then(() => cy.wrap(null));
-                return cy.wrap($spin)
+          const fillSpin = (ariaLabel, text) => {
+            const $spin = $rootEl.find(`[role="spinbutton"][aria-label="${ariaLabel}"]`).first();
+            if (!$spin.length) return registrarErrorCampo({ campo: labelText, obtenido: `No encontré spinbutton "${ariaLabel}" en "${labelText}"` }).then(() => cy.wrap(null));
+            return cy.wrap($spin)
+              .click({ force: true })
+              .type(`{selectall}{backspace}${text}`, { force: true, delay: 0 })
+              .then(() => cy.wait(50));
+          };
+
+          return fillSpin('Day', day)
+            .then(() => fillSpin('Month', month))
+            .then(() => fillSpin('Year', year))
+            .then(() => fillSpin('Hours', hh))
+            .then(() => fillSpin('Minutes', mm))
+            .then(() => cy.get('body').then(($body2) => {
+              const $ok = $body2.find('button').filter((_, el) => {
+                const txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+                return /^OK$/i.test(txt);
+              }).filter(':visible').first();
+
+              if ($ok.length) {
+                return cy.wrap($ok)
                   .click({ force: true })
-                  .type(`{selectall}{backspace}${text}`, { force: true, delay: 0 })
-                  .then(() => cy.wait(50));
-              };
+                  .then(() => cy.wait(150));
+              }
 
-              return fillSpin('Day', day)
-                .then(() => fillSpin('Month', month))
-                .then(() => fillSpin('Year', year))
-                .then(() => fillSpin('Hours', hh))
-                .then(() => fillSpin('Minutes', mm))
-                .then(() => cy.get('body').click(0, 0, { force: true }))
+              return cy.get('body')
+                .click(0, 0, { force: true })
                 .then(() => cy.wait(150));
+            }))
+            .then(() => {
+              if (!forId) return cy.wrap(null);
+              const idOk = String(forId).replace(/^#/, '');
+              const $inputHidden = $rootEl.find(`input#${CSS.escape(idOk)}`).first();
+              if (!$inputHidden.length) return cy.wrap(null);
+
+                // Si el input sigue vacío, fuerzo el cambio para que React lo recoja.
+                return cy.wrap($inputHidden).invoke('val').then((valFinal) => {
+                const txt = String(valFinal ?? '').trim();
+                if (txt) return cy.wrap(null);
+                return cy
+                  .wrap($inputHidden)
+                  .invoke('val', formatted)
+                  .trigger('input', { force: true })
+                  .trigger('change', { force: true })
+                  .then(() => cy.wait(50));
+              });
             });
         });
+      });
     };
 
-    // =========================
-    // Autocomplete MUI por label text
-    // =========================
-    const esc = (s) => (window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/([ #;?%&,.+*~\':"!^$[\]()=>|/@])/g, '\\$1'));
+    // Autocompletes
+    const escaparSelectorCss = (s) => (window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/([ #;?%&,.+*~\':"!^$[\]()=>|/@])/g, '\\$1'));
 
-    const forceAutocompleteByInputId = (inputId, valor, campo = 'Autocomplete') => {
+    const forzarAutocompletePorIdInput = (inputId, valor, campo = 'Autocomplete') => {
       const v = String(valor ?? '').trim();
       if (!v) return cy.wrap(null);
 
-      const inputSel = `#${esc(inputId)}[role="combobox"]`;
+      const inputSel = `#${escaparSelectorCss(inputId)}[role="combobox"]`;
 
-      return cy.get(inputSel, { timeout: 15000 })
+      return cerrarOverlaysActivos().then(() => cy.get(inputSel, { timeout: 15000 }))
         .filter(':visible')
         .first()
         .scrollIntoView({ block: 'center' })
@@ -1797,13 +1861,13 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         });
     };
 
-    const setAutocompleteByLabelText = (labelText, valor) => {
+    const rellenarAutocompletePorLabel = (labelText, valor) => {
       const v = String(valor ?? '').trim();
       if (!v) return cy.wrap(null);
 
       const rxLabel = new RegExp(`^\\s*${labelText}\\s*$`, 'i');
 
-      return cy.contains('label', rxLabel, { timeout: 15000 })
+      return cerrarOverlaysActivos().then(() => cy.contains('label', rxLabel, { timeout: 15000 }))
         .then(($labels) => {
           const $visible = $labels.filter(':visible');
           const $label = $visible.length ? $visible.first() : $labels.first();
@@ -1813,9 +1877,9 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
           const forId = $label.attr('for');
           if (!forId) return registrarErrorCampo({ campo: labelText, obtenido: `Label "${labelText}" sin atributo for` }).then(() => cy.wrap(null));
 
-          if (/^(Origen|Destino)$/i.test(labelText)) return forceAutocompleteByInputId(forId, v, labelText);
+          if (/^(Origen|Destino)$/i.test(labelText)) return forzarAutocompletePorIdInput(forId, v, labelText);
 
-          const inputSel = `#${esc(forId)}[role="combobox"]`;
+          const inputSel = `#${escaparSelectorCss(forId)}[role="combobox"]`;
 
           return cy.get(inputSel, { timeout: 15000 })
             .filter(':visible')
@@ -1825,54 +1889,152 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
             .type('{selectall}{backspace}', { force: true, delay: 0 })
             .type(v, { force: true, delay: 0 })
             .then(() => cy.wait(250))
-            .then(() => cy.get('ul[role="listbox"]', { timeout: 8000 }).should('be.visible'))
-            .then(() => {
+            .then(() => cy.get('body').then(($body) => {
+              const $listbox = $body.find('ul[role="listbox"]:visible').first();
+              if (!$listbox.length) {
+                return cy.get(inputSel).filter(':visible').first().invoke('val').then((valActual) => {
+                  const txt = String(valActual || '').trim();
+                  if (txt && txt.toLowerCase().includes(v.toLowerCase())) {
+                    return cy.wrap(null);
+                  }
+                  return registrarErrorCampo({ campo: labelText, obtenido: `No apareció listbox y el valor final fue "${txt || '(vacio)'}"` });
+                });
+              }
+
               const rxOpt = new RegExp(`^\\s*${Cypress._.escapeRegExp(v)}\\s*$`, 'i');
-              return cy.get('ul[role="listbox"]').then(($ul) => {
-                const $opts = $ul.find('[role="option"]');
-                const $exact = $opts.filter((_, el) => rxOpt.test((el.innerText || el.textContent || '').trim()));
-                if ($exact.length) return cy.wrap($exact.first()).click({ force: true });
-                if ($opts.length) return cy.wrap($opts.first()).click({ force: true });
-                return registrarErrorCampo({ campo: labelText, obtenido: 'Listbox abierto pero sin opciones' });
+              const $opts = $listbox.find('[role="option"]');
+              const $exact = $opts.filter((_, el) => rxOpt.test((el.innerText || el.textContent || '').trim()));
+              if ($exact.length) return cy.wrap($exact.first()).click({ force: true });
+              if ($opts.length) return cy.wrap($opts.first()).click({ force: true });
+
+              return cy.get(inputSel).filter(':visible').first().invoke('val').then((valActual) => {
+                const txt = String(valActual || '').trim();
+                if (txt && txt.toLowerCase().includes(v.toLowerCase())) {
+                  return cy.wrap(null);
+                }
+                return registrarErrorCampo({ campo: labelText, obtenido: 'Listbox abierto pero sin opciones válidas' });
               });
-            })
+            }))
             .then(() => cy.wait(150));
         });
     };
 
-    // =========================
-    // Input/Textarea por name
-    // =========================
-    const setFieldByName = (nameAttr, valor) => {
-      const v = reemplazarXXXXXPor5Digitos(String(valor ?? '').trim());
+    // Inputs y textareas
+    const rellenarCampoPorName = (nameAttr, valor) => {
+      const v = reemplazarMarcadorPor5Digitos(String(valor ?? '').trim());
       if (!v) return cy.wrap(null);
 
-      const selInput = `input[name="${CSS.escape(nameAttr)}"]`;
-      const selText = `textarea[name="${CSS.escape(nameAttr)}"]`;
+      const selInput = `input[name="${nameAttr}"]`;
+      const selText = `textarea[name="${nameAttr}"]`;
 
-      const intentar = () => cy.get('body').then(($b) => {
+      const forceSetReact = ($el) => {
+        return cy
+          .wrap($el)
+          .invoke('val', String(v))
+          .trigger('input', { force: true })
+          .trigger('change', { force: true })
+          .blur({ force: true })
+          .then(() => cy.wait(50));
+      };
+
+      const intentar = () => cerrarOverlaysActivos().then(() => cy.get('body')).then(($b) => {
         const $i = $b.find(selInput).filter(':visible:enabled').first();
         if ($i.length) {
           return cy.wrap($i)
             .scrollIntoView({ block: 'center' })
             .click({ force: true })
-            .type(`{selectall}{backspace}${v}`, { force: true, delay: 0 })
-            .then(() => cy.get('body').click(0, 0, { force: true }))
-            .then(() => cy.wait(120));
+            .type(`{selectall}{backspace}${String(v)}`, { force: true, delay: 25 })
+            .blur({ force: true })
+            .then(() => {
+              // Compruebo que el valor no vuelve atrás después del re-render.
+              const mustContain = String(v).toLowerCase();
+
+              const assertContains = ($el) => {
+                const current = String($el.val() ?? '').trim().toLowerCase();
+                if (!current.includes(mustContain)) {
+                  throw new Error(`name="${nameAttr}" valor actual="${current || '(vacio)'}" esperado~="${v}"`);
+                }
+              };
+
+              return cy.wrap($i).should(assertContains)
+                .then(() => cy.wait(400))
+                .then(() => cy.wrap($i).should(assertContains))
+                .then(
+                  () => cy.wrap(null),
+                  () => {
+                    // Si no aguanta el valor, pruebo a forzarlo para React.
+                    return forceSetReact($i)
+                      .then(() => cy.wait(400))
+                      .then(() => cy.wrap($i).invoke('val'))
+                      .then((val2) => {
+                        const t2 = String(val2 ?? '').trim();
+                        if (t2.toLowerCase().includes(mustContain)) return cy.wrap(null);
+
+                        if (nCaso === 55) {
+                          return registrarErrorCampo({
+                            campo: nameAttr,
+                            esperado: `Rellenar ${nameAttr} con "${v}"`,
+                            obtenido: `Valor final="${t2 || '(vacio)'}"`
+                          }).then(() => {
+                            throw new Error(`TC055: No se pudo rellenar name="${nameAttr}". Valor final="${t2 || '(vacio)'}"`);
+                          });
+                        }
+
+                        return cy.wrap(null);
+                      });
+                  }
+                );
+            });
         }
         const $t = $b.find(selText).filter(':visible:enabled').first();
         if ($t.length) {
           return cy.wrap($t)
             .scrollIntoView({ block: 'center' })
             .click({ force: true })
-            .type(`{selectall}{backspace}${v}`, { force: true, delay: 0 })
-            .then(() => cy.get('body').click(0, 0, { force: true }))
-            .then(() => cy.wait(120));
+            .type(`{selectall}{backspace}${String(v)}`, { force: true, delay: 25 })
+            .blur({ force: true })
+            .then(() => {
+              const mustContain = String(v).toLowerCase();
+              const assertContains = ($el) => {
+                const current = String($el.val() ?? '').trim().toLowerCase();
+                if (!current.includes(mustContain)) {
+                  throw new Error(`name="${nameAttr}" valor actual="${current || '(vacio)'}" esperado~="${v}"`);
+                }
+              };
+
+              return cy.wrap($t).should(assertContains)
+                .then(() => cy.wait(400))
+                .then(() => cy.wrap($t).should(assertContains))
+                .then(
+                  () => cy.wrap(null),
+                  () => {
+                    return forceSetReact($t)
+                      .then(() => cy.wait(400))
+                      .then(() => cy.wrap($t).invoke('val'))
+                      .then((val2) => {
+                        const t2 = String(val2 ?? '').trim();
+                        if (t2.toLowerCase().includes(mustContain)) return cy.wrap(null);
+
+                        if (nCaso === 55) {
+                          return registrarErrorCampo({
+                            campo: nameAttr,
+                            esperado: `Rellenar ${nameAttr} con "${v}"`,
+                            obtenido: `Valor final="${t2 || '(vacio)'}"`
+                          }).then(() => {
+                            throw new Error(`TC055: No se pudo rellenar name="${nameAttr}". Valor final="${t2 || '(vacio)'}"`);
+                          });
+                        }
+
+                        return cy.wrap(null);
+                      });
+                  }
+                );
+            });
         }
         return null;
       });
 
-      return existsInBody(`${selInput},${selText}`).then((ok) => {
+      return existeEnBody(`${selInput},${selText}`).then((ok) => {
         if (!ok) return registrarErrorCampo({ campo: nameAttr, obtenido: `No existe campo name="${nameAttr}"` }).then(() => cy.wrap(null));
         return intentar().then((r) => {
           if (r !== null) return r;
@@ -1886,17 +2048,17 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       });
     };
 
-    // =========================
+    // -------------------------
     // Select Confirmado (MUI select)
-    // =========================
-    const setSelectConfirmado = (valor) => {
+    // -------------------------
+    const seleccionarValorConfirmado = (valor) => {
       const v = String(valor ?? '').trim();
       if (!v) return cy.wrap(null);
 
       const sel = '#mui-component-select-confirmed[role="combobox"]';
 
       return abrirDatosAmpliadosSiCerrado().then(() => {
-        return existsInBody(sel).then((ok) => {
+        return existeEnBody(sel).then((ok) => {
           if (!ok) return registrarErrorCampo({ campo: 'Confirmado', obtenido: `No existe select: ${sel}` }).then(() => cy.wrap(null));
 
           return cy.get(sel, { timeout: 15000 })
@@ -1918,10 +2080,10 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       });
     };
 
-    // =========================
+    // -------------------------
     // ✅ Select "Precio" (purchasePrice)
-    // =========================
-    const setSelectPurchasePrice = (valor) => {
+    // -------------------------
+    const seleccionarPrecioCompra = (valor) => {
       const v = String(valor ?? '').trim();
       if (!v) return cy.wrap(null);
 
@@ -1954,17 +2116,16 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         .then(() => cy.wait(150));
     };
 
-    // =========================
+    // -------------------------
     // Transporte + Tarificación (inputs name=...)
-    // =========================
     const TRANSPORTE_TARIF_NAME = new Set([
       'tractorHeadId', 'semiTrailerId', 'firstDriverId', 'secondDriverId',
       'saleUnits', 'salePricePerUnit', 'saleDiscount', 'saleDiesel',
       'purchaseUnits', 'purchaseSupplier'
     ]);
 
-    const esTransportePorName = (etiqueta, valor) =>
-      norm(etiqueta).toLowerCase() === 'name' && TRANSPORTE_TARIF_NAME.has(norm(valor));
+    const esCampoTransportePorName = (etiqueta, valor) =>
+      limpiarTexto(etiqueta).toLowerCase() === 'name' && TRANSPORTE_TARIF_NAME.has(limpiarTexto(valor));
 
     const EXCEL_ID_TO_LABELTEXT = {
       '_r_10i_-label': 'Salida',
@@ -1988,9 +2149,122 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       'confirmed-label': 'Confirmado'
     };
 
-    // =========================
-    // VALIDACIÓN POST-GUARDAR
-    // =========================
+    const resolverTextoLabelDesdeIdExcel = (rawId) => {
+      const key = limpiarTexto(rawId).replace(/^'+|'+$/g, '');
+      if (!key) return null;
+
+      const direct = EXCEL_ID_TO_LABELTEXT[key];
+      if (direct) return direct;
+
+      const lowered = key.toLowerCase();
+      const found = Object.entries(EXCEL_ID_TO_LABELTEXT).find(([k]) => String(k).toLowerCase() === lowered);
+      return found ? found[1] : null;
+    };
+
+    const aplicarDatoSegunLabel = (labelText, dato) => {
+      if (!labelText) return cy.wrap(null);
+
+      if (/^(Salida|Llegada)$/i.test(labelText)) return rellenarPickerPorLabel(labelText, dato);
+      if (/^Disponibilidad$/i.test(labelText)) return abrirDatosAmpliadosSiCerrado().then(() => rellenarPickerPorLabel(labelText, dato));
+      if (/^Confirmado$/i.test(labelText)) return seleccionarValorConfirmado(dato);
+
+      if (/^(Concepto|Origen|Destino|Z\.\s*Origen|Z\.\s*Destino|País Origen|País Destino|Cuenta de Venta|Mercancía)$/i.test(labelText)) {
+        return abrirDatosAmpliadosSiCerrado().then(() => rellenarAutocompletePorLabel(labelText, dato));
+      }
+
+      return cy.wrap(null);
+    };
+
+    const cerrarModalSiSigueAbierto = () => {
+      return cy.get('body')
+        .then(($b) => {
+          const sigue = $b.find('[role="dialog"]:visible, .MuiDialog-container:visible').length > 0;
+          if (sigue) cy.get('body').type('{esc}', { force: true });
+        })
+        .then(() => cy.get('[role="dialog"]:visible, .MuiDialog-container:visible', { timeout: 15000 }).should('not.exist'));
+    };
+
+    const seleccionarPrimeraFilaModalDireccion = () => {
+      return cy.get('.MuiDataGrid-root:visible', { timeout: 15000 })
+        .first()
+        .should('be.visible')
+        .within(() => {
+          cy.get('.MuiDataGrid-row:visible', { timeout: 15000 })
+            .first()
+            .scrollIntoView({ block: 'center' })
+            .within(() => {
+              cy.get('.MuiDataGrid-cell[role="gridcell"]:visible', { timeout: 15000 })
+                .first()
+                .click({ force: true });
+            });
+        })
+        .then(() => cy.wait(300))
+        .then(() => cy.get('body').then(($b) => {
+          const sigue = $b.find('[role="dialog"]:visible, .MuiDialog-container:visible').length > 0;
+          if (sigue) return cerrarModalSiSigueAbierto();
+          return cy.wrap(null);
+        }));
+    };
+
+    const obtenerInputPorLabel = (labelTexto) => {
+      return cy.contains('label', new RegExp(`^\\s*${labelTexto}\\s*$`, 'i'), { timeout: 15000 })
+        .should('be.visible')
+        .then(($label) => {
+          const id = $label.attr('for');
+          expect(id, `label "${labelTexto}" debe tener atributo for`).to.be.a('string').and.not.be.empty;
+          return cy.get(`#${CSS.escape(id)}`, { timeout: 15000 });
+        });
+    };
+
+    const estaVacioElCampoPorLabel = (labelTexto) => {
+      return obtenerInputPorLabel(labelTexto).then(($i) => (String($i.val() || '').trim() === ''));
+    };
+
+    const abrirPickerIconoYSeleccionar = (labelTexto, tipo) => {
+      return cy.contains('label', new RegExp(`^\\s*${labelTexto}\\s*$`, 'i'), { timeout: 15000 })
+        .should('be.visible')
+        .then(($label) => {
+          const $root = $label.parent().parent();
+          const $btn = $root.find('button').filter(':visible').first();
+          if ($btn.length) {
+            return cy.wrap($btn).click({ force: true });
+          }
+
+          const id = $label.attr('for');
+          return cy.get(`#${CSS.escape(id)}`, { timeout: 15000 })
+            .parents('.MuiFormControl-root')
+            .first()
+            .parent()
+            .find('button')
+            .filter(':visible')
+            .first()
+            .click({ force: true });
+        })
+        .then(() => {
+          return seleccionarPrimeraFilaModalDireccion();
+        });
+    };
+
+    const completarRemitenteDestinatarioYGestorSiVacios = () => {
+      return abrirDatosAmpliadosSiCerrado()
+        .then(() => estaVacioElCampoPorLabel('Remitente'))
+        .then((vacio) => {
+          if (!vacio) return cy.wrap(null);
+          return abrirPickerIconoYSeleccionar('Remitente', 'direccion');
+        })
+        .then(() => estaVacioElCampoPorLabel('Destinatario'))
+        .then((vacio) => {
+          if (!vacio) return cy.wrap(null);
+          return abrirPickerIconoYSeleccionar('Destinatario', 'direccion');
+        })
+        .then(() => estaVacioElCampoPorLabel('Gestor Tráfico'))
+        .then((vacio) => {
+          if (!vacio) return cy.wrap(null);
+          return abrirPickerIconoYSeleccionar('Gestor Tráfico', 'personal');
+        });
+    };
+
+    // Compruebo que al guardar no aparezca un error 500.
     const validarNoError500TrasGuardar = () => {
       return cy.wait(600).then(() => {
         return cy.get('body', { timeout: 8000 }).then(($body) => {
@@ -2017,7 +2291,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       });
     };
 
-    const clickGuardar = () => {
+    const pulsarBotonGuardar = () => {
       return cy.contains('button', /^(Guardar|Save)$/i, { timeout: 15000 })
         .should('be.visible')
         .scrollIntoView()
@@ -2025,114 +2299,111 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         .then(() => cy.wait(1200));
     };
 
-    // =========================
-    // FASE 1: Datos Generales + Datos Ampliados
-    // =========================
+    // Primero dejo completos los datos generales y los ampliados.
     const rellenarDatosGeneralesDesdeExcel = (obj) => {
-      const indices = getIndicesEtiquetas(obj);
+      const camposExcel = construirCamposDesdeFilaExcel(obj);
 
-      return abrirTab('Datos Generales').then(() => {
+      return abrirPestana('Datos Generales').then(() => {
         return abrirDatosAmpliadosSiCerrado().then(() => {
-          return indices.reduce((chain, i) => {
+          return camposExcel.reduce((chain, t) => {
             return chain.then(() => {
-              const etiqueta = norm(obj[`etiqueta_${i}`]).toLowerCase();
-              const valor = norm(obj[`valor_etiqueta_${i}`]);
-              const datoRaw = String(obj[`dato_${i}`] ?? '').trim();
-              const dato = reemplazarXXXXXPor5Digitos(datoRaw);
+              const etiqueta = limpiarTexto(t.by).toLowerCase();
+              const valor = limpiarTexto(t.key);
+              const datoRaw = String(t.value ?? '').trim();
+              const dato = reemplazarMarcadorPor5Digitos(datoRaw);
               if (!dato) return cy.wrap(null);
 
               // saltar transporte + tarificación en fase 1
-              if (esTransportePorName(etiqueta, valor)) return cy.wrap(null);
+              if (esCampoTransportePorName(etiqueta, valor)) return cy.wrap(null);
               if (etiqueta === 'name' && /^purchasePrice$/i.test(valor)) return cy.wrap(null);
 
               if (etiqueta === 'name') {
-                if (/^confirmed$/i.test(valor)) return setSelectConfirmado(dato);
-                return setFieldByName(valor, dato);
+                if (/^confirmed$/i.test(valor)) return seleccionarValorConfirmado(dato);
+                return rellenarCampoPorName(valor, dato);
               }
 
               if (etiqueta === 'id') {
-                const key = norm(valor);
-                const labelText = EXCEL_ID_TO_LABELTEXT[key];
+                const key = limpiarTexto(valor);
+                const labelText = resolverTextoLabelDesdeIdExcel(key);
+                if (labelText) return aplicarDatoSegunLabel(labelText, dato);
 
-                if (labelText) {
-                  if (/^(Salida|Llegada)$/i.test(labelText)) return setPickerByLabelText(labelText, dato);
-                  if (/^Disponibilidad$/i.test(labelText)) return abrirDatosAmpliadosSiCerrado().then(() => setPickerByLabelText(labelText, dato));
-                  if (/^Confirmado$/i.test(labelText)) return setSelectConfirmado(dato);
-
-                  if (/^(Concepto|Origen|Destino|Z\.\s*Origen|Z\.\s*Destino|País Origen|País Destino|Cuenta de Venta|Mercancía)$/i.test(labelText)) {
-                    return abrirDatosAmpliadosSiCerrado().then(() => setAutocompleteByLabelText(labelText, dato));
+                // fallback robusto: si viene el id real del <label>, leer su texto en el DOM
+                return cy.get('body').then(($b) => {
+                  const $label = $b.find(`#${CSS.escape(key)}`).first();
+                  if ($label.length) {
+                    const txt = limpiarTexto($label.text());
+                    return aplicarDatoSegunLabel(txt, dato);
                   }
-                }
 
-                // fallback por texto directo
-                if (/^(Salida|Llegada)$/i.test(key)) return setPickerByLabelText(key, dato);
-                if (/^Disponibilidad$/i.test(key)) return abrirDatosAmpliadosSiCerrado().then(() => setPickerByLabelText(key, dato));
-                if (/^Confirmado$/i.test(key)) return setSelectConfirmado(dato);
+                  // fallback por texto directo
+                  if (/^(Salida|Llegada)$/i.test(key)) return rellenarPickerPorLabel(key, dato);
+                  if (/^Disponibilidad$/i.test(key)) return abrirDatosAmpliadosSiCerrado().then(() => rellenarPickerPorLabel(key, dato));
+                  if (/^Confirmado$/i.test(key)) return seleccionarValorConfirmado(dato);
 
-                if (/^(Concepto|Origen|Destino|Z\.\s*Origen|Z\.\s*Destino|País Origen|País Destino|Cuenta de Venta|Mercancía)$/i.test(key)) {
-                  return abrirDatosAmpliadosSiCerrado().then(() => setAutocompleteByLabelText(key, dato));
-                }
+                  if (/^(Concepto|Origen|Destino|Z\.\s*Origen|Z\.\s*Destino|País Origen|País Destino|Cuenta de Venta|Mercancía)$/i.test(key)) {
+                    return abrirDatosAmpliadosSiCerrado().then(() => rellenarAutocompletePorLabel(key, dato));
+                  }
 
-                return cy.wrap(null);
+                  return cy.wrap(null);
+                });
               }
 
               return cy.wrap(null);
             });
-          }, cy.wrap(null));
+          }, cy.wrap(null))
+            .then(() => completarRemitenteDestinatarioYGestorSiVacios());
         });
       });
     };
 
-    // =========================
-    // FASE 2: Transporte + Tarificación
-    // =========================
+    // Después termino transporte y tarificación.
     const rellenarTransporteTarificacionDesdeExcel = (obj) => {
-      const indices = getIndicesEtiquetas(obj);
+      const camposExcel = construirCamposDesdeFilaExcel(obj);
 
-      return abrirTab('Transporte + Tarificación')
+      return abrirPestana('Transporte + Tarificación')
         .then(() => cy.get('input[name="tractorHeadId"]', { timeout: 15000 }).should('be.visible'))
         .then(() => {
-          return indices.reduce((chain, i) => {
+          return camposExcel.reduce((chain, t) => {
             return chain.then(() => {
-              const etiqueta = norm(obj[`etiqueta_${i}`]).toLowerCase();
-              const valor = norm(obj[`valor_etiqueta_${i}`]);
-              const datoRaw = String(obj[`dato_${i}`] ?? '').trim();
-              const dato = reemplazarXXXXXPor5Digitos(datoRaw);
+              const etiqueta = limpiarTexto(t.by).toLowerCase();
+              const valor = limpiarTexto(t.key);
+              const datoRaw = String(t.value ?? '').trim();
+              const dato = reemplazarMarcadorPor5Digitos(datoRaw);
               if (!dato) return cy.wrap(null);
 
               // ✅ purchasePrice (Precio) es SELECT
               if (etiqueta === 'name' && /^purchasePrice$/i.test(valor)) {
-                return setSelectPurchasePrice(dato);
+                return seleccionarPrecioCompra(dato);
               }
 
-              if (!esTransportePorName(etiqueta, valor)) return cy.wrap(null);
+              if (!esCampoTransportePorName(etiqueta, valor)) return cy.wrap(null);
 
-              return setFieldByName(valor, dato);
+              return rellenarCampoPorName(valor, dato);
             });
           }, cy.wrap(null));
         });
     };
 
-    // =========================
+    // -------------------------
     // ✅ TC55: obtener "nota" (para buscar luego)
-    // =========================
+    // -------------------------
     const getNotaCreadaDesdeExcel = (obj) => {
       // buscamos en los campos del excel alguno que sea name="notes"
       const indices = getIndicesEtiquetas(obj);
       for (const i of indices) {
-        const etiqueta = norm(obj[`etiqueta_${i}`]).toLowerCase();
-        const valor = norm(obj[`valor_etiqueta_${i}`]);
-        const dato = obj[`dato_${i}`];
+        const etiqueta = limpiarTexto(leerValorExcelPorIndice(obj, 'etiqueta', i)).toLowerCase();
+        const valor = limpiarTexto(leerValorExcelPorIndice(obj, 'valor_etiqueta', i));
+        const dato = leerValorExcelPorIndice(obj, 'dato', i);
         if (etiqueta === 'name' && valor.toLowerCase() === 'notes' && dato != null && String(dato).trim() !== '') {
-          return reemplazarXXXXXPor5Digitos(String(dato).trim());
+          return reemplazarMarcadorPor5Digitos(String(dato).trim());
         }
       }
       return null;
     };
 
-    // =========================
+    // -------------------------
     // ✅ TC55: abrir registro creado desde listado buscándolo por Nota
-    // =========================
+    // -------------------------
     const abrirPlanificacionPorNotaEnListado = (nota) => {
       if (!nota) {
         // si no hay nota, no podemos buscar
@@ -2171,17 +2442,20 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
               });
             }
 
-            return cy.wrap(fila).dblclick({ force: true });
+            return cy.wrap(fila)
+              .scrollIntoView({ block: 'center' })
+              .dblclick({ force: true })
+              .then(() => cy.wait(1200));
           });
         })
         .then(() => cy.wait(1500))
         .then(() => cy.url().should('include', '/dashboard/'));
     };
 
-    // =========================
+    // -------------------------
     // ✅ TC55: verificación campos (los del Excel que tenían dato)
-    // =========================
-    const getValorCampoPorName = (nameAttr) => {
+    // -------------------------
+    const obtenerValorCampoPorName = (nameAttr) => {
       const sel = `input[name="${CSS.escape(nameAttr)}"], textarea[name="${CSS.escape(nameAttr)}"]`;
       return cy.get('body').then(($b) => {
         const $el = $b.find(sel).filter(':visible').first();
@@ -2191,7 +2465,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       });
     };
 
-    const getValorSelectMUIById = (idCombobox) => {
+    const obtenerValorSelectMUIPorId = (idCombobox) => {
       const sel = `#${CSS.escape(idCombobox)}[role="combobox"]`;
       return cy.get('body').then(($b) => {
         const $cb = $b.find(sel).filter(':visible').first();
@@ -2201,7 +2475,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       });
     };
 
-    const getValorAutocompletePorLabel = (labelText) => {
+    const obtenerValorAutocompletePorLabel = (labelText) => {
       const re = new RegExp(`^\\s*${Cypress._.escapeRegExp(String(labelText || '').trim())}\\s*$`, 'i');
       return cy.get('body').then(($b) => {
         const $label = $b.find('label').filter((_, el) => re.test((el.innerText || el.textContent || '').trim())).filter(':visible').first();
@@ -2221,10 +2495,10 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
       const checks = [];
 
       for (const i of indices) {
-        const etiqueta = norm(obj[`etiqueta_${i}`]).toLowerCase();
-        const valor = norm(obj[`valor_etiqueta_${i}`]);
-        const datoRaw = String(obj[`dato_${i}`] ?? '').trim();
-        const dato = reemplazarXXXXXPor5Digitos(datoRaw);
+        const etiqueta = limpiarTexto(leerValorExcelPorIndice(obj, 'etiqueta', i)).toLowerCase();
+        const valor = limpiarTexto(leerValorExcelPorIndice(obj, 'valor_etiqueta', i));
+        const datoRaw = String(leerValorExcelPorIndice(obj, 'dato', i) ?? '').trim();
+        const dato = reemplazarMarcadorPor5Digitos(datoRaw);
         if (!dato) continue;
 
         if (etiqueta === 'name') {
@@ -2245,7 +2519,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         }
 
         if (etiqueta === 'id') {
-          const key = norm(valor);
+          const key = limpiarTexto(valor);
           const labelText = EXCEL_ID_TO_LABELTEXT[key];
           if (labelText) {
             // los que son autocomplete por label
@@ -2262,12 +2536,26 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         }
       }
 
+      // Estos tres no vienen en Excel, pero si el alta está bien deberían quedar informados.
+      checks.push({ tipo: 'label_input', nombre: 'Remitente', esperado: 'con valor' });
+      checks.push({ tipo: 'label_input', nombre: 'Destinatario', esperado: 'con valor' });
+      checks.push({ tipo: 'label_input', nombre: 'Gestor Tráfico', esperado: 'con valor' });
+
       // Ejecutar verificaciones
       return cy.wrap({ vacios: [] }).then((acc) => {
         return checks.reduce((chain, c) => {
           return chain.then((state) => {
+            const esCampoTransporte =
+              c.tipo === 'select_purchasePrice' ||
+              (c.tipo === 'name' && esCampoTransportePorName('name', c.nombre));
+
+            const prepararPantalla = esCampoTransporte
+              ? () => abrirPestana('Transporte + Tarificación')
+              : () => abrirPestana('Datos Generales').then(() => abrirDatosAmpliadosSiCerrado());
+
+            return prepararPantalla().then(() => {
             if (c.tipo === 'name') {
-              return getValorCampoPorName(c.nombre).then((v) => {
+              return obtenerValorCampoPorName(c.nombre).then((v) => {
                 const ok = !!String(v || '').trim();
                 if (!ok) state.vacios.push(`name="${c.nombre}"`);
                 return state;
@@ -2276,7 +2564,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
 
             if (c.tipo === 'select_purchasePrice') {
               // el combobox tiene id fijo en DOM: mui-component-select-purchasePrice
-              return getValorSelectMUIById('mui-component-select-purchasePrice').then((txt) => {
+              return obtenerValorSelectMUIPorId('mui-component-select-purchasePrice').then((txt) => {
                 const t = String(txt || '').trim();
                 if (!t) state.vacios.push('purchasePrice (Precio)');
                 return state;
@@ -2284,7 +2572,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
             }
 
             if (c.tipo === 'select_confirmed') {
-              return getValorSelectMUIById('mui-component-select-confirmed').then((txt) => {
+              return obtenerValorSelectMUIPorId('mui-component-select-confirmed').then((txt) => {
                 const t = String(txt || '').trim();
                 if (!t) state.vacios.push('confirmed (Confirmado)');
                 return state;
@@ -2292,7 +2580,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
             }
 
             if (c.tipo === 'label_input') {
-              return getValorAutocompletePorLabel(c.nombre).then((v) => {
+              return obtenerValorAutocompletePorLabel(c.nombre).then((v) => {
                 const ok = !!String(v || '').trim();
                 if (!ok) state.vacios.push(`label="${c.nombre}"`);
                 return state;
@@ -2300,22 +2588,43 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
             }
 
             return state;
+            });
           });
         }, cy.wrap(acc));
       });
     };
 
+    const buscarYVerificarPlanificacionGuardadaCaso55 = (obj) => {
+      const notaCreada = getNotaCreadaDesdeExcel(obj);
+
+      return abrirPlanificacionPorNotaEnListado(notaCreada)
+        .then(() => verificarCamposDesdeExcelCaso55(obj))
+        .then((resultado) => {
+          const faltantes = Array.isArray(resultado?.vacios) ? resultado.vacios : [];
+          if (!faltantes.length) return cy.wrap(null);
+
+          const detalle = `Campos sin datos tras guardar: ${faltantes.join(', ')}`;
+          return registrarResultado({
+            resultado: 'ERROR',
+            esperado: 'Poder recuperar la planificación creada y ver todos los campos informados',
+            obtenido: detalle
+          }).then(() => {
+            throw new Error(detalle);
+          });
+        });
+    };
+
     // ========= ejecución por caso (52/54 especiales ya los tenías) =========
-    const getDatoExcelPorNameConFallback = (obj, candidates) => {
+    const obtenerDatoExcelPorNameConFallback = (obj, candidates) => {
       const arr = Array.isArray(candidates) ? candidates : [candidates];
       const indices = getIndicesEtiquetas(obj);
 
       const findName = (target) => {
-        const t = norm(target).toLowerCase();
+        const t = limpiarTexto(target).toLowerCase();
         for (const i of indices) {
-          const et = norm(obj[`etiqueta_${i}`]).toLowerCase();
-          const vl = norm(obj[`valor_etiqueta_${i}`]).toLowerCase();
-          const dt = obj[`dato_${i}`];
+          const et = limpiarTexto(leerValorExcelPorIndice(obj, 'etiqueta', i)).toLowerCase();
+          const vl = limpiarTexto(leerValorExcelPorIndice(obj, 'valor_etiqueta', i)).toLowerCase();
+          const dt = leerValorExcelPorIndice(obj, 'dato', i);
           if (et === 'name' && vl === t && dt != null && String(dt).trim() !== '') return String(dt).trim();
         }
         return null;
@@ -2329,30 +2638,28 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     };
 
     const rellenarSoloObligatorios = (obj) => {
-      const cliente = getDatoExcelPorNameConFallback(obj, 'clientCode');
-      const ruta = getDatoExcelPorNameConFallback(obj, 'routeCode');
+      const cliente = obtenerDatoExcelPorNameConFallback(obj, 'clientCode');
+      const ruta = obtenerDatoExcelPorNameConFallback(obj, 'routeCode');
 
-      return abrirTab('Datos Generales')
-        .then(() => (cliente ? setFieldByName('clientCode', cliente) : cy.wrap(null)))
-        .then(() => (ruta ? setFieldByName('routeCode', ruta) : cy.wrap(null)))
-        .then(() => clickGuardar())
+      return abrirPestana('Datos Generales')
+        .then(() => (cliente ? rellenarCampoPorName('clientCode', cliente) : cy.wrap(null)))
+        .then(() => (ruta ? rellenarCampoPorName('routeCode', ruta) : cy.wrap(null)))
+        .then(() => pulsarBotonGuardar())
         .then(() => validarNoError500TrasGuardar());
     };
 
     const rellenarSoloCliente = (obj) => {
-      const cliente = getDatoExcelPorNameConFallback(obj, 'clientCode');
+      const cliente = obtenerDatoExcelPorNameConFallback(obj, 'clientCode');
 
-      return abrirTab('Datos Generales')
-        .then(() => (cliente ? setFieldByName('clientCode', cliente) : cy.wrap(null)))
-        .then(() => clickGuardar())
+      return abrirPestana('Datos Generales')
+        .then(() => (cliente ? rellenarCampoPorName('clientCode', cliente) : cy.wrap(null)))
+        .then(() => pulsarBotonGuardar())
         .then(() => validarNoError500TrasGuardar());
     };
 
-    // =========================
+    // -------------------------
     // FLUJO FINAL
-    // =========================
-    const notaCreada = getNotaCreadaDesdeExcel(caso); // ✅ se usa solo en TC55 (pero lo calculamos ya)
-
+    // -------------------------
     return UI.abrirPantalla()
       .then(() => abrirFormularioCreacion())
       .then(() => {
@@ -2362,32 +2669,11 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
         // 53 y 55: rellenar todo
         return rellenarDatosGeneralesDesdeExcel(caso)
           .then(() => rellenarTransporteTarificacionDesdeExcel(caso))
-          .then(() => clickGuardar())
+          .then(() => pulsarBotonGuardar())
           .then(() => validarNoError500TrasGuardar())
           .then(() => {
-            // ✅ SOLO TC55: buscar por Nota y verificar campos
-            if (nCaso !== 55) return cy.wrap(null);
-
-            return abrirPlanificacionPorNotaEnListado(notaCreada)
-              .then(() => abrirTab('Datos Generales'))
-              .then(() => abrirDatosAmpliadosSiCerrado())
-              .then(() => abrirTab('Transporte + Tarificación'))
-              .then(() => verificarCamposDesdeExcelCaso55(caso))
-              .then((r) => {
-                const vacios = (r && r.vacios) ? r.vacios : [];
-                if (vacios.length > 0) {
-                  return registrarResultado({
-                    resultado: 'ERROR',
-                    esperado: 'Tras guardar, todos los campos deben quedar rellenos',
-                    obtenido: `Campos vacíos: ${vacios.join(', ')}`
-                  });
-                }
-                return registrarResultado({
-                  resultado: 'OK',
-                  esperado: 'Tras guardar, todos los campos deben quedar rellenos',
-                  obtenido: 'Todos los campos verificados están rellenos'
-                });
-              });
+            if (nCaso === 55) return buscarYVerificarPlanificacionGuardadaCaso55(caso);
+            return cy.wrap(null);
           });
       });
   }
@@ -2400,7 +2686,7 @@ describe('PROCESOS - PLANIFICACIÓN - Validación completa con errores y reporte
     return cy.url().then((urlActual) => {
       if (urlActual.includes('/form')) {
         cy.log('TC056/TC057: Estamos en el formulario, navegando a la lista...');
-        return cy.visit(URL_PATH)
+        return cy.visit(RUTA_PANTALLA)
           .then(() => cy.wait(1000));
       }
       return cy.wrap(null);

@@ -1,4 +1,4 @@
-describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
+﻿describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   const archivo = 'reportes_pruebas_novatrans.xlsx';
   const PANTALLA = 'Ficheros (Clientes)';
   const HOJA_EXCEL = 'Ficheros (Clientes)';
@@ -114,10 +114,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
         const { fn, autoRegistro = true } = ejecucion;
 
-        // Para los casos de alta (7-15 y 37, 43), siempre hacer login y navegación completa
+        // Para los casos de alta (6-14 y 40), siempre hacer login y navegación completa
         // para garantizar un estado limpio antes de cada caso
         let prepararPantalla = pantallaLista;
-        if ((numero >= 7 && numero <= 15) || numero === 43) {
+        if ((numero >= 6 && numero <= 14) || numero === 40) {
           const seccion = deducirSeccionDesdeCaso(caso);
           cy.log(`Caso ${numero}: Preparando estado limpio (login + navegación + abrir formulario)`);
           prepararPantalla = cy.login()
@@ -168,12 +168,12 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               return UI.esperarTabla();
             });
         }
-        // Para el caso 16, recargar antes de ejecutar
-        else if (numero === 16) {
+        // Para el caso 15, recargar antes de ejecutar
+        else if (numero === 15) {
           prepararPantalla = cy.login().then(() => UI.abrirPantalla());
         }
-        // Para el caso 18, navegar directamente a la tabla para salir del formulario de editar cliente
-        else if (numero === 18) {
+        // Para el caso 17, navegar directamente a la tabla para salir del formulario de editar cliente
+        else if (numero === 17) {
           prepararPantalla = cy.visit(URL_PATH).then(() => {
             cy.wait(2000);
             cy.url().should('include', URL_PATH).and('not.include', '/form');
@@ -189,12 +189,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               });
           });
         }
-        // Para el caso 38, asegurar login + navegación antes de ejecutar (por si venimos de 37 en formulario)
-        else if (numero === 38) {
-          prepararPantalla = cy.login().then(() => UI.abrirPantalla());
-        }
-        // Para el caso 40, navegar directamente a la tabla para salir del formulario del caso 39
-        else if (numero === 40) {
+        // Para el caso 37, navegar directamente a la tabla para salir del formulario del caso 36
+        else if (numero === 37) {
           prepararPantalla = cy.visit(URL_PATH).then(() => {
             cy.wait(2000);
             cy.url().should('include', URL_PATH).and('not.include', '/form');
@@ -246,17 +242,17 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           // Tras cada caso, recargar pantalla para no arrastrar estado del anterior
           .then(() => {
             // Para casos 14 y 15, no recargar para evitar buscar tabla desde el formulario
-            if (numero === 14 || numero === 15) {
+            if (numero === 13 || numero === 14) {
               return cy.wrap(null);
             }
 
             // Caso 13: asegurar salir del formulario con login + navegación limpia
-            if (numero === 13) {
+            if (numero === 12) {
               return cy.login().then(() => UI.abrirPantalla());
             }
 
-            // Para casos 7-15 y 43, recargar y usar abrirPantalla (salta esperarTabla si seguimos en form)
-            if ((numero >= 7 && numero <= 15) || numero === 43) {
+            // Para casos 7-14 y 40, recargar y usar abrirPantalla (salta esperarTabla si seguimos en form)
+            if ((numero >= 6 && numero <= 14) || numero === 40) {
               return cy.reload().then(() => UI.abrirPantalla());
             }
 
@@ -275,14 +271,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       case 1:
         return { fn: cargaPantalla };
       case 2:
-        return { fn: marcarOkSinEjecutar };
       case 3:
+        return { fn: ejecutarFiltroIndividualExcel };
       case 4:
-        return { fn: ejecutarFiltroIndividualExcel };
-      case 5:
         return { fn: seleccionarFechasFiltro };
-      case 6:
+      case 5:
         return { fn: ejecutarFiltroIndividualExcel };
+      case 6:
       case 7:
       case 8:
       case 9:
@@ -290,64 +285,60 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       case 11:
       case 12:
       case 13:
-        return { fn: anadirCliente };
       case 14:
         return { fn: anadirCliente };
       case 15:
-        return { fn: anadirCliente };
       case 16:
         return { fn: editarCliente };
       case 17:
-        return { fn: editarCliente };
-      case 18:
-        // TC018: Seleccionar fila, pulsar Eliminar y cancelar el diálogo para que no borre datos importantes por si acaso
+        // Seleccionar fila, confirmar eliminación y validar borrado o aviso de vinculación
         return { fn: seleccionarFilaYPulsarEliminar };
-      case 19:
+      case 18:
         return { fn: scrollTablaClientes };
-      case 20:
+      case 19:
         return { fn: cambiarIdiomasClientes };
+      case 20:
       case 21:
       case 22:
-      case 23:
         return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
-      case 24:
+      case 23:
         return { fn: ejecutarFiltroIndividualExcel };
-      case 25:
+      case 24:
         return { fn: seleccionarPrimerCliente };
+      case 25:
       case 26:
       case 27:
-      case 28:
         return { fn: seleccionarNacionalidad };
-      case 29:
+      case 28:
         return { fn: ejecutarFiltroIndividualExcel };
+      case 29:
       case 30:
       case 31:
-        return { fn: ordenarColumnaDesdeExcel };
       case 32:
+        return { fn: ordenarColumnaDesdeExcel };
       case 33:
-        return { fn: ordenarColumnaDesdeExcel };
-      case 34:
-      case 35:
-        return { fn: marcarOkSinEjecutar }; // Ya no existen estos casos
-      case 36:
         return { fn: ocultarColumnaDesdeExcel };
-      case 37:
+      case 34:
         return { fn: mostrarColumnaDesdeExcel };
-      case 38:
+      case 35:
         return { fn: ordenarColumnaDesdeExcel };
-      case 39:
+      case 36:
         return { fn: abrirFormularioDesdeExcel };
-      case 40:
+      case 37:
         return { fn: guardarFiltroDesdeExcel };
-      case 41:
+      case 38:
         return { fn: limpiarFiltroDesdeExcel };
-      case 42:
+      case 39:
         return { fn: seleccionarFiltroGuardadoDesdeExcel };
-      case 43:
-        return { fn: TC043 };
-      case 44:
-      case 45:
+      case 40:
+        return { fn: TC040 };
+      case 41:
+      case 42:
         return { fn: exportarCliente, autoRegistro: true };
+      case 43:
+        return { fn: ordenarOtraPaginaClientes, autoRegistro: false };
+      case 44:
+        return { fn: comprobarPersistenciaOrdenColumnaClientes, autoRegistro: false };
       default:
         return null;
     }
@@ -409,44 +400,57 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       return cy.get('.MuiDataGrid-row:visible')
         .first()
         .within(() => {
-          cy.get('input[type="checkbox"]').check({ force: true });
+          cy.get('.MuiDataGrid-cellCheckbox [role="checkbox"], .MuiDataGrid-cellCheckbox input[type="checkbox"], input[type="checkbox"]')
+            .first()
+            .click({ force: true });
         });
     }
   };
 
   function ejecutarFiltroIndividualExcel(caso, numero, casoId) {
     return UI.abrirPantalla().then(() => {
-      return cy.ejecutarFiltroIndividual(
+      const preparacion = numero === 23 ? limpiarMultifiltroClientes() : cy.wrap(null);
+
+      return preparacion.then(() => cy.ejecutarFiltroIndividual(
         numero,
         PANTALLA,
         HOJA_EXCEL
-      );
+      ));
     });
   }
 
   function ejecutarMultifiltroExcel(caso, numero, casoId) {
     UI.esperarTabla();
-    return cy.ejecutarMultifiltro(
-      numero,
-      PANTALLA,
-      HOJA_EXCEL,
-      MENU,
-      SUBMENU
-    );
+    return limpiarMultifiltroClientes()
+      .then(() => cy.ejecutarMultifiltro(
+        numero,
+        PANTALLA,
+        HOJA_EXCEL,
+        MENU,
+        SUBMENU
+      ));
   }
 
-  // Casos deshabilitados temporalmente, se registran como OK sin ejecutar pasos
-  function marcarOkSinEjecutar(caso, numero, casoId) {
-    const id = casoId || `TC${String(numero).padStart(3, '0')}`;
-    cy.log(`${id}: marcado como OK sin ejecución (deshabilitado temporalmente)`);
-    return registrarResultadoAutomatico(
-      numero,
-      id,
-      caso?.nombre || id,
-      'Caso deshabilitado temporalmente (OK)',
-      'OK',
-      true
-    );
+  function limpiarMultifiltroClientes() {
+    return cy.get('body').then(($body) => {
+      const botonLimpiar = $body.find('button')
+        .filter((_, el) => {
+          const texto = (el.textContent || el.innerText || '').trim();
+          return /^(Limpiar|Clear|Netejar)$/i.test(texto);
+        })
+        .filter(':visible')
+        .first();
+
+      if (!botonLimpiar.length) {
+        return cy.wrap(null);
+      }
+
+      cy.log('Limpiando multifiltro anterior antes de aplicar el siguiente');
+      return cy.wrap(botonLimpiar)
+        .scrollIntoView()
+        .click({ force: true })
+        .then(() => cy.wait(500));
+    });
   }
 
   function seleccionarNacionalidad(caso, numero) {
@@ -471,8 +475,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     cy.log(`Seleccionando nacionalidad para caso ${numero}: ${textoBuscar}`);
 
     return UI.abrirPantalla().then(() => {
-      // Abrir el panel de Filtros
-      cy.contains('button', /^(Filtros|Filters|Filtres)$/i).click({ force: true });
+      // Abrir el panel de Filtros avanzados
+      cy.contains('button', /(Filtros avanzados|Advanced filters|Filtres avançats)/i).click({ force: true });
       cy.wait(1000);
 
       // Buscar directamente el radio button de la nacionalidad y hacer clic
@@ -718,6 +722,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function seleccionarFechasFiltro(caso, numero, casoId) {
+    const etiquetaCaso = casoId || `TC${String(numero || 4).padStart(3, '0')}`;
+
     return UI.abrirPantalla().then(() => {
       cy.get('.MuiDataGrid-root', { timeout: 10000 }).should('be.visible');
       // No verificar que haya filas, solo que la tabla esté visible
@@ -734,7 +740,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       const fechaDesde = caso?.dato_1 || '01/12/2020';
       const fechaHasta = caso?.dato_2 || '04/01/2021';
 
-      cy.log(`TC005: Seleccionando rango de fechas desde ${fechaDesde} hasta ${fechaHasta}`);
+      cy.log(`${etiquetaCaso}: Seleccionando rango de fechas desde ${fechaDesde} hasta ${fechaHasta}`);
 
       // Parsear fechas
       const fechaInicioObj = parseFechaBasicaExcel(fechaDesde);
@@ -770,7 +776,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
       // No verificar que haya filas visibles, el filtro puede no devolver resultados
       // El test es OK si se aplica el filtro correctamente, aunque no haya resultados
-      cy.log('TC005: Filtro de fechas aplicado correctamente');
+      cy.log(`${etiquetaCaso}: Filtro de fechas aplicado correctamente`);
       return cy.wrap(null);
     });
   }
@@ -966,30 +972,23 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   function editarCliente(caso, numero) {
     const nuevoEmail = caso?.dato_1 || caso?.email || 'pruebas@gmail.com';
+    const etiquetaCaso = `TC${String(numero || 15).padStart(3, '0')}`;
 
     // Si ya estamos en el formulario de edición, editar y guardar directamente
     return cy.url().then((urlActual) => {
       const enFormularioEdicion = /\/dashboard\/clients\/form\/\d+$/i.test(urlActual);
       if (enFormularioEdicion) {
         // Caso 16: solo abrir, no editar
-        if (numero === 16) {
-          cy.log('TC016: ya en formulario, no se edita, solo se mantiene abierto');
+        if (numero === 15) {
+          cy.log(`${etiquetaCaso}: ya en formulario, no se edita, solo se mantiene abierto`);
           return cy.wrap(null);
         }
         // Caso 17: editar email y guardar
-        if (numero === 17) {
-          cy.log('TC017: ya en formulario, editando email y guardando');
+        if (numero === 16) {
+          cy.log(`${etiquetaCaso}: ya en formulario, editando email y guardando`);
           return actualizarEmailYGuardar(nuevoEmail);
         }
         // Casos 14 y 15 (mantener compatibilidad)
-        if (numero === 14) {
-          cy.log('Caso 14: ya en formulario, no se edita, solo se mantiene abierto');
-          return cy.wrap(null);
-        }
-        if (numero === 15) {
-          cy.log('Caso 15: ya en formulario, editando email y guardando');
-          return actualizarEmailYGuardar(nuevoEmail);
-        }
         cy.log('Ya en formulario de edición, editando email y guardando');
         return actualizarEmailYGuardar(nuevoEmail);
       }
@@ -1004,11 +1003,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           .then(() => cy.url().should('match', /\/dashboard\/clients\/form\/\d+$/))
         )
         .then(() => {
-          if (numero === 16) {
+          if (numero === 15) {
             cy.log('TC016: formulario abierto, sin edición');
             return cy.wrap(null);
           }
-          if (numero === 17) {
+          if (numero === 16) {
             cy.log('TC017: formulario abierto, editando email');
             return actualizarEmailYGuardar(nuevoEmail);
           }
@@ -1094,65 +1093,86 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function seleccionarFilaYPulsarEliminar(caso, numero, casoId) {
-    cy.log('TC018: Seleccionando fila y pulsando botón eliminar');
+    const etiquetaCaso = casoId || `TC${String(numero || 17).padStart(3, '0')}`;
+    let totalFilasAntes = 0;
+    let textoFilaSeleccionada = '';
 
-    // Navegar directamente a la URL de la tabla (sin /form) para asegurar que estamos en la vista inicial
+    cy.log(`${etiquetaCaso}: Seleccionando fila y pulsando botón eliminar`);
+
     cy.visit(URL_PATH);
     cy.wait(2000);
-
-    // Verificar que estamos en la vista de tabla, no en el formulario
     cy.url().should('include', URL_PATH).and('not.include', '/form');
-
-    // Esperar a que la tabla esté visible con timeout aumentado
     cy.get('.MuiDataGrid-root', { timeout: 60000 }).should('be.visible');
     cy.wait(2000);
 
-    // Esperar a que las filas se carguen con timeout aumentado
     return cy.get('.MuiDataGrid-row', { timeout: 60000 })
       .should('have.length.greaterThan', 0)
-      .then(() => {
-        cy.wait(1000); // Espera adicional para asegurar que todo está cargado
-        cy.log('Tabla cargada con filas visibles');
-      })
-      .then(() => {
-        cy.log('Seleccionando primera fila con checkbox...');
-        // Seleccionar la primera fila con checkbox
+      .then(($rows) => {
+        totalFilasAntes = $rows.length;
+        textoFilaSeleccionada = (($rows[0]?.innerText || $rows[0]?.textContent || '').trim()).replace(/\s+/g, ' ');
         return UI.seleccionarPrimeraFilaConCheckbox();
       })
       .then(() => {
-        cy.wait(500); // Esperar a que aparezca la barra de acciones
-        cy.log('Fila seleccionada, buscando botón de eliminar...');
-
-        // Buscar el botón de eliminar en la barra de acciones inferior
+        cy.wait(500);
         return cy.get('body').then(($body) => {
-          // Buscar botón que contenga "Eliminar" en el texto
           const $btnEliminar = $body.find('button, a, [role="button"]').filter((_, el) => {
             const texto = (el.textContent || el.innerText || '').trim();
             return /^eliminar$/i.test(texto);
           }).filter(':visible').first();
 
           if ($btnEliminar.length) {
-            cy.log('Botón Eliminar encontrado, haciendo clic...');
-            return cy.wrap($btnEliminar[0])
-              .scrollIntoView()
-              .should('be.visible')
-              .click({ force: true });
-          } else {
-            cy.log('No se encontró botón Eliminar, intentando con selector más amplio...');
-            // Fallback: buscar con cy.contains
-            return cy.contains('button, a', /^Eliminar$/i, { timeout: 5000 })
-              .should('be.visible')
-              .scrollIntoView()
-              .click({ force: true });
+            return cy.wrap($btnEliminar[0]).scrollIntoView().should('be.visible').click({ force: true });
           }
+
+          return cy.contains('button, a, [role="button"]', /^Eliminar$/i, { timeout: 5000 })
+            .should('be.visible')
+            .scrollIntoView()
+            .click({ force: true });
         });
       })
       .then(() => {
-        cy.log('Botón Eliminar pulsado, verificando que aparezca el diálogo de confirmación...');
-        // Verificar que el diálogo de confirmación aparezca
-        cy.contains(/¿Estás seguro|eliminar.*cliente|Esta acción no se puede deshacer/i, { timeout: 5000 })
-          .should('be.visible');
-        cy.log('TC018: Diálogo de confirmación de eliminación visible. Test completado.');
+        return cy.get('[role="dialog"], .MuiDialog-root', { timeout: 10000 })
+          .should('be.visible')
+          .last()
+          .within(() => {
+            cy.contains(/seguro|eliminar.*cliente|esta acci.n no se puede deshacer/i, { timeout: 5000 })
+              .should('be.visible');
+            cy.contains('button, [role="button"]', /eliminar|aceptar|confirmar|s[ií]/i, { timeout: 5000 })
+              .should('be.visible')
+              .click({ force: true });
+          });
+      })
+      .then(() => cy.wait(1500))
+      .then(() => {
+        const patronAvisoVinculado = /vinculad|relacionad|asociad|no se puede eliminar|no es posible eliminar|linked|cannot delete/i;
+        const patronExito = /eliminad|borrad|deleted|correctamente|success/i;
+
+        return cy.get('body').then(($body) => {
+          const textoBody = ($body.text() || '').replace(/\s+/g, ' ').trim();
+
+          if (patronAvisoVinculado.test(textoBody)) {
+            cy.log(`${etiquetaCaso}: Se mostró aviso de vinculación. Resultado válido.`);
+            return;
+          }
+
+          if (patronExito.test(textoBody)) {
+            cy.log(`${etiquetaCaso}: Se mostró mensaje de eliminación correcta.`);
+            return;
+          }
+
+          return cy.get('.MuiDataGrid-row', { timeout: 15000 }).then(($rowsDespues) => {
+            const totalFilasDespues = $rowsDespues.length;
+            const sigueVisible = Array.from($rowsDespues).some((row) => {
+              const textoFila = ((row.innerText || row.textContent || '').trim()).replace(/\s+/g, ' ');
+              return textoFilaSeleccionada && textoFila.includes(textoFilaSeleccionada);
+            });
+
+            expect(
+              totalFilasDespues < totalFilasAntes || !sigueVisible,
+              `${etiquetaCaso}: tras confirmar, el cliente debe eliminarse o mostrarse un aviso de vinculación`
+            ).to.eq(true);
+          });
+        });
       });
   }
 
@@ -1165,19 +1185,234 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function cambiarIdiomasClientes(caso, numero, casoId) {
+    const idiomas = [
+      { codigo: 'ca', nombre: 'Catalán' },
+      { codigo: 'en', nombre: 'Inglés' },
+      { codigo: 'es', nombre: 'Español' }
+    ];
+    const todosLosErrores = [];
+    const nombreCaso = `${casoId || `TC${String(numero || 19).padStart(3, '0')}`} - ${caso?.nombre || 'Tabla responde al cambiar idioma'}`;
+
     return UI.abrirPantalla()
-      // Misma lógica que procesos_planificacion: delegar en cambiarIdiomaCompleto con los tres idiomas
-      .then(() => cy.cambiarIdiomaCompleto(
-        PANTALLA,
-        'Clientes',   // Español
-        'Clients',    // Catalán
-        'Clients',    // Inglés
-        20
-      ));
+      .then(() => cambiarYValidarIdiomaCliente(idiomas[0], todosLosErrores))
+      .then(() => cambiarYValidarIdiomaCliente(idiomas[1], todosLosErrores))
+      .then(() => cambiarIdiomaClientes('es'))
+      .then(() => {
+        const erroresReales = [...new Set(todosLosErrores)].filter(e =>
+          e.startsWith('Clave sin traducir:') || e.startsWith('Palabra en español:')
+        );
+
+        if (erroresReales.length > 0) {
+          return cy.registrarResultados({
+            numero: numero || 19,
+            nombre: nombreCaso,
+            esperado: 'EN: sin palabras UI en español ni claves con puntos. CA: sin claves con puntos.',
+            obtenido: erroresReales.join(' | '),
+            resultado: 'ERROR',
+            archivo,
+            pantalla: PANTALLA
+          });
+        }
+
+        return cy.registrarResultados({
+          numero: numero || 19,
+          nombre: nombreCaso,
+          esperado: 'EN: sin palabras UI en español ni claves con puntos. CA: sin claves con puntos.',
+          obtenido: 'OK',
+          resultado: 'OK',
+          archivo,
+          pantalla: PANTALLA
+        });
+      })
+      .then(() => cambiarIdiomaClientes('es'))
+      .then(() => UI.abrirPantalla());
+  }
+
+  function cambiarYValidarIdiomaCliente(config, todosLosErrores) {
+    cy.log(`Cambiando idioma a: ${config.nombre} (${config.codigo})`);
+
+    return cambiarIdiomaClientes(config.codigo)
+      .then(() => cy.wait(1500))
+      .then(() => {
+        if (config.codigo === 'es') return;
+
+        return cy.validarTraducciones(config.codigo).then((validacion) => {
+          const erroresFiltrados = filtrarErroresIdiomaClientes(config.codigo, validacion?.errores || []);
+          erroresFiltrados.forEach((e) => todosLosErrores.push(e));
+        });
+      })
+      .then(() => {
+        if (config.codigo === 'es') return;
+
+        return cy.url().then((urlActual) => {
+          if (/\/form/i.test(urlActual)) {
+            return validarFormularioIdiomaClientes(config, todosLosErrores);
+          }
+
+          return abrirFormularioNuevoCliente()
+            .then(() => validarFormularioIdiomaClientes(config, todosLosErrores));
+        });
+      });
+  }
+
+  function filtrarErroresIdiomaClientes(codigoIdioma, errores = []) {
+    if (codigoIdioma === 'es') return [];
+    if (codigoIdioma === 'ca') {
+      return errores.filter((e) => e.startsWith('Clave sin traducir:'));
+    }
+    return errores;
+  }
+
+  function validarFormularioIdiomaClientes(config, todosLosErrores) {
+    return cy.validarTraducciones(config.codigo)
+      .then((validacion) => {
+        filtrarErroresIdiomaClientes(config.codigo, validacion?.errores || [])
+          .forEach((e) => todosLosErrores.push(e));
+      })
+      .then(() => {
+        const pestanasVisitadas = new Set();
+
+        return cy.get('body').then(($body) => {
+          const tabs = $body
+            .find('[role="tab"], .MuiTab-root, button[role="tab"], [data-testid*="tab"]')
+            .filter(':visible');
+
+          if (!tabs.length) {
+            return cy.wrap(null);
+          }
+
+          const normalizarNombrePestana = (valor) => (valor || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+
+          return cy.get('[role="tab"], .MuiTab-root, button[role="tab"], [data-testid*="tab"]')
+            .filter(':visible')
+            .then(($tabsIniciales) => {
+              Array.from($tabsIniciales).forEach((tab, index) => {
+                const nombre = normalizarNombrePestana(tab.textContent || tab.getAttribute('aria-label') || `pestana-${index}`);
+                const ariaSelected = (tab.getAttribute('aria-selected') || '').toLowerCase();
+                if (ariaSelected === 'true' || tab.classList.contains('Mui-selected')) {
+                  pestanasVisitadas.add(nombre);
+                }
+              });
+            })
+            .then(() => {
+              const validarSiguientePestana = () => {
+                return cy.get('[role="tab"], .MuiTab-root, button[role="tab"], [data-testid*="tab"]')
+                  .filter(':visible')
+                  .then(($tabsActuales) => {
+                    const siguiente = Array.from($tabsActuales).find((tab, index) => {
+                      const nombre = normalizarNombrePestana(tab.textContent || tab.getAttribute('aria-label') || `pestana-${index}`);
+                      return !pestanasVisitadas.has(nombre);
+                    });
+
+                    if (!siguiente) {
+                      return cy.wrap(null);
+                    }
+
+                    const nombrePestana = (siguiente.textContent || siguiente.getAttribute('aria-label') || '').trim();
+                    const clavePestana = normalizarNombrePestana(nombrePestana);
+                    pestanasVisitadas.add(clavePestana);
+
+                    return cy.wrap(siguiente)
+                      .click({ force: true })
+                      .then(() => cy.wait(800))
+                      .then(() => cy.validarTraducciones(config.codigo))
+                      .then((validacionSiguiente) => {
+                        filtrarErroresIdiomaClientes(config.codigo, validacionSiguiente?.errores || [])
+                          .forEach((e) => todosLosErrores.push(e));
+
+                        cy.log(`Pestaña validada (${config.nombre}): ${nombrePestana}`);
+                      })
+                      .then(() => validarSiguientePestana());
+                  });
+              };
+
+              return validarSiguientePestana();
+            });
+        });
+      })
+      .then(() => cerrarFormularioIdiomaClientes());
+  }
+
+  function cerrarFormularioIdiomaClientes() {
+    return cy.url().then((urlActual) => {
+      if (!/\/form/i.test(urlActual)) return cy.wrap(null);
+
+      return cy.get('body').then(($body) => {
+        const botonCerrar = $body.find('button, a').filter((_, btn) => {
+          const texto = (btn.textContent || btn.innerText || '').trim().toLowerCase();
+          const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
+
+          return /cerrar|close|cancelar|cancel|salir|exit/i.test(texto) ||
+            /cerrar|close|cancelar|cancel/i.test(ariaLabel) ||
+            (btn.classList.contains('MuiIconButton-root') &&
+              btn.querySelector('[aria-label*="close"], [aria-label*="Close"], [aria-label*="cerrar"]'));
+        }).filter(':visible').first();
+
+        if (botonCerrar.length > 0) {
+          return cy.wrap(botonCerrar).click({ force: true })
+            .then(() => cy.wait(1000))
+            .then(() => cy.url().then((urlDespues) => {
+              if (/\/form/i.test(urlDespues)) {
+                cy.get('body').type('{esc}', { force: true });
+                cy.wait(500);
+              }
+            }));
+        }
+
+        cy.get('body').type('{esc}', { force: true });
+        return cy.wait(500);
+      }).then(() => cy.visit(URL_PATH).then(() => UI.esperarTabla()));
+    });
+  }
+
+  function cambiarIdiomaClientes(codigo) {
+    return cy.get('body').then(($body) => {
+      if ($body.find('select#languageSwitcher').length > 0) {
+        return cy.get('select#languageSwitcher').select(codigo, { force: true });
+      }
+
+      if ($body.find('select[name="language"], select[data-testid="language-switcher"]').length > 0) {
+        return cy.get('select[name="language"], select[data-testid="language-switcher"]').select(codigo, { force: true });
+      }
+
+      const selectors = [
+        'button:contains("Spanish")',
+        'button:contains("Español")',
+        'button:contains("Espanyol")',
+        'button:contains("English")',
+        'button:contains("Inglés")',
+        'button:contains("Angles")',
+        'button:contains("Anglès")',
+        'button:contains("Catalan")',
+        'button:contains("Catalán")',
+        'button:contains("Català")',
+        '[role="button"]:contains("Spanish")',
+        '[role="button"]:contains("Español")',
+        'button.MuiButton-root'
+      ];
+
+      const selectorEncontrado = selectors.find((selector) => $body.find(selector).length > 0);
+      if (!selectorEncontrado) return cy.wrap(null);
+
+      cy.get(selectorEncontrado).first().click({ force: true });
+      cy.wait(500);
+
+      if (codigo === 'en') {
+        return cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/English|Inglés|Angles|Anglès/i).click({ force: true });
+      }
+      if (codigo === 'ca') {
+        return cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Catalan|Catalán|Català/i).click({ force: true });
+      }
+      return cy.get('li.MuiMenuItem-root, [role="menuitem"]').contains(/Spanish|Español|Espanyol/i).click({ force: true });
+    });
   }
 
   function seleccionarPrimerCliente(caso, numero, casoId) {
     return UI.abrirPantalla()
+      .then(() => limpiarMultifiltroClientes())
       .then(() => UI.seleccionarPrimeraFilaConCheckbox());
   }
 
@@ -1235,6 +1470,106 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           return UI.filasVisibles().should('have.length.greaterThan', 0);
         });
     });
+  }
+
+  function obtenerPaginaActualClientes() {
+    return cy.get('body').then(($body) => {
+      const candidatos = [
+        'button.MuiPaginationItem-root.Mui-selected',
+        '.MuiPaginationItem-root.Mui-selected',
+        'button[aria-current="true"]',
+        '[aria-current="true"]'
+      ];
+
+      for (const selector of candidatos) {
+        const $actual = $body.find(selector).filter(':visible').first();
+        const texto = ($actual.text() || '').trim();
+        if (/^\d+$/.test(texto)) {
+          return Number(texto);
+        }
+      }
+
+      return 1;
+    });
+  }
+
+  function irAPaginaClientes(numeroPagina) {
+    cy.log(`Ir a la página ${numeroPagina}`);
+
+    return UI.abrirPantalla()
+      .then(() => UI.esperarTabla())
+      .then(() => cy.get('.MuiDataGrid-footerContainer, .MuiTablePagination-root, .MuiPagination-root', { timeout: 10000 }).should('be.visible'))
+      .then(() => {
+        return cy.contains('button, [role="button"]', new RegExp(`^${numeroPagina}$`), { timeout: 10000 })
+          .filter(':visible')
+          .last()
+          .scrollIntoView({ block: 'center' })
+          .click({ force: true });
+      })
+      .then(() => cy.wait(800))
+      .then(() => obtenerPaginaActualClientes())
+      .then((paginaActual) => {
+        expect(paginaActual, `Página activa tras pulsar ${numeroPagina}`).to.eq(numeroPagina);
+      });
+  }
+
+  function obtenerValoresColumnaCodigoPaginaActual() {
+    return cy.get('.MuiDataGrid-row[role="row"]', { timeout: 10000 })
+      .filter(':visible')
+      .then(($rows) => {
+        const valores = Array.from($rows)
+          .map((row) => {
+            const cell = row.querySelector('[data-field="code"]');
+            return (cell?.textContent || cell?.innerText || '').trim();
+          })
+          .filter(Boolean);
+
+        cy.log(`Códigos detectados en la página actual: ${valores.join(', ')}`);
+        return valores;
+      });
+  }
+
+  function ordenarOtraPaginaClientes(caso, numero, casoId) {
+    cy.log('TC043: Ir a página 3 y ordenar Código sin volver a la página 1');
+    let falloRegistrado = false;
+
+    return UI.abrirPantalla()
+      .then(() => irAPaginaClientes(3))
+      .then(() => ordenarColumna('Código'))
+      .then(() => obtenerPaginaActualClientes())
+      .then((paginaActual) => {
+        if (paginaActual !== 3) {
+          falloRegistrado = true;
+          const mensaje = `No se ordena la página 3, me devuelve a la página ${paginaActual}`;
+          cy.log(`TC043 ERROR: ${mensaje}`);
+          return registrarResultadoAutomatico(numero, casoId, 'Ordenar otra página', mensaje, 'ERROR', true);
+        }
+        return cy.wrap(null);
+      })
+      .then(() => {
+        if (falloRegistrado) return null;
+        return obtenerValoresColumnaCodigoPaginaActual();
+      })
+      .then((codigos) => {
+        if (falloRegistrado) return null;
+
+        const esperado = [...codigos].sort((a, b) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }));
+        if (JSON.stringify(codigos) !== JSON.stringify(esperado)) {
+          falloRegistrado = true;
+          const mensaje = `La página 3 no queda ordenada por Código. Obtenido: ${codigos.join(', ')}`;
+          cy.log(`TC043 ERROR: ${mensaje}`);
+          return registrarResultadoAutomatico(numero, casoId, 'Ordenar otra página', mensaje, 'ERROR', true);
+        }
+
+        return registrarResultadoAutomatico(
+          numero,
+          casoId,
+          'Ordenar otra página',
+          'Se ordena correctamente la página 3 sin volver a la página 1',
+          'OK',
+          true
+        );
+      });
   }
 
   function abrirPanelColumnas() {
@@ -1307,6 +1642,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     if (/nombre/.test(lower)) {
       return /(Nombre|Name|Nom)/i;
     }
+    if (/raz[oó]n social/.test(lower)) {
+      return /(Raz[oó]n Social|Business Name|Ra[oó] Social)/i;
+    }
     if (/tel[eé]fono/.test(lower)) {
       return /(Tel[eé]fono|Phone|Tel[eè]fon)/i;
     }
@@ -1326,6 +1664,191 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             .should('not.contain.text', columna)
         );
     });
+  }
+
+  function obtenerOrdenCabecerasClientes() {
+    return cy.get('[role="columnheader"], .MuiDataGrid-columnHeader', { timeout: 10000 })
+      .filter(':visible')
+      .then(($headers) => {
+        const columnas = Array.from($headers)
+          .filter((el) => {
+            const className = el.className || '';
+            return !String(className).includes('MuiDataGrid-columnHeader--moving');
+          })
+          .sort((a, b) => {
+            const idxA = Number(a.getAttribute('aria-colindex') || '0');
+            const idxB = Number(b.getAttribute('aria-colindex') || '0');
+            return idxA - idxB;
+          })
+          .map((el) => (el.textContent || el.innerText || '').replace(/\s+/g, ' ').trim())
+          .filter((txt) => txt && !/^\d+$/.test(txt));
+
+        Cypress.log({
+          name: 'cabeceras',
+          message: `Orden actual de cabeceras: ${columnas.join(' | ')}`
+        });
+
+        return columnas;
+      });
+  }
+
+  function validarNombreDespuesDeRazonSocial(columnas, contexto = '') {
+    const idxNombre = columnas.findIndex((txt) => obtenerPatronColumna('Nombre').test(txt));
+    const idxRazon = columnas.findIndex((txt) => obtenerPatronColumna('Razón Social').test(txt));
+
+    expect(idxRazon, `${contexto} - índice de "Razón Social"`).to.be.greaterThan(-1);
+    expect(idxNombre, `${contexto} - índice de "Nombre"`).to.be.greaterThan(-1);
+    expect(idxNombre, `${contexto} - "Nombre" debe quedar justo después de "Razón Social"`).to.eq(idxRazon + 1);
+  }
+
+  function moverColumnaDespues(origen, destino) {
+    const patronOrigen = obtenerPatronColumna(origen);
+    const patronDestino = obtenerPatronColumna(destino);
+
+    cy.log(`Moviendo columna "${origen}" detrás de "${destino}"`);
+
+    return UI.abrirPantalla().then(() => {
+      return cy.contains('.MuiDataGrid-columnHeaderTitle', patronOrigen, { timeout: 10000 })
+        .should('be.visible')
+        .closest('[role="columnheader"]')
+        .then(($source) => {
+          return cy.contains('.MuiDataGrid-columnHeaderTitle', patronDestino, { timeout: 10000 })
+            .should('be.visible')
+            .closest('[role="columnheader"]')
+            .then(($target) => {
+              const sourceRect = $source[0].getBoundingClientRect();
+              const targetRect = $target[0].getBoundingClientRect();
+              const startX = Math.round(sourceRect.left + (sourceRect.width / 2));
+              const startY = Math.round(sourceRect.top + (sourceRect.height / 2));
+              const endX = Math.round(targetRect.right - 10);
+              const endY = Math.round(targetRect.top + (targetRect.height / 2));
+
+              const dataTransfer = new DataTransfer();
+              const sourceSelector = '.MuiDataGrid-columnHeaderDraggableContainer[draggable="true"]';
+
+              cy.log(`Drag coordinates: start(${startX},${startY}) target(${endX},${endY})`);
+
+              return cy.wrap($source)
+                .find(sourceSelector)
+                .first()
+                .should('exist')
+                .trigger('mousedown', {
+                  button: 0,
+                  buttons: 1,
+                  which: 1,
+                  clientX: startX,
+                  clientY: startY,
+                  force: true
+                })
+                .trigger('dragstart', {
+                  dataTransfer,
+                  eventConstructor: 'DragEvent',
+                  force: true
+                })
+                .wait(250)
+                .then(() => {
+                  return cy.wrap($target)
+                    .find(sourceSelector)
+                    .first()
+                    .should('exist')
+                    .trigger('dragenter', {
+                      dataTransfer,
+                      eventConstructor: 'DragEvent',
+                      clientX: endX,
+                      clientY: endY,
+                      force: true
+                    })
+                    .trigger('dragover', {
+                      dataTransfer,
+                      eventConstructor: 'DragEvent',
+                      clientX: endX,
+                      clientY: endY,
+                      force: true
+                    })
+                    .wait(150)
+                    .trigger('drop', {
+                      dataTransfer,
+                      eventConstructor: 'DragEvent',
+                      clientX: endX,
+                      clientY: endY,
+                      force: true
+                    });
+                })
+                .then(() => {
+                  return cy.wrap($source)
+                    .find(sourceSelector)
+                    .first()
+                    .trigger('dragend', {
+                      dataTransfer,
+                      eventConstructor: 'DragEvent',
+                      force: true
+                    })
+                    .trigger('mouseup', {
+                      button: 0,
+                      which: 1,
+                      clientX: endX,
+                      clientY: endY,
+                      force: true
+                    });
+                })
+                .then(() => cy.wait(1000));
+            });
+        });
+    });
+  }
+
+  function comprobarPersistenciaOrdenColumnaClientes(caso, numero, casoId) {
+    cy.log('TC044: Mover "Nombre" detrás de "Razón Social" y comprobar persistencia');
+
+    return UI.abrirPantalla()
+      .then(() => UI.esperarTabla())
+      .then(() => obtenerOrdenCabecerasClientes())
+      .then((ordenInicial) => {
+        const idxNombre = ordenInicial.findIndex((txt) => obtenerPatronColumna('Nombre').test(txt));
+        const idxRazon = ordenInicial.findIndex((txt) => obtenerPatronColumna('Razón Social').test(txt));
+
+        if (idxNombre !== idxRazon + 1) {
+          return moverColumnaDespues('Nombre', 'Razón Social')
+            .then(() => cy.wait(1000));
+        }
+
+        cy.log('La columna "Nombre" ya estaba colocada después de "Razón Social"');
+        return cy.wrap(null);
+      })
+      .then(() => {
+        cy.log('Navegando a otro módulo para comprobar persistencia');
+        return cy.navegarAMenu('Ficheros', 'Proveedores');
+      })
+      .then(() => cy.wait(1000))
+      .then(() => UI.abrirPantalla())
+      .then(() => UI.esperarTabla())
+      .then(() => obtenerOrdenCabecerasClientes())
+      .then((ordenFinal) => {
+        const idxNombre = ordenFinal.findIndex((txt) => obtenerPatronColumna('Nombre').test(txt));
+        const idxRazon = ordenFinal.findIndex((txt) => obtenerPatronColumna('Razón Social').test(txt));
+
+        if (idxRazon === -1 || idxNombre === -1 || idxNombre !== idxRazon + 1) {
+          const mensaje = 'No se guarda el orden de las columnas, se queda como estaba antes';
+          cy.log(`TC044 ERROR: ${mensaje}`);
+          return registrarResultadoAutomatico(
+            numero,
+            casoId,
+            'Cambiar una columna y comprobar que se graba',
+            mensaje,
+            'ERROR',
+            true
+          );
+        }
+
+        return registrarResultadoAutomatico(
+          numero,
+          casoId,
+          'Cambiar una columna y comprobar que se graba',
+          'Se guarda correctamente el orden de las columnas',
+          'OK',
+          true
+        );
+      });
   }
 
   function mostrarColumna(columna) {
@@ -1384,7 +1907,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function abrirFormularioNuevoCliente() {
-    return cy.contains('button, a', /\+?\s?Nuevo|Añadir/i, { timeout: 10000 })
+    return cy.contains('button, a', /\+?\s?(Nuevo|Nou|New|Añadir)/i, { timeout: 10000 })
       .scrollIntoView()
       .click({ force: true })
       .then(() => {
@@ -1394,13 +1917,16 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function guardarFiltroClientes(caso = {}) {
-    const termino = caso?.dato_1 || caso?.valor_etiqueta_1 || '';
-    const nombreFiltro = caso?.dato_2 || caso?.valor_etiqueta_2 || 'filtro clientes';
+    const columna = /column/i.test(caso?.valor_etiqueta_1 || '') ? (caso?.dato_1 || '') : '';
+    const termino = /search/i.test(caso?.valor_etiqueta_2 || '') ? (caso?.dato_2 || '') : '';
+    const nombreFiltro = 'filtro código';
     if (!termino) {
       cy.log('Excel no define criterio para guardar filtro');
       return cy.wrap(null);
     }
     return UI.abrirPantalla()
+      .then(() => limpiarMultifiltroClientes())
+      .then(() => seleccionarCampoFiltroClientes(columna))
       .then(() => UI.buscar(termino))
       .then(() => {
         cy.contains('button', /(Guardar|Save|Desar)/i).click({ force: true });
@@ -1412,25 +1938,29 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
   }
 
   function limpiarFiltroClientes(caso = {}) {
-    const termino = caso?.dato_1 || caso?.valor_etiqueta_1 || '';
-    if (!termino) {
-      cy.log('Excel no define criterio para limpiar filtro');
-      return cy.wrap(null);
-    }
     return UI.abrirPantalla()
-      .then(() => UI.buscar(termino))
       .then(() => cy.contains('button', /(Limpiar|Clear|Netejar)/i).click({ force: true }));
   }
 
   function seleccionarFiltroGuardadoClientes(caso = {}) {
-    const filtroNombre = caso?.dato_1 || caso?.valor_etiqueta_1 || 'filtro clientes';
-    return guardarFiltroClientes({
-      dato_1: caso?.dato_2 || caso?.valor_etiqueta_2 || filtroNombre,
-      dato_2: filtroNombre
-    }).then(() => {
-      cy.contains('button', /(Guardados|Saved|Guardats)/i).click({ force: true });
-      return cy.contains('li, [role="option"]', new RegExp(filtroNombre, 'i')).click({ force: true });
-    });
+    const filtroNombre = caso?.dato_1 || caso?.valor_etiqueta_1 || 'filtro código';
+    return UI.abrirPantalla()
+      .then(() => cy.contains('button', /(Guardados|Saved|Guardats)/i).click({ force: true }))
+      .then(() => cy.contains('li, [role="option"]', new RegExp(filtroNombre, 'i')).click({ force: true }));
+  }
+
+  function seleccionarCampoFiltroClientes(nombreCampo) {
+    return cy.contains('button, [role="button"], .MuiSelect-select', /Multifiltro/i, { timeout: 10000 })
+      .first()
+      .scrollIntoView()
+      .click({ force: true })
+      .then(() => cy.wait(300))
+      .then(() => {
+        return cy.contains('li[role="menuitem"], li[role="option"], [role="menuitem"], [role="option"]', new RegExp(`^${nombreCampo}$`, 'i'), { timeout: 10000 })
+          .should('be.visible')
+          .scrollIntoView()
+          .click({ force: true });
+      });
   }
 
   /** ---------- Fecha / Calendario ---------- **/
@@ -2567,7 +3097,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     if (nombre.includes('dato adicional') || nombre.includes('datos adicional') || nombre.includes('adicional') || nombre.includes('facturación electrónica') || nombre.includes('facturacion electronica')) return 'Datos adicionales';
     if (nombre.includes('documento')) return 'Documentos';
     // Ojo: en algunos Excels el nombre puede incluir "dirección de facturación".
-    // Para TC043 es crítico que eso se trate como la pestaña "Facturación" (sin modal),
+    // Para TC040 es crítico que eso se trate como la pestaña "Facturación" (sin modal),
     // no como "Dirección" (que va dentro de Contacto).
     if (nombre.includes('facturación') || nombre.includes('facturacion')) return 'Facturación';
     if (nombre.includes('dirección') || nombre.includes('direccion')) return 'Dirección';
@@ -2768,6 +3298,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const provincia = caso.dato_16;  // prueba
     const pais = caso.dato_17;  // prueba
 
+    const contactoNombre = obtenerDatoPorNameExcel('client.principalContactName');
     const contactoEmail = caso.dato_18; // prueba@gmail.com
     const contactoTelefono = caso.dato_19; // 952345678
     const contactoCargo = caso.dato_21; // prueba
@@ -2812,6 +3343,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       { label: 'País', name: 'client.country', valor: pais },
 
       // Contacto principal (UI nueva)
+      { label: 'Contacto - Nombre', name: 'client.principalContactName', valor: contactoNombre },
       { label: 'Contacto - E-mail', name: 'client.principalContactEmail', valor: contactoEmail },
       { label: 'Contacto - Teléfono', name: 'client.principalContactPhone', valor: contactoTelefono },
       { label: 'Contacto - Cargo', name: 'client.principalContactJobTitle', valor: contactoCargo },
@@ -2864,7 +3396,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
               cy.log(`  - Campo vacío: ${label} (name="${el.name}")`);
             });
           } else {
-            cy.log('✓ Todos los campos obligatorios parecen estar rellenados');
+            cy.log('Todos los campos obligatorios parecen estar rellenados');
           }
         });
       });
@@ -3006,8 +3538,23 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
   // Rellenar formulario de Acciones en el modal lateral
   function llenarFormularioAcciones(caso, numeroCaso) {
-    const fecha = caso.dato_1;
-    const notas = caso.dato_2;
+    const obtenerDatoPorSelectorCaso = (needle) => {
+      if (!needle) return null;
+      const n = String(needle).toLowerCase().trim();
+      const total = Number(caso?.__totalCamposExcel) || 30;
+
+      for (let i = 1; i <= total; i++) {
+        const selector = String(caso?.[`valor_etiqueta_${i}`] || '').toLowerCase().trim();
+        const valor = caso?.[`dato_${i}`];
+        if (selector && (selector === n || selector.includes(n) || n.includes(selector)) && valor !== undefined && valor !== null && `${valor}` !== '') {
+          return valor;
+        }
+      }
+      return null;
+    };
+
+    const fecha = obtenerDatoPorSelectorCaso('_r_8i_') || obtenerDatoPorSelectorCaso('_r_8i_-label') || caso.dato_1;
+    const notas = obtenerDatoPorSelectorCaso('_r_ph_') || obtenerDatoPorSelectorCaso('_r_ph_-label') || obtenerDatoPorSelectorCaso('his_notes') || caso.dato_2;
 
     cy.log(`Datos Acciones detectados: fecha=${fecha}, notas=${notas}`);
 
@@ -3060,11 +3607,33 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
     }
 
+    const escribirNotasAccion = (valorNotas) => {
+      const texto = String(valorNotas || '').trim();
+      if (!texto) return cy.wrap(null);
+
+      const selectorNotas = [
+        '.MuiDrawer-root:visible input[name="his_notes"]',
+        '.MuiDrawer-root:visible input#_r_ph_',
+        '[role="dialog"]:visible input[name="his_notes"]',
+        '[role="dialog"]:visible input#_r_ph_',
+        'input[name="his_notes"]',
+        'input#_r_ph_'
+      ].join(', ');
+
+      return cy.get(selectorNotas, { timeout: 10000 })
+        .filter(':visible')
+        .first()
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true })
+        .type('{selectall}{backspace}', { force: true })
+        .clear({ force: true })
+        .type(texto, { force: true, delay: 0 });
+    };
+
     // Campo Notas (his_notes)
     if (notas) {
-      chain = chain.then(() =>
-        escribirPorName('his_notes', notas, 'Notas')
-      );
+      chain = chain.then(() => escribirNotasAccion(notas));
     }
 
     return chain.then(() => {
@@ -3295,50 +3864,6 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     // Función auxiliar para escapar regex
     const escapeRegex = (texto = '') => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Función genérica para manejar Selects (País) - buscar por label
-    const seleccionarSelectPorLabel = (labelText, valor) => {
-      cy.log(`Seleccionando "${labelText}": ${valor} (Select)...`);
-      // Buscar el label y luego el Select - continuar la cadena directamente sin .then()
-      return cy.contains('label', new RegExp(`^${escapeRegex(labelText)}$`, 'i'), { timeout: 10000 })
-        .should('exist')
-        .closest('.MuiFormControl-root')
-        .find('.MuiSelect-root, [role="combobox"], .MuiSelect-select')
-        .first()
-        .should('exist')
-        .click({ force: true })
-        .then(() => {
-          cy.wait(1000); // Esperar más tiempo para que se abra el listbox
-          // Buscar la opción en el listbox con más tiempo
-          return cy.get('ul[role="listbox"]:visible', { timeout: 10000 })
-            .first()
-            .should('be.visible')
-            .within(() => {
-              cy.contains('li[role="option"]', new RegExp(`^${escapeRegex(valor)}$`, 'i'))
-                .click({ force: true });
-            })
-            .then(() => {
-              cy.wait(300);
-              cy.log(` ${labelText} "${valor}" seleccionado`);
-            }, () => {
-              // Si no encuentra exacto, primera opción
-              return cy.get('ul[role="listbox"]:visible')
-                .first()
-                .within(() => {
-                  return cy.get('li[role="option"]:visible')
-                    .first()
-                    .click({ force: true })
-                    .then(() => {
-                      cy.wait(300);
-                      cy.log(` Primera opción de ${labelText} seleccionada (fallback)`);
-                    });
-                });
-            });
-        }, () => {
-          cy.log(` No se pudo hacer clic en el Select de "${labelText}"`);
-          return cy.wrap(null);
-        });
-    };
 
     // Mapeo de campos del Excel a los name attributes del formulario (usando los nombres reales del HTML)
     const camposDireccion = [
@@ -3675,16 +4200,30 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       return null;
     };
 
+    const leerBooleanoExcel = (...valores) => {
+      const bruto = valores.find((v) => v !== undefined && v !== null && String(v).trim() !== '');
+      if (bruto === undefined) return null;
+
+      const txt = String(bruto).trim().toLowerCase();
+      if (['true', '1', 'si', 'sí', 'yes', 'y', 'x'].includes(txt)) return true;
+      if (['false', '0', 'no', 'n'].includes(txt)) return false;
+      return null;
+    };
+
     // --- datos según el mapeo del Excel TC010 ---
-    // Leer siempre por valor_etiqueta_X para no depender del orden
-    // Empresas (id _r_17g_-label -> "DESDE CANARIAS")
-    const empresas = obtenerDatoPorSelectorExcel('_r_17g_') || obtenerDatoPorSelectorExcel('_r_17g_-label');
-    // Diseño Factura (id _r_17j_-label -> "Diseño 2")
-    const disenoFactura = obtenerDatoPorSelectorExcel('_r_17j_') || obtenerDatoPorSelectorExcel('_r_17j_-label');
+    // Leer siempre por value/name real antes de depender de ids dinámicos.
+    const empresas = obtenerDatoPorNameExcel('client.companyId') ||
+      obtenerDatoPorSelectorExcel('client.companyId') ||
+      obtenerDatoPorSelectorExcel('_r_17g_') ||
+      obtenerDatoPorSelectorExcel('_r_17g_-label') ||
+      obtenerDatoPorSelectorExcel('Empresas');
+    // Diseño Factura
+    const disenoFactura = obtenerDatoPorSelectorExcel('_r_17j_') ||
+      obtenerDatoPorSelectorExcel('_r_17j_-label') ||
+      obtenerDatoPorSelectorExcel('Diseño Factura');
     // Banco (name client.bankName -> "prueba")
     const banco = obtenerDatoPorNameExcel('client.bankName');
-    // Forma de Pago (name client.paymentMethodDesc -> "233", pero en HTML es client.paymentMethodId)
-    // Buscar primero por paymentMethodDesc (descripción) y luego por paymentMethodId (ID)
+    // Forma de Pago: el Excel puede venir con descripción o con el id visible
     const formaPago = obtenerDatoPorNameExcel('client.paymentMethodDesc') || obtenerDatoPorNameExcel('client.paymentMethodId');
     if (formaPago) {
       cy.log(` Forma de Pago encontrada en Excel: "${formaPago}" (se escribirá como número)`);
@@ -3736,14 +4275,25 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const cContable = obtenerDatoPorNameExcel('client.CuentaContable') || obtenerDatoPorNameExcel('client.bankAccount');
     // IVA (name client.defaultTax -> "20")
     const iva = obtenerDatoPorNameExcel('client.defaultTax');
-    // Días Cobro (name client.diaCobro1 -> "2")
-    const diasCobro = obtenerDatoPorNameExcel('client.diaCobro1');
+    // Días Cobro
+    const diaCobro1 = obtenerDatoPorNameExcel('client.diaCobro1');
+    const diaCobro2 = obtenerDatoPorNameExcel('client.diaCobro2');
     // Riesgo Asegurado (name client.RiesgoAsegurado -> "prueba", pero en HTML es client.insuredRisk)
     const riesgoAsegurado = obtenerDatoPorNameExcel('client.RiesgoAsegurado') || obtenerDatoPorNameExcel('client.insuredRisk');
     // Dto (name client.discount -> "2")
     const dto = obtenerDatoPorNameExcel('client.discount');
-    // Tipo Facturación (id r_5t_ -> "Beneficio")
-    const tipoFacturacion = obtenerDatoPorSelectorExcel('r_5t_');
+    // Tipo Facturación
+    const tipoFacturacion = obtenerDatoPorSelectorExcel('_r_17i_') ||
+      obtenerDatoPorSelectorExcel('_r_17i_-label') ||
+      obtenerDatoPorSelectorExcel('_r_17h_') ||
+      obtenerDatoPorSelectorExcel('_r_17h_-label') ||
+      obtenerDatoPorSelectorExcel('r_5t_') ||
+      obtenerDatoPorSelectorExcel('_r_5t_') ||
+      obtenerDatoPorSelectorExcel('_r_8i_') ||
+      obtenerDatoPorSelectorExcel('_r_8i_-label') ||
+      obtenerDatoPorSelectorExcel('_r_8j_') ||
+      obtenerDatoPorSelectorExcel('_r_8j_-label') ||
+      obtenerDatoPorSelectorExcel('Tipo Facturación');
 
     // C. Venta (autocomplete) - buscar por selector o name
     // Puede venir como id _r_48 o _r_1an_ o por name client.salesAccount
@@ -3761,9 +4311,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     // CCC Empresa - buscar por selector (puede no estar en Excel)
     const cccEmpresa = obtenerDatoPorSelectorExcel('_r_1ab_') || obtenerDatoPorSelectorExcel('CCC Empresa') || null;
 
-    // Campos opcionales que pueden no estar en el Excel
-    const cobroFinMes = null; // No está en el Excel del TC010
-    const conRiesgo = null; // No está en el Excel del TC010
+    const cobroFinMes = leerBooleanoExcel(
+      obtenerDatoPorNameExcel('client.cobroFinMes'),
+      obtenerDatoPorSelectorExcel('Cobro fin mes')
+    );
+    const conRiesgo = leerBooleanoExcel(
+      obtenerDatoPorNameExcel('client.withRiskB'),
+      obtenerDatoPorSelectorExcel('Con Riesgo')
+    );
 
     // Construir IBAN completo manualmente: concatenar las 5 partes sin espacios
     // Formato: EE11 + 1111 + 1111 + 11 + 1111111111 = EE1111111111111111111111
@@ -3804,9 +4359,12 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     cy.log(`   C. Venta: ${cVenta || '(vacío)'}`);
     cy.log(`   CCC Empresa: ${cccEmpresa || '(vacío)'}`);
     cy.log(`   IVA: ${iva || '(vacío)'}`);
-    cy.log(`   Días Cobro: ${diasCobro || '(vacío)'}`);
+    cy.log(`   Día Cobro 1: ${diaCobro1 || '(vacío)'}`);
+    cy.log(`   Día Cobro 2: ${diaCobro2 || '(vacío)'}`);
     cy.log(`   Riesgo Asegurado: ${riesgoAsegurado || '(vacío)'}`);
     cy.log(`   Dto: ${dto || '(vacío)'}`);
+    cy.log(`   Cobro fin mes: ${cobroFinMes === null ? '(vacío)' : cobroFinMes}`);
+    cy.log(`   Con Riesgo: ${conRiesgo === null ? '(vacío)' : conRiesgo}`);
     cy.log(`═══════════════════════════════════════════════════════`);
 
     // Log de depuración del Excel completo para ver qué hay
@@ -3825,18 +4383,24 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     cy.log(` RESUMEN DE CAMPOS:`);
     cy.log(`Encontrados: Empresas=${!!empresas}, Diseño=${!!disenoFactura}, Tipo Fact=${!!tipoFacturacion}, Banco=${!!banco}, FormaPago=${!!formaPago}, Swift=${!!swift}`);
     cy.log(`IBAN: País=${!!ibanParte1}, Office=${!!ibanOffice}, Control=${!!ibanControl}, Account=${!!ibanAccount}, Parte2=${!!ibanParte2}`);
-    cy.log(`Otros: C.Contable=${!!cContable}, IVA=${!!iva}, DíasCobro=${!!diasCobro}, Riesgo=${!!riesgoAsegurado}, Dto=${!!dto}`);
+    cy.log(`Otros: C.Contable=${!!cContable}, IVA=${!!iva}, DíaCobro1=${!!diaCobro1}, DíaCobro2=${!!diaCobro2}, Riesgo=${!!riesgoAsegurado}, Dto=${!!dto}`);
     cy.log(`No en Excel: CCC Empresa=${!cccEmpresa}, C.Venta=${!cVenta}`);
 
     // ---------------- helpers ----------------
     const escapeRegex = (s) => Cypress._.escapeRegExp(String(s));
+    const normalizarTextoSeleccion = (s) => String(s || '')
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[-–—]/g, '');
 
     // Helper: seleccionar opción de una lista de elementos jQuery
     const seleccionarOpcionDeLista = ($opts, valor, regexExacto, regexParcial) => {
+      const valorNormalizado = normalizarTextoSeleccion(valor);
+
       // Buscar opción exacta
       const exacta = Array.from($opts).find((el) => {
         const texto = (el.textContent || el.innerText || '').trim();
-        return regexExacto.test(texto);
+        return regexExacto.test(texto) || normalizarTextoSeleccion(texto) === valorNormalizado;
       });
 
       if (exacta) {
@@ -3854,7 +4418,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       cy.log(` No se encontró opción exacta "${valor}", buscando opción que contenga el texto...`);
       const parcial = Array.from($opts).find((el) => {
         const texto = (el.textContent || el.innerText || '').trim();
-        return regexParcial.test(texto);
+        return regexParcial.test(texto) || normalizarTextoSeleccion(texto).includes(valorNormalizado);
       });
 
       if (parcial) {
@@ -3907,6 +4471,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       const valor = String(empresaTxt).trim();
       const regexExacto = new RegExp(`^${escapeRegex(valor)}$`, 'i');
       const regexParcial = new RegExp(escapeRegex(valor), 'i');
+      const valorNormalizado = normalizarTextoSeleccion(valor);
 
       cy.log(`Seleccionando Empresa (Facturación): "${valor}"`);
 
@@ -3918,7 +4483,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         .within(() => {
           cy.get('[role="combobox"]', { timeout: 10000 })
             .should('be.visible')
-            .click({ force: true });
+            .then(($combo) => {
+              const actual = ($combo.text() || $combo.val() || '').toString().trim();
+              if (normalizarTextoSeleccion(actual) === valorNormalizado) {
+                cy.log(`Empresa ya seleccionada: "${actual}"`);
+                return cy.wrap($combo);
+              }
+              return cy.wrap($combo).click({ force: true });
+            })
         })
         .then(() => {
           cy.wait(800); // Esperar a que se abra el listbox (más tiempo para caso 43)
@@ -3977,6 +4549,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     const seleccionarAutocompletePorLabel = (label, valor, { strictExact = false } = {}) => {
       const valorTxt = String(valor).trim();
       const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
+      const valorNormalizado = normalizarTextoSeleccion(valorTxt);
 
       cy.log(`Autocomplete "${label}" => "${valorTxt}"`);
 
@@ -3986,10 +4559,33 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         .parents('.MuiFormControl-root')
         .first()
         .within(() => {
+          cy.get('button[type="button"]').then(($buttons) => {
+            const $clear = $buttons.filter((_, el) => {
+              const $el = Cypress.$(el);
+              const aria = ($el.attr('aria-label') || '').toLowerCase();
+              const title = ($el.attr('title') || '').toLowerCase();
+              const cls = ($el.attr('class') || '').toLowerCase();
+              const tieneSvg = $el.find('svg').length > 0;
+              return $el.is(':visible') && tieneSvg && (
+                aria.includes('clear') ||
+                aria.includes('limpiar') ||
+                title.includes('clear') ||
+                title.includes('limpiar') ||
+                cls.includes('iconbutton')
+              );
+            }).first();
+
+            if ($clear.length) {
+              cy.wrap($clear).click({ force: true });
+              cy.wait(100);
+            }
+          });
+
           cy.get('input[role="combobox"], input[aria-autocomplete="list"], input', { timeout: 10000 })
             .first()
             .should('be.visible')
             .click({ force: true })
+            .type('{selectall}{backspace}', { force: true })
             .clear({ force: true })
             .type(valorTxt, { force: true });
         })
@@ -3998,13 +4594,27 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           return cy.get('body').then(($body) => {
             const $opts = $body.find('[role="option"]').filter(':visible');
             if (!$opts.length) {
-              cy.log(`No hay opciones visibles para "${label}"`);
-              return cy.wrap(null);
+              cy.log(`No hay opciones visibles para "${label}", se mantiene el valor escrito`);
+              return cy.contains('label', new RegExp(`^${escapeRegex(label)}$`, 'i'), { timeout: 10000 })
+                .parents('.MuiFormControl-root')
+                .first()
+                .find('input[role="combobox"], input[aria-autocomplete="list"], input')
+                .first()
+                .blur({ force: true })
+                .then(() => cy.wrap(null));
             }
 
             const exacta = Array.from($opts).find((el) => regexValor.test((el.textContent || '').trim()));
             if (exacta) {
               return cy.wrap(exacta).click({ force: true });
+            }
+
+            const parcial = Array.from($opts).find((el) => {
+              const texto = (el.textContent || '').trim();
+              return normalizarTextoSeleccion(texto).includes(valorNormalizado);
+            });
+            if (parcial) {
+              return cy.wrap(parcial).click({ force: true });
             }
 
             if (strictExact) {
@@ -4015,6 +4625,30 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             return cy.wrap($opts[0]).click({ force: true });
           });
         });
+    };
+
+    const ajustarSwitchPorName = (nameAttr, activar, etiqueta) => {
+      if (activar === null || activar === undefined) {
+        return cy.wrap(null);
+      }
+
+      return cy.get('body').then(($body) => {
+        const $switch = $body.find(`input[name="${nameAttr}"]`).filter(':visible').first();
+        if (!$switch.length) {
+          cy.log(`(SKIP) No existe switch visible: ${etiqueta || nameAttr}`);
+          return cy.wrap(null);
+        }
+
+        const estaMarcado = Boolean($switch.prop('checked'));
+        if (estaMarcado === activar) {
+          cy.log(`${etiqueta || nameAttr}: ya está ${activar ? 'marcado' : 'desmarcado'}`);
+          return cy.wrap(null);
+        }
+
+        return cy.wrap($switch)
+          .scrollIntoView()
+          .click({ force: true });
+      });
     };
 
     // IBAN en el HTML viene en 5 campos separados
@@ -4406,7 +5040,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     //  3) Tipo Facturación + Diseño Factura (autocompletes)
     if (tipoFacturacion) {
-      chain = chain.then(() => seleccionarAutocompletePorLabel('Tipo Facturación', tipoFacturacion, { strictExact: true }));
+      chain = chain.then(() => seleccionarAutocompletePorLabel('Tipo Facturación', tipoFacturacion, { strictExact: false }));
     }
     if (disenoFactura) {
       chain = chain.then(() => seleccionarAutocompletePorLabel('Diseño Factura', disenoFactura, { strictExact: true }));
@@ -4421,25 +5055,22 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     if (banco) chain = chain.then(() => escribirPorName('client.bankName', banco, 'Banco'));
     if (swift) chain = chain.then(() => escribirPorName('client.swift', swift, 'Swift'));
 
-    //  6) Forma de pago: en tu HTML es input name="client.paymentMethodId" + botón (buscador)
-    // FORZAR valor a 62 (el usuario indicó que el 233 no existe en la base de datos)
-    const formaPagoForzada = '62';
-    cy.log(`Forma de Pago: usando valor forzado "${formaPagoForzada}" en lugar del Excel (${formaPago || 'vacío'})`);
-    chain = chain.then(() => escribirPorName('client.paymentMethodId', formaPagoForzada, 'Forma de Pago'));
+    //  6) Forma de Pago
+    if (formaPago) {
+      chain = chain.then(() => escribirPorName('client.paymentMethodId', formaPago, 'Forma de Pago'));
+    }
 
-    //  7) Días cobro (dos inputs diaCobro1/diaCobro2). Si solo tienes uno en Excel, va al 1.
-    if (diasCobro) {
-      chain = chain.then(() => escribirPorName('client.diaCobro1', diasCobro, 'Días Cobro'));
+    //  7) Días cobro
+    if (diaCobro1 !== undefined && diaCobro1 !== null && `${diaCobro1}` !== '') {
+      chain = chain.then(() => escribirPorName('client.diaCobro1', diaCobro1, 'Días Cobro 1'));
+    }
+    if (diaCobro2 !== undefined && diaCobro2 !== null && `${diaCobro2}` !== '') {
+      chain = chain.then(() => escribirPorName('client.diaCobro2', diaCobro2, 'Días Cobro 2'));
     }
 
     //  8) Cobro fin mes (switch checkbox)
-    if (cobroFinMes) {
-      chain = chain.then(() => {
-        cy.log('Marcando "Cobro fin mes"');
-        return cy.get('input[name="client.cobroFinMes"]', { timeout: 10000 })
-          .should('exist')
-          .check({ force: true });
-      });
+    if (cobroFinMes !== null) {
+      chain = chain.then(() => ajustarSwitchPorName('client.cobroFinMes', cobroFinMes, 'Cobro fin mes'));
     }
 
     //  9) C. Contable (name="client.bankAccount")
@@ -4567,13 +5198,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     }
 
     //  13) Con Riesgo (switch: name="client.withRiskB") y Riesgo asegurado (name="client.insuredRisk")
-    if (conRiesgo) {
-      chain = chain.then(() => {
-        cy.log('Activando "Con Riesgo"');
-        return cy.get('input[name="client.withRiskB"]', { timeout: 10000 })
-          .should('exist')
-          .check({ force: true });
-      });
+    if (conRiesgo !== null) {
+      chain = chain.then(() => ajustarSwitchPorName('client.withRiskB', conRiesgo, 'Con Riesgo'));
     }
 
     if (riesgoAsegurado !== undefined && riesgoAsegurado !== null && `${riesgoAsegurado}` !== '') {
@@ -4609,7 +5235,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
     //  Si no existe el input, NO fallar
     return cy.get('body').then($body => {
-      const $found = $body.find(selector);
+      const $found = $body.find(selector).filter(':visible');
       if (!$found.length) {
         cy.log(`(SKIP) No existe en UI: ${selector}`);
         return cy.wrap(null);
@@ -4716,6 +5342,23 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
     });
   }
 
+  function verificarPestañaConFilas(nombrePestaña) {
+    return cy.get('body').then(($body) => {
+      const filasVisibles = $body.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible')
+        .filter((_, el) => {
+          const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
+          return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(textoFila);
+        });
+
+      if (filasVisibles.length > 0) {
+        cy.log(`La pestaña ${nombrePestaña} tiene ${filasVisibles.length} fila(s) visibles`);
+        return cy.wrap(true);
+      }
+
+      return verificarPestañaSinFilas(nombrePestaña);
+    });
+  }
+
   function clickGuardarDentroFormulario() {
     return cy.get('button', { timeout: 15000 })
       .filter((_, el) => {
@@ -4733,45 +5376,48 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       .click({ force: true });
   }
 
-  // TC043: Crear cliente completo con todas las pestañas
-  function TC043(caso, numero, casoId) {
-    cy.log('TC043: Creando cliente completo con todas las pestañas');
+  // TC040: Crear cliente completo con todas las pestañas
+  function TC040(caso, numero, casoId) {
+    const numeroCaso = Number(numero) || 40;
+    const idCaso = casoId || `TC${String(numeroCaso).padStart(3, '0')}`;
+    cy.log('TC040: Creando cliente completo con todas las pestañas');
 
-    // Obtener datos del caso 7 para DATOS GENERALES
+    // Obtener datos del caso 6 para DATOS GENERALES
     return cy.obtenerDatosExcel(HOJA_EXCEL).then((todosLosCasos) => {
-      const caso7 = todosLosCasos.find(c => {
+      const caso6 = todosLosCasos.find(c => {
         const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
-        return num === 7;
+        return num === 6;
       });
 
-      if (!caso7) {
-        cy.log(' No se encontró el caso 7 en Excel, usando datos del caso actual');
-        return TC043ConDatos(caso, todosLosCasos);
+      if (!caso6) {
+        cy.log(' No se encontró el caso 6 en Excel, usando datos del caso actual');
+        return TC040ConDatos(caso, todosLosCasos, numeroCaso, idCaso);
       }
 
-      cy.log('Usando datos del caso 7 para DATOS GENERALES');
-      return TC043ConDatos(caso7, todosLosCasos);
+      cy.log('Usando datos del caso 6 para DATOS GENERALES');
+      return TC040ConDatos(caso6, todosLosCasos, numeroCaso, idCaso);
     });
   }
 
-  function TC043ConDatos(casoDatosGenerales, todosLosCasos) {
+  function TC040ConDatos(casoDatosGenerales, todosLosCasos, numeroCaso = 40, idCaso = 'TC040') {
     // Generar nombre único usando timestamp + número aleatorio para evitar duplicados
     const timestamp = Date.now().toString().slice(-6); // Últimos 6 dígitos del timestamp
     const numeroAleatorio = Math.floor(Math.random() * 100).toString().padStart(2, '0');
     const nombreCliente = `prueba${timestamp}${numeroAleatorio}`;
-    cy.log(`TC043: Nombre del cliente generado (único): ${nombreCliente}`);
+    cy.log(`TC040: Nombre del cliente generado (único): ${nombreCliente}`);
 
     // Variable para almacenar el código del cliente (se capturará después de guardar)
     let codigoCliente = null;
+    let busquedaClienteRealizada = false;
 
     // Modificar el caso para usar el nombre generado
     const casoModificado = { ...casoDatosGenerales };
     casoModificado.dato_7 = nombreCliente; // El nombre va en dato_7
 
-    // En TC043, Facturación debe aplicar exactamente la lógica/datos del caso 10 (si existe)
-    const caso10Facturacion = todosLosCasos.find((c) => {
+    // En TC040, Facturación debe aplicar exactamente la lógica/datos del caso 9 (si existe)
+    const caso9Facturacion = todosLosCasos.find((c) => {
       const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
-      return num === 10;
+      return num === 9;
     });
 
     // Interceptar la petición POST para capturar qué se está enviando y corregir el IBAN
@@ -4842,19 +5488,19 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         });
       })
       .then(() => {
-        cy.log('Rellenando DATOS GENERALES usando datos del caso 7...');
+        cy.log('Rellenando DATOS GENERALES usando datos del caso 6...');
         // Rellenar DATOS GENERALES con el nombre generado
-        return llenarFormularioGeneralesDesdeExcel(casoModificado, 7);
+        return llenarFormularioGeneralesDesdeExcel(casoModificado, 6);
       })
       .then(() => {
-        cy.log('Rellenando todas las pestañas usando datos de los casos 8-15...');
-        // Obtener casos 8-15 para las demás pestañas
+        cy.log('Rellenando todas las pestañas usando datos de los casos 7-14...');
+        // Obtener casos 7-14 para las demás pestañas
         const casosPestañas = todosLosCasos.filter(c => {
           const num = parseInt(String(c.caso || '').replace(/\D/g, ''), 10);
-          return num >= 8 && num <= 15;
+          return num >= 7 && num <= 14;
         });
 
-        cy.log(`Encontrados ${casosPestañas.length} casos para las pestañas (8-15)`);
+        cy.log(`Encontrados ${casosPestañas.length} casos para las pestañas (7-14)`);
 
         // Ordenar por número de caso
         casosPestañas.sort((a, b) => {
@@ -4863,7 +5509,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           return numA - numB;
         });
 
-        // TC043: ejecutar Documentos SIEMPRE al final (justo antes del Guardar principal)
+        // TC040: ejecutar Documentos SIEMPRE al final (justo antes del Guardar principal)
         const casoDocumentos = casosPestañas.find((c) => /documento/i.test(deducirSeccionDesdeCaso(c)));
         const casosSinDocumentos = casosPestañas.filter((c) => !/documento/i.test(deducirSeccionDesdeCaso(c)));
 
@@ -4889,9 +5535,9 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
             // Secciones con modal
             if (esSeccionConModal) {
-              // En TC043, Documentos se ejecuta al final fuera de este bucle
+              // En TC040, Documentos se ejecuta al final fuera de este bucle
               if (esSeccionDocumentos) {
-                cy.log('TC043: Documentos se pospone al final, continuando con la siguiente pestaña...');
+                cy.log('TC040: Documentos se pospone al final, continuando con la siguiente pestaña...');
                 return cy.wrap(null);
               }
               // Caso especial: Dirección está dentro de Contacto
@@ -4945,7 +5591,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   return cy.wait(500);
                 })
                 .then(() => {
-                  // Para TC043: Guardar el modal usando el botón Guardar del formulario para:
+                  // Para TC040: Guardar el modal usando el botón Guardar del formulario para:
                   // Contacto, Direcciones, Acciones, Zonas de Carga, Certificaciones y Documentos
                   if (esSeccionContacto || esSeccionAcciones || esZonasCarga || esSeccionCertificaciones) {
                     cy.log(`Guardando modal de ${seccion} usando botón Guardar del formulario...`);
@@ -4960,19 +5606,19 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             }
 
             // Sección Facturación sin modal
-            // TC043: usar EXACTAMENTE el caso 10 para Facturación (igual que en TC010)
+            // TC040: usar EXACTAMENTE el caso 9 para Facturación
             if (esSeccionFacturacion) {
-              if (!caso10Facturacion) {
-                cy.log('TC043: ERROR - No se encontró el caso 10 para Facturación. Se omite el rellenado de Facturación.');
+              if (!caso9Facturacion) {
+                cy.log('TC040: ERROR - No se encontró el caso 9 para Facturación. Se omite el rellenado de Facturación.');
                 return cy.wrap(null);
               }
-              // Hacer EXACTAMENTE igual que en anadirCliente (caso 10) - línea 951-952
+              // Hacer EXACTAMENTE igual que en añadir cliente, pero con el caso 9 renumerado
               // Añadir un wait adicional para asegurar que la pestaña esté completamente cargada
               return navegarSeccionFormulario(seccion)
                 .then(() => {
                   cy.wait(1000); // Esperar a que la pestaña de Facturación esté completamente cargada
-                  cy.log('TC043: Pestaña Facturación cargada, iniciando rellenado...');
-                  return llenarFormularioFacturacion(caso10Facturacion, 10);
+                  cy.log('TC040: Pestaña Facturación cargada, iniciando rellenado...');
+                  return llenarFormularioFacturacion(caso9Facturacion, 9);
                 })
                 .then(() => {
                   cy.wait(1000); // Esperar después de rellenar Facturación para evitar errores 500
@@ -4989,9 +5635,19 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             return cy.wrap(null);
           });
         });
-        cy.log('TC043: Se omite la subida de documentos para evitar errores 500');
+        return chain.then(() => {
+          if (!casoDocumentos) {
+            cy.log('TC040: No hay caso de Documentos en Excel, se continúa sin subir documento');
+            return cy.wrap(null);
+          }
 
-        return chain;
+          const numeroPestaña = parseInt(String(casoDocumentos.caso || '').replace(/\D/g, ''), 10);
+          cy.log(`TC040: Subiendo documento con datos del caso ${numeroPestaña}`);
+
+          return navegarSeccionFormulario('Documentos')
+            .then(() => llenarFormularioDocumentos(casoDocumentos, numeroPestaña))
+            .then(() => cy.wait(1000));
+        });
       })
       .then(() => {
         // Verificar que estamos todavía en el formulario antes de guardar
@@ -5080,7 +5736,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                       .click({ force: true });
                   })
                     .then(() => {
-                      cy.log('TC043: Botón Guardar clickeado, esperando respuesta...');
+                      cy.log('TC040: Botón Guardar clickeado, esperando respuesta...');
 
                       // Esperar a que se complete la petición y capturar la respuesta
                       return cy.wait('@guardarCliente', { timeout: 15000 })
@@ -5092,13 +5748,13 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
                           // Logs en Cypress
                           cy.log('═══════════════════════════════════════════════════════');
-                          cy.log('TC043: RESPUESTA DEL SERVIDOR RECIBIDA');
+                          cy.log('TC040: RESPUESTA DEL SERVIDOR RECIBIDA');
                           cy.log(`Status: ${status}`);
                           cy.log(`Status Text: ${statusText}`);
 
                           // También en consola del navegador (más visible)
                           console.log('═══════════════════════════════════════════════════════');
-                          console.log('TC043: RESPUESTA DEL SERVIDOR RECIBIDA');
+                          console.log('TC040: RESPUESTA DEL SERVIDOR RECIBIDA');
                           console.log('Status:', status);
                           console.log('Status Text:', statusText);
 
@@ -5109,8 +5765,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                             // Intentar capturar el código del cliente desde la respuesta
                             if (responseBody.code || responseBody.codigo || responseBody.id) {
                               codigoCliente = responseBody.code || responseBody.codigo || responseBody.id;
-                              cy.log(`TC043: Código del cliente capturado desde respuesta: ${codigoCliente}`);
-                              console.log(`TC043: Código del cliente capturado desde respuesta: ${codigoCliente}`);
+                              cy.log(`TC040: Código del cliente capturado desde respuesta: ${codigoCliente}`);
+                              console.log(`TC040: Código del cliente capturado desde respuesta: ${codigoCliente}`);
                             }
                           }
 
@@ -5211,7 +5867,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                     .scrollIntoView()
                     .click({ force: true })
                     .then(() => {
-                      cy.log('TC043: Botón Guardar clickeado (fallback), esperando respuesta...');
+                      cy.log('TC040: Botón Guardar clickeado (fallback), esperando respuesta...');
 
                       // Esperar a que se complete la petición y capturar la respuesta
                       return cy.wait('@guardarCliente', { timeout: 15000 })
@@ -5222,20 +5878,20 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
                           // Logs en Cypress
                           cy.log('═══════════════════════════════════════════════════════');
-                          cy.log('TC043: RESPUESTA DEL SERVIDOR RECIBIDA (fallback)');
+                          cy.log('TC040: RESPUESTA DEL SERVIDOR RECIBIDA (fallback)');
                           cy.log(`Status: ${status}`);
 
                           // También en consola del navegador (más visible)
                           console.log('═══════════════════════════════════════════════════════');
-                          console.log('TC043: RESPUESTA DEL SERVIDOR RECIBIDA (fallback)');
+                          console.log('TC040: RESPUESTA DEL SERVIDOR RECIBIDA (fallback)');
                           console.log('Status:', status);
 
                           if (responseBody) {
                             // Intentar capturar el código del cliente desde la respuesta
                             if (responseBody.code || responseBody.codigo || responseBody.id) {
                               codigoCliente = responseBody.code || responseBody.codigo || responseBody.id;
-                              cy.log(`TC043: Código del cliente capturado desde respuesta (fallback): ${codigoCliente}`);
-                              console.log(`TC043: Código del cliente capturado desde respuesta (fallback): ${codigoCliente}`);
+                              cy.log(`TC040: Código del cliente capturado desde respuesta (fallback): ${codigoCliente}`);
+                              console.log(`TC040: Código del cliente capturado desde respuesta (fallback): ${codigoCliente}`);
                             }
                           }
 
@@ -5317,7 +5973,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       })
       .then(() => {
         // Verificar si aparece mensaje de "guardado correctamente" o éxito
-        cy.log('TC043: Verificando si aparece mensaje de guardado correcto...');
+        cy.log('TC040: Verificando si aparece mensaje de guardado correcto...');
         return cy.get('body', { timeout: 10000 }).then($body => {
           const textoCompleto = $body.text();
           const tieneExito = textoCompleto.includes('guardado correctamente') ||
@@ -5334,23 +5990,23 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           try {
             const win = window || null;
             if (win) {
-              win.__TC043_GUARDADO_OK__ = !!tieneExito;
+              win.__TC040_GUARDADO_OK__ = !!tieneExito;
             }
           } catch (e) {
             // ignorar errores al acceder a window
           }
 
           if (tieneExito) {
-            cy.log('TC043: Mensaje de guardado correcto detectado');
+            cy.log('TC040: Mensaje de guardado correcto detectado');
             cy.wait(2000); // Esperar un poco más para asegurar que el guardado se complete
           } else {
-            cy.log('TC043: No se detectó mensaje de éxito explícito, continuando...');
+            cy.log('TC040: No se detectó mensaje de éxito explícito, continuando...');
           }
         });
       })
       .then(() => {
         // Verificar si aparece una alerta de error después de guardar
-        cy.log('TC043: Verificando si aparece alerta de error...');
+        cy.log('TC040: Verificando si aparece alerta de error...');
         return cy.get('body').then($body => {
           const textoCompleto = $body.text();
 
@@ -5359,7 +6015,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           let guardadoOk = false;
           try {
             const win = window || null;
-            guardadoOk = !!(win && win.__TC043_GUARDADO_OK__);
+            guardadoOk = !!(win && win.__TC040_GUARDADO_OK__);
           } catch (e) {
             guardadoOk = false;
           }
@@ -5379,7 +6035,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           const tieneError = !guardadoOk && hayTextoError;
 
           if (tieneError) {
-            cy.log(' TC043: Alerta de error detectada después de guardar');
+            cy.log(' TC040: Alerta de error detectada después de guardar');
             const mensajeError = $body.find('[class*="error"], [class*="Error"], [role="alert"]')
               .first()
               .text()
@@ -5387,21 +6043,21 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
             // Registrar como ERROR y terminar el caso
             return cy.registrarResultados({
-              numero: 43,
-              nombre: `TC043 - ${casoDatosGenerales?.nombre || 'Crear cliente completo con todas las pestañas'}`,
+              numero: numeroCaso,
+              nombre: `${idCaso} - ${casoDatosGenerales?.nombre || 'Crear cliente completo con todas las pestañas'}`,
               esperado: 'Comportamiento correcto',
               obtenido: mensajeError,
               resultado: 'ERROR',
               pantalla: PANTALLA,
               archivo: 'reportes_pruebas_novatrans.xlsx'
             }).then(() => {
-              cy.log('TC043: Caso terminado por error detectado');
+              cy.log('TC040: Caso terminado por error detectado');
               return cy.wrap('ERROR_DETECTADO');
             });
           }
 
           // Si no hay error, continuar con el flujo normal
-          cy.log('TC043: No se detectó alerta de error, continuando con búsqueda...');
+          cy.log('TC040: No se detectó alerta de error, continuando con búsqueda...');
           return cy.wrap(null);
         });
       })
@@ -5414,10 +6070,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Si se capturó el código desde la respuesta, usarlo
         if (codigoDesdeRespuesta) {
           codigoCliente = codigoDesdeRespuesta;
-          cy.log(`TC043: Código del cliente obtenido desde respuesta: ${codigoCliente}`);
+          cy.log(`TC040: Código del cliente obtenido desde respuesta: ${codigoCliente}`);
         }
 
-        cy.log(`TC043: Formulario guardado. Buscando cliente por código...`);
+        cy.log(`TC040: Formulario guardado. Buscando cliente por código...`);
 
         // Volver a la lista y buscar el cliente por código
         return cy.url().then((urlActual) => {
@@ -5436,8 +6092,11 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       .then(() => {
         // Si no tenemos el código, intentar leerlo de la primera fila después de buscar por nombre
         if (!codigoCliente) {
-          cy.log(`TC043: No se capturó el código desde la respuesta, buscando primero por nombre para obtener el código...`);
+          cy.log(`TC040: No se capturó el código desde la respuesta, buscando primero por nombre para obtener el código...`);
           return UI.buscar(nombreCliente)
+            .then(() => {
+              busquedaClienteRealizada = true;
+            })
             .then(() => cy.wait(1000))
             .then(() => {
               // Intentar leer el código de la primera fila de la tabla
@@ -5449,7 +6108,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                   const textoCodigo = (primeraCelda.text() || '').trim();
                   if (textoCodigo && /^\d+$/.test(textoCodigo)) {
                     codigoCliente = textoCodigo;
-                    cy.log(`TC043: Código del cliente leído de la tabla: ${codigoCliente}`);
+                    cy.log(`TC040: Código del cliente leído de la tabla: ${codigoCliente}`);
                   }
                 }
                 return cy.wrap(null);
@@ -5459,11 +6118,17 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         return cy.wrap(null);
       })
       .then(() => {
+        if (busquedaClienteRealizada) {
+          cy.log('TC040: La búsqueda del cliente ya está hecha, no se repite');
+          return cy.wrap(null);
+        }
         // Buscar el cliente por código (o por nombre si no tenemos código)
         const valorBusqueda = codigoCliente || nombreCliente;
         const tipoBusqueda = codigoCliente ? 'código' : 'nombre';
-        cy.log(`TC043: Buscando cliente por ${tipoBusqueda}: ${valorBusqueda}`);
-        return UI.buscar(valorBusqueda);
+        cy.log(`TC040: Buscando cliente por ${tipoBusqueda}: ${valorBusqueda}`);
+        return UI.buscar(valorBusqueda).then(() => {
+          busquedaClienteRealizada = true;
+        });
       })
       .then(() => {
         cy.wait(1000);
@@ -5523,15 +6188,15 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Si no se encontró el cliente, terminar con error
         if (resultado === 'CLIENTE_NO_ENCONTRADO') {
           return cy.registrarResultados({
-            numero: 43,
-            nombre: `TC043 - ${casoDatosGenerales?.nombre || 'Crear cliente completo con todas las pestañas'}`,
+            numero: numeroCaso,
+            nombre: `${idCaso} - ${casoDatosGenerales?.nombre || 'Crear cliente completo con todas las pestañas'}`,
             esperado: `Cliente "${nombreCliente}" guardado y encontrado en la lista`,
             obtenido: 'Cliente no encontrado en la lista después de guardar',
             resultado: 'ERROR',
             pantalla: PANTALLA,
             archivo: 'reportes_pruebas_novatrans.xlsx'
           }).then(() => {
-            cy.log('TC043: Caso terminado - cliente no encontrado');
+            cy.log('TC040: Caso terminado - cliente no encontrado');
             return cy.wrap('CLIENTE_NO_ENCONTRADO');
           });
         }
@@ -5540,7 +6205,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         // Verificar que estamos en el formulario de edición
         return cy.url().should('include', '/dashboard/clients/form')
           .then(() => {
-            cy.log(`✓ TC043: Cliente "${nombreCliente}" guardado correctamente y verificado`);
+            cy.log(`✓ TC040: Cliente "${nombreCliente}" guardado correctamente y verificado`);
             cy.log('✓ Formulario de edición abierto - el cliente existe en la base de datos');
           });
       })
@@ -5551,9 +6216,10 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         }
 
         // Continuar con la verificación de pestañas
-        cy.log('TC043: Verificando que todas las pestañas tienen datos guardados...');
+        cy.log('TC040: Verificando que todas las pestañas tienen datos guardados...');
 
         // Lista de pestañas a verificar (las que tienen formularios)
+        const nombreDocumentoEsperado = (Cypress.env('DOCUMENTO_PRUEBA_FILENAME') || 'documento prueba.txt').toString();
         const pestañasAVerificar = [
           { nombre: 'Contacto', tieneSubpestaña: true },
           { nombre: 'Acciones', tieneSubpestaña: false },
@@ -5585,15 +6251,90 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
         const tieneValorEsperado = (v) => v !== undefined && v !== null && String(v).trim() !== '';
 
-        const esperadosFacturacion = caso10Facturacion
+        const obtenerDatoPorNameExcel = (caso, nameAttr) => {
+          if (!nameAttr) return null;
+          const total = Number(caso?.__totalCamposExcel) || 30;
+          const nameAttrLower = String(nameAttr).toLowerCase().trim();
+
+          for (let i = 1; i <= total; i++) {
+            const tipo = (caso?.[`etiqueta_${i}`] || '').toString().toLowerCase().trim().replace(/\s+/g, ' ');
+            const selector = (caso?.[`valor_etiqueta_${i}`] || '').toString().toLowerCase().trim();
+            const val = caso?.[`dato_${i}`];
+            if (!tipo.includes('name')) continue;
+
+            const selectorSinPrefijo = selector.replace(/^client\./, '');
+            const nameAttrSinPrefijo = nameAttrLower.replace(/^client\./, '');
+            const coincide = selector === nameAttrLower ||
+              selector.includes(nameAttrLower) ||
+              nameAttrLower.includes(selector) ||
+              selectorSinPrefijo === nameAttrSinPrefijo ||
+              selectorSinPrefijo.includes(nameAttrSinPrefijo) ||
+              nameAttrSinPrefijo.includes(selectorSinPrefijo);
+
+            if (coincide && val !== undefined && val !== null && `${val}` !== '') {
+              return val;
+            }
+          }
+          return null;
+        };
+
+        const leerBooleanoExcel = (...valores) => {
+          const bruto = valores.find((v) => v !== undefined && v !== null && String(v).trim() !== '');
+          if (bruto === undefined) return null;
+
+          const txt = String(bruto).trim().toLowerCase();
+          if (['true', '1', 'si', 'sí', 'yes', 'y', 'x'].includes(txt)) return true;
+          if (['false', '0', 'no', 'n'].includes(txt)) return false;
+          return null;
+        };
+
+        const esperadosFacturacion = caso9Facturacion
           ? {
-            // mismos mapeos que en llenarFormularioFacturacion()
-            empresas: caso10Facturacion.dato_1,
-            disenoFactura: caso10Facturacion.dato_2,
-            banco: caso10Facturacion.dato_3,
-            formaPago: caso10Facturacion.dato_4,
-            swift: caso10Facturacion.dato_5,
-            tipoFacturacion: obtenerDatoPorSelectorExcel(caso10Facturacion, 'r_5t_')
+            empresas: obtenerDatoPorNameExcel(caso9Facturacion, 'client.companyId') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'client.companyId') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17g_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17g_-label') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'Empresas'),
+            tipoFacturacion: obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17i_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17i_-label') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17h_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17h_-label') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'r_5t_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_5t_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_8i_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_8i_-label') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_8j_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_8j_-label') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'Tipo Facturación'),
+            disenoFactura: obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17j_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_17j_-label') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'Diseño Factura'),
+            banco: obtenerDatoPorNameExcel(caso9Facturacion, 'client.bankName'),
+            formaPago: obtenerDatoPorNameExcel(caso9Facturacion, 'client.paymentMethodDesc') ||
+              obtenerDatoPorNameExcel(caso9Facturacion, 'client.paymentMethodId'),
+            swift: obtenerDatoPorNameExcel(caso9Facturacion, 'client.swift'),
+            iva: obtenerDatoPorNameExcel(caso9Facturacion, 'client.defaultTax'),
+            diaCobro1: obtenerDatoPorNameExcel(caso9Facturacion, 'client.diaCobro1'),
+            diaCobro2: obtenerDatoPorNameExcel(caso9Facturacion, 'client.diaCobro2'),
+            cContable: obtenerDatoPorNameExcel(caso9Facturacion, 'client.CuentaContable') ||
+              obtenerDatoPorNameExcel(caso9Facturacion, 'client.bankAccount'),
+            riesgoAsegurado: obtenerDatoPorNameExcel(caso9Facturacion, 'client.RiesgoAsegurado') ||
+              obtenerDatoPorNameExcel(caso9Facturacion, 'client.insuredRisk'),
+            dto: obtenerDatoPorNameExcel(caso9Facturacion, 'client.discount'),
+            cVenta: obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_48') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_1an_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'C. Venta') ||
+              obtenerDatoPorNameExcel(caso9Facturacion, 'client.salesAccount'),
+            cccEmpresa: obtenerDatoPorSelectorExcel(caso9Facturacion, '_r_1ab_') ||
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'CCC Empresa'),
+            cobroFinMes: leerBooleanoExcel(
+              obtenerDatoPorNameExcel(caso9Facturacion, 'client.cobroFinMes'),
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'Cobro fin mes')
+            ),
+            conRiesgo: leerBooleanoExcel(
+              obtenerDatoPorNameExcel(caso9Facturacion, 'client.withRiskB'),
+              obtenerDatoPorSelectorExcel(caso9Facturacion, 'Con Riesgo')
+            )
           }
           : null;
 
@@ -5615,38 +6356,71 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           });
         };
 
+        const leerValorPorName = (nameAttr) => {
+          const sel = `input[name="${nameAttr}"], textarea[name="${nameAttr}"]`;
+          return cy.get('body').then(($b) => {
+            const $inp = $b.find(sel).filter(':visible').first();
+            if ($inp.length) return cy.wrap($inp).invoke('val');
+            return cy.wrap('');
+          });
+        };
+
+        const leerSwitchPorName = (nameAttr) => {
+          return cy.get('body').then(($b) => {
+            const $inp = $b.find(`input[name="${nameAttr}"]`).filter(':visible').first();
+            if (!$inp.length) return cy.wrap(null);
+            return cy.wrap(Boolean($inp.prop('checked')));
+          });
+        };
+
+        const coincideValor = (actual, esperado, { exacto = false } = {}) => {
+          const a = normalizar(actual);
+          const e = normalizar(esperado);
+          if (!a && a !== '0') return false;
+          if (!e && e !== '0') return false;
+          return exacto ? a === e : (a === e || a.includes(e) || e.includes(a));
+        };
+
         const verificarFacturacion = () => {
           if (!esperadosFacturacion) return cy.wrap([]);
 
-          const checks = [
-            { label: 'Empresas', esperado: esperadosFacturacion.empresas },
-            { label: 'Tipo Facturación', esperado: esperadosFacturacion.tipoFacturacion },
-            { label: 'Diseño Factura', esperado: esperadosFacturacion.disenoFactura }
+          const checksLabel = [
+            { label: 'Empresas', esperado: esperadosFacturacion.empresas, exacto: false, permitirVacio: true },
+            { label: 'Tipo Facturación', esperado: esperadosFacturacion.tipoFacturacion, exacto: true },
+            { label: 'Diseño Factura', esperado: esperadosFacturacion.disenoFactura, exacto: true },
+            { label: 'CCC Empresa', esperado: esperadosFacturacion.cccEmpresa, exacto: true },
+            { label: 'C. Venta', esperado: esperadosFacturacion.cVenta, exacto: true }
+          ];
+
+          const checksTexto = [
+            { name: 'client.bankName', label: 'Banco', esperado: esperadosFacturacion.banco, exacto: false },
+            { name: 'client.paymentMethodId', label: 'Forma de Pago', esperado: esperadosFacturacion.formaPago, exacto: false },
+            { name: 'client.swift', label: 'Swift', esperado: esperadosFacturacion.swift, exacto: false },
+            { name: 'client.defaultTax', label: 'IVA', esperado: esperadosFacturacion.iva, exacto: false },
+            { name: 'client.diaCobro1', label: 'Días Cobro 1', esperado: esperadosFacturacion.diaCobro1, exacto: false },
+            { name: 'client.diaCobro2', label: 'Días Cobro 2', esperado: esperadosFacturacion.diaCobro2, exacto: false },
+            { name: 'client.bankAccount', label: 'C. Contable', esperado: esperadosFacturacion.cContable, exacto: false },
+            { name: 'client.insuredRisk', label: 'Riesgo Asegurado', esperado: esperadosFacturacion.riesgoAsegurado, exacto: false },
+            { name: 'client.discount', label: 'Dto', esperado: esperadosFacturacion.dto, exacto: false }
+          ];
+
+          const checksSwitch = [
+            { name: 'client.cobroFinMes', label: 'Cobro fin mes', esperado: esperadosFacturacion.cobroFinMes },
+            { name: 'client.withRiskB', label: 'Con Riesgo', esperado: esperadosFacturacion.conRiesgo }
           ];
 
           let chain = cy.wrap([]);
-          checks.forEach((c) => {
+
+          checksLabel.forEach((c) => {
             chain = chain.then((errores) => {
-              // Solo validamos los campos que se intentaron rellenar (tienen valor esperado en Excel),
-              // incluyendo valores como 0.
               if (!tieneValorEsperado(c.esperado)) return cy.wrap(errores);
-
-              // Para "Empresas": está OK si está vacío o es "0" (el usuario indicó que no pasa nada)
-              const esEmpresas = /^empresas$/i.test(c.label);
-
               return leerValorInputPorLabel(c.label).then((actual) => {
                 const a = normalizar(actual);
-                const e = normalizar(c.esperado);
-                const esDiseno = /^diseño factura$/i.test(c.label);
-
-                // Si es Empresas y está vacío o es "0", considerarlo OK
-                if (esEmpresas && (!a || a === '0' || a === '')) {
+                if (c.permitirVacio && (!a || a === '0')) {
                   cy.log(`Facturación (${c.label}): está vacío o es "0", se considera OK (no se verifica)`);
                   return cy.wrap(errores);
                 }
-
-                const ok = a && (esDiseno ? a === e : (a === e || a.includes(e)));
-                if (!ok) {
+                if (!coincideValor(actual, c.esperado, { exacto: c.exacto })) {
                   const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual || ''}"`;
                   return cy.wrap([...errores, msg]);
                 }
@@ -5655,37 +6429,28 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             });
           });
 
-          // Campos de texto: solo si tenían dato esperado en Excel
-          const checksTexto = [
-            { name: 'client.bankName', label: 'Banco', esperado: esperadosFacturacion.banco },
-            { name: 'client.swift', label: 'Swift', esperado: esperadosFacturacion.swift }
-          ];
-
           checksTexto.forEach((c) => {
             chain = chain.then((errores) => {
               if (!tieneValorEsperado(c.esperado)) return cy.wrap(errores);
-              const sel = `input[name="${c.name}"], textarea[name="${c.name}"]`;
-              return cy.get('body').then(($b) => {
-                const $inp = $b.find(sel).filter(':visible').first();
-                if ($inp.length) {
-                  return cy.wrap($inp).invoke('val').then((actual) => {
-                    const a = normalizar(actual);
-                    const e = normalizar(c.esperado);
-                    const ok = a && (a === e || a.includes(e));
-                    if (!ok) {
-                      const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual || ''}"`;
-                      return cy.wrap([...errores, msg]);
-                    }
-                    return cy.wrap(errores);
-                  });
+              return leerValorPorName(c.name).then((actualPorName) => {
+                if (c.name === 'client.insuredRisk' && normalizar(actualPorName) === '0') {
+                  cy.log('Facturación (Riesgo Asegurado): valor por defecto "0", se considera OK');
+                  return cy.wrap(errores);
                 }
-                // Si no existe el input, intentamos por label como fallback
-                return leerValorInputPorLabel(c.label).then((actual) => {
-                  const a = normalizar(actual);
-                  const e = normalizar(c.esperado);
-                  const ok = a && (a === e || a.includes(e));
-                  if (!ok) {
-                    const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual || ''}"`;
+                if (tieneValorEsperado(actualPorName)) {
+                  if (!coincideValor(actualPorName, c.esperado, { exacto: c.exacto })) {
+                    const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actualPorName || ''}"`;
+                    return cy.wrap([...errores, msg]);
+                  }
+                  return cy.wrap(errores);
+                }
+                return leerValorInputPorLabel(c.label).then((actualPorLabel) => {
+                  if (c.name === 'client.insuredRisk' && normalizar(actualPorLabel) === '0') {
+                    cy.log('Facturación (Riesgo Asegurado): valor por defecto "0", se considera OK');
+                    return cy.wrap(errores);
+                  }
+                  if (!coincideValor(actualPorLabel, c.esperado, { exacto: c.exacto })) {
+                    const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actualPorLabel || ''}"`;
                     return cy.wrap([...errores, msg]);
                   }
                   return cy.wrap(errores);
@@ -5694,7 +6459,29 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
             });
           });
 
-          return chain;
+          checksSwitch.forEach((c) => {
+            chain = chain.then((errores) => {
+              if (c.esperado === null || c.esperado === undefined) return cy.wrap(errores);
+              return leerSwitchPorName(c.name).then((actual) => {
+                if (actual === null) {
+                  const msg = `Facturación (${c.label}): no se encontró el switch en pantalla`;
+                  return cy.wrap([...errores, msg]);
+                }
+                if (Boolean(actual) !== Boolean(c.esperado)) {
+                  const msg = `Facturación (${c.label}): esperado="${c.esperado}" obtenido="${actual}"`;
+                  return cy.wrap([...errores, msg]);
+                }
+                return cy.wrap(errores);
+              });
+            });
+          });
+
+          return chain.then((errores) => {
+            if (!errores.length) {
+              cy.log('Facturación verificada completa');
+            }
+            return cy.wrap(errores);
+          });
         };
 
         pestañasAVerificar.forEach((pestañaInfo) => {
@@ -5712,17 +6499,38 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                     if (erroresFact && erroresFact.length) {
                       erroresFact.forEach((e) => nuevas.push(e));
                     } else {
-                      // Si no hay esperados (caso 10 no existe), caemos a verificación genérica
+                      // Si no hay esperados (caso 9 no existe), caemos a verificación genérica
                       // sin marcar error extra.
                     }
                     return cy.wrap(nuevas);
                   });
                 }
 
+                if (pestañaInfo.nombre === 'Documentos') {
+                  return cy.get('body').then(($body) => {
+                    const filasDocumento = $body.find('.MuiDataGrid-row:visible, tbody tr:visible, .MuiTableBody-root tr:visible')
+                      .filter((_, el) => {
+                        const textoFila = (el.textContent || el.innerText || '').trim().toLowerCase();
+                        return textoFila.length > 0 && !/sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(textoFila);
+                      });
+                    const texto = ($body.text() || '').toLowerCase();
+                    const tieneDocumento = filasDocumento.length > 0 || !/sin\s+filas|no\s+hay\s+datos|sin\s+datos/i.test(texto);
+
+                    if (!tieneDocumento) {
+                      const nuevasPestañasSinDatos = [...pestañasSinDatos];
+                      nuevasPestañasSinDatos.push('Documentos');
+                      return cy.wrap(nuevasPestañasSinDatos);
+                    }
+
+                    cy.log(`Documentos verificados: ${filasDocumento.length > 0 ? `${filasDocumento.length} fila(s)` : 'contenido presente'}`);
+                    return cy.wrap(pestañasSinDatos);
+                  });
+                }
+
                 // Si tiene subpestaña (Contacto con Direcciones), verificar ambas
                 if (pestañaInfo.tieneSubpestaña && pestañaInfo.nombre === 'Contacto') {
                   // Verificar Contacto primero
-                  return verificarPestañaSinFilas('Contacto')
+                  return verificarPestañaConFilas('Contacto')
                     .then((tieneDatosContacto) => {
                       const nuevasPestañasSinDatos = [...pestañasSinDatos];
                       if (!tieneDatosContacto) {
@@ -5747,14 +6555,14 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                                 .scrollIntoView()
                                 .click({ force: true })
                                 .then(() => cy.wait(1000))
-                                .then(() => verificarPestañaSinFilas('Direcciones'));
+                                .then(() => verificarPestañaConFilas('Direcciones'));
                             } else {
                               // Si no se encuentra visible, intentar con cy.contains
                               return cy.contains('button, [role="tab"], div, span', /Direcciones|Direccion/i, { timeout: 10000 })
                                 .scrollIntoView()
                                 .click({ force: true })
                                 .then(() => cy.wait(1000))
-                                .then(() => verificarPestañaSinFilas('Direcciones'));
+                                .then(() => verificarPestañaConFilas('Direcciones'));
                             }
                           });
                         })
@@ -5766,7 +6574,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
                         });
                     });
                 } else {
-                  return verificarPestañaSinFilas(pestañaInfo.nombre)
+                  return verificarPestañaConFilas(pestañaInfo.nombre)
                     .then((tieneDatos) => {
                       const nuevasPestañasSinDatos = [...pestañasSinDatos];
                       if (!tieneDatos) {
@@ -5782,7 +6590,7 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
         return chainVerificacion;
       })
       .then((pestañasSinDatos) => {
-        cy.log('TC043: Verificación completada');
+        cy.log('TC040: Verificación completada');
 
         // Determinar el resultado y mensaje
         let resultado = 'OK';
@@ -5799,8 +6607,8 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
 
         // Registrar resultado
         return registrarResultadoAutomatico(
-          43,
-          'TC043',
+          numeroCaso,
+          idCaso,
           casoModificado?.nombre || 'Comprobar que se guardan todos los datos',
           mensaje,
           resultado,
@@ -5809,16 +6617,70 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
       });
   }
 
-  // TC044 y TC045: Exportar Excel (datos visibles o todo)
+  // TC041 y TC042: Exportar Excel (datos visibles o todo)
   function exportarCliente(caso, numero, casoId) {
     const nCaso = Number(numero);
-    cy.log(`TC0${nCaso}: Exportar ${nCaso === 44 ? 'datos visibles' : 'todo'} a Excel`);
+    const descripcionExportacion = nCaso === 41 ? 'columnas visibles' : 'todo';
+    cy.log(`TC${String(nCaso).padStart(3, '0')}: Exportar ${descripcionExportacion} a Excel`);
+    let columnasVisibles = [];
+
+    const normalizarCabecera = (txt = '') => String(txt)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    const obtenerColumnasVisiblesClientes = () => {
+      const leerCabecerasVisibles = () => {
+        return cy.get('[role="columnheader"], .MuiDataGrid-columnHeader', { timeout: 10000 })
+          .filter(':visible')
+          .then(($headers) => {
+            const columnas = Array.from($headers)
+              .map((el) => (el.textContent || el.innerText || '').trim())
+              .filter((txt) => txt && !/^\d+$/.test(txt))
+              .map((txt) => txt.replace(/\s+/g, ' ').trim());
+
+            columnas.forEach((c) => {
+              if (!columnasVisibles.includes(c)) columnasVisibles.push(c);
+            });
+          });
+      };
+
+      return cy.get('.MuiDataGrid-virtualScroller', { timeout: 10000 })
+        .first()
+        .then(($scroller) => {
+          const scroller = $scroller[0];
+          if (!scroller) return cy.wrap(columnasVisibles);
+
+          const maxScrollLeft = Math.max(0, (scroller.scrollWidth || 0) - (scroller.clientWidth || 0));
+          const pasos = maxScrollLeft > 0
+            ? [0, Math.round(maxScrollLeft * 0.33), Math.round(maxScrollLeft * 0.66), maxScrollLeft]
+            : [0];
+
+          let chain = cy.wrap(null);
+          pasos.forEach((pos) => {
+            chain = chain
+              .then(() => cy.get('.MuiDataGrid-virtualScroller').first().scrollTo(pos, 0, { ensureScrollable: false, duration: 200 }))
+              .then(() => cy.wait(250))
+              .then(() => leerCabecerasVisibles());
+          });
+
+          return chain
+            .then(() => cy.get('.MuiDataGrid-virtualScroller').first().scrollTo('left', { ensureScrollable: false, duration: 100 }))
+            .then(() => {
+              columnasVisibles = [...new Set(columnasVisibles)];
+              cy.log(`Columnas visibles detectadas: ${columnasVisibles.join(', ')}`);
+              return cy.wrap(columnasVisibles);
+            });
+        });
+    };
 
     // Paso 0: Asegurarse de estar en la lista, no en el formulario
     return cy.url().then((urlActual) => {
       // Si estamos en el formulario, navegar a la lista primero
       if (urlActual.includes('/dashboard/clients/form')) {
-        cy.log('TC044/TC045: Estamos en el formulario, navegando a la lista...');
+        cy.log('TC041/TC042: Estamos en el formulario, navegando a la lista...');
         // Navegar directamente a la URL de la lista
         return cy.visit('/dashboard/clients')
           .then(() => cy.wait(1000));
@@ -5831,149 +6693,159 @@ describe('FICHEROS (CLIENTES) - Validación dinámica desde Excel', () => {
           .then(() => cy.task('listarArchivosDescargados'))
           .then((archivosAntes) => {
             cy.log(`Archivos antes de descargar: ${archivosAntes.length}`);
-            
+
             return UI.abrirPantalla()
-          .then(() => UI.esperarTabla())
-          .then(() => {
-            // Hacer clic en el botón de exportar Excel (icono con aria-label="Exportar a Excel")
-            return cy.get('button[aria-label="Exportar a Excel"], button[aria-label*="Excel"]', { timeout: 10000 })
-              .should('be.visible')
-              .scrollIntoView({ block: 'center' })
-              .click({ force: true });
-          })
-          .then(() => cy.wait(500)) // Esperar a que aparezca el menú
-          .then(() => {
-            // Seleccionar la opción del menú según el caso
-            const opcionMenu = nCaso === 44 ? 'Exportar datos visibles' : 'Exportar todo';
+              .then(() => UI.esperarTabla())
+              .then(() => obtenerColumnasVisiblesClientes())
+              .then(() => {
+                // Hacer clic en el botón de exportar Excel (icono con aria-label="Exportar a Excel")
+                return cy.get('button[aria-label="Exportar a Excel"], button[aria-label*="Excel"]', { timeout: 10000 })
+                  .should('be.visible')
+                  .scrollIntoView({ block: 'center' })
+                  .click({ force: true });
+              })
+              .then(() => cy.wait(500)) // Esperar a que aparezca el menú
+              .then(() => {
+                // Seleccionar la opción del menú según el caso
+                const opcionMenu = nCaso === 41 ? 'Exportar columnas visibles' : 'Exportar todo';
 
-            // Buscar el menú por id o por clase, y luego el item dentro
-            return cy.get('body').then(($body) => {
-              const $menu = $body.find('#excel-export-menu, [id*="excel-export"], .MuiPopover-root:visible').last();
+                // Buscar el menú por id o por clase, y luego el item dentro
+                return cy.get('body').then(($body) => {
+                  const $menu = $body.find('#excel-export-menu, [id*="excel-export"], .MuiPopover-root:visible').last();
 
-              if ($menu.length > 0) {
-                // Buscar dentro del menú
-                const $item = $menu.find('li[role="menuitem"], .MuiMenuItem-root')
-                  .filter((_, el) => {
-                    const texto = (el.textContent || el.innerText || '').trim();
-                    return new RegExp(opcionMenu, 'i').test(texto);
-                  })
-                  .first();
+                  if ($menu.length > 0) {
+                    // Buscar dentro del menú
+                    const $item = $menu.find('li[role="menuitem"], .MuiMenuItem-root')
+                      .filter((_, el) => {
+                        const texto = (el.textContent || el.innerText || '').trim();
+                        return new RegExp(opcionMenu, 'i').test(texto);
+                      })
+                      .first();
 
-                if ($item.length > 0) {
-                  return cy.wrap($item)
+                    if ($item.length > 0) {
+                      return cy.wrap($item)
+                        .should('be.visible')
+                        .scrollIntoView({ block: 'center' })
+                        .click({ force: true });
+                    }
+                  }
+
+                  // Fallback: buscar directamente en el body
+                  return cy.contains('li[role="menuitem"], .MuiMenuItem-root', new RegExp(opcionMenu, 'i'), { timeout: 10000 })
                     .should('be.visible')
                     .scrollIntoView({ block: 'center' })
                     .click({ force: true });
-                }
-              }
-
-              // Fallback: buscar directamente en el body
-              return cy.contains('li[role="menuitem"], .MuiMenuItem-root', new RegExp(opcionMenu, 'i'), { timeout: 10000 })
-                .should('be.visible')
-                .scrollIntoView({ block: 'center' })
-                .click({ force: true });
-            });
-          })
-          .then(() => {
-            // Esperar a que se descargue el archivo
-            cy.log('Esperando a que se descargue el archivo Excel...');
-            
-            // Esperar un tiempo fijo para que se complete la descarga (más simple y evita bucles infinitos)
-            return cy.wait(8000) // Esperar 8 segundos
+                });
+              })
               .then(() => {
-                // Verificar si hay un archivo nuevo
-                return cy.task('listarArchivosDescargados')
-                  .then((archivosAhora) => {
-                    cy.log(`Archivos antes: ${archivosAntes.length}, Archivos ahora: ${archivosAhora.length}`);
-                    
-                    // Buscar un archivo nuevo
-                    const archivoNuevo = archivosAhora.find(f => !archivosAntes.includes(f));
-                    
-                    if (archivoNuevo) {
-                      cy.log(`Archivo descargado encontrado: ${archivoNuevo}`);
-                      return cy.wrap(archivoNuevo);
-                    }
-                    
-                    // Si no hay archivo nuevo pero hay archivos, usar el más reciente
-                    if (archivosAhora.length > 0) {
-                      cy.log(`No se detectó archivo nuevo, usando el más reciente: ${archivosAhora[0]}`);
-                      return cy.wrap(archivosAhora[0]);
-                    }
-                    
-                    cy.log('No se encontró ningún archivo .xlsx en la carpeta downloads');
-                    return cy.wrap(null);
+                // Esperar a que se descargue el archivo
+                cy.log('Esperando a que se descargue el archivo Excel...');
+
+                // Esperar un tiempo fijo para que se complete la descarga (más simple y evita bucles infinitos)
+                return cy.wait(8000) // Esperar 8 segundos
+                  .then(() => {
+                    // Verificar si hay un archivo nuevo
+                    return cy.task('listarArchivosDescargados')
+                      .then((archivosAhora) => {
+                        cy.log(`Archivos antes: ${archivosAntes.length}, Archivos ahora: ${archivosAhora.length}`);
+
+                        // Buscar un archivo nuevo
+                        const archivoNuevo = archivosAhora.find(f => !archivosAntes.includes(f));
+
+                        if (archivoNuevo) {
+                          cy.log(`Archivo descargado encontrado: ${archivoNuevo}`);
+                          return cy.wrap(archivoNuevo);
+                        }
+
+                        // Si no hay archivo nuevo pero hay archivos, usar el más reciente
+                        if (archivosAhora.length > 0) {
+                          cy.log(`No se detectó archivo nuevo, usando el más reciente: ${archivosAhora[0]}`);
+                          return cy.wrap(archivosAhora[0]);
+                        }
+
+                        cy.log('No se encontró ningún archivo .xlsx en la carpeta downloads');
+                        return cy.wrap(null);
+                      });
                   });
+              })
+              .then((nombreArchivo) => {
+                if (!nombreArchivo) {
+                  const error = 'No se detectó ningún archivo nuevo descargado';
+                  cy.log(`ERROR: ${error}`);
+                  return registrarResultadoAutomatico(
+                    numero,
+                    casoId,
+                    `Exportar ${descripcionExportacion}`,
+                    error,
+                    'ERROR',
+                    true
+                  );
+                }
+
+                // Leer el Excel descargado
+                return cy.task('leerUltimoExcelDescargado').then((excelData) => {
+                  if (!excelData || !excelData.rows) {
+                    const error = 'No se pudo leer el archivo Excel descargado';
+                    cy.log(`ERROR: ${error}`);
+                    return registrarResultadoAutomatico(
+                      numero,
+                      casoId,
+                      `Exportar ${descripcionExportacion}`,
+                      error,
+                      'ERROR',
+                      true
+                    );
+                  }
+
+                  const totalFilas = excelData.totalRows;
+                  const cabecerasExcel = excelData.rows.length ? Object.keys(excelData.rows[0] || {}) : [];
+                  const visiblesNorm = columnasVisibles.map(normalizarCabecera);
+                  const excelNorm = cabecerasExcel.map(normalizarCabecera);
+
+                  cy.log(`Excel descargado: ${excelData.fileName} con ${totalFilas} filas de datos`);
+                  cy.log(`Cabeceras Excel: ${cabecerasExcel.join(', ')}`);
+
+                  // Validar según el caso
+                  let resultado = 'OK';
+                  let mensaje = `Excel descargado correctamente con ${totalFilas} filas`;
+
+                  if (nCaso === 41) {
+                    const faltanVisibles = columnasVisibles.filter((c) => !excelNorm.includes(normalizarCabecera(c)));
+                    const sobranEnExcel = cabecerasExcel.filter((c) => !visiblesNorm.includes(normalizarCabecera(c)));
+
+                    if (totalFilas > 0 && faltanVisibles.length === 0 && sobranEnExcel.length === 0) {
+                      mensaje = `Excel descargado correctamente con ${totalFilas} filas y solo las columnas visibles: ${columnasVisibles.join(', ')}`;
+                      resultado = 'OK';
+                    } else {
+                      mensaje = `Exportación visible incorrecta. Faltan columnas visibles: ${faltanVisibles.join(', ') || 'ninguna'}. Sobran columnas en Excel: ${sobranEnExcel.join(', ') || 'ninguna'}. Filas: ${totalFilas}`;
+                      resultado = 'ERROR';
+                    }
+                  } else if (nCaso === 42) {
+                    const faltanVisibles = columnasVisibles.filter((c) => !excelNorm.includes(normalizarCabecera(c)));
+                    const tieneMasColumnasQueVisibles = cabecerasExcel.length > columnasVisibles.length;
+
+                    if (totalFilas > 0 && faltanVisibles.length === 0 && tieneMasColumnasQueVisibles) {
+                      mensaje = `Excel descargado correctamente con ${totalFilas} filas y todas las columnas. Visibles detectadas: ${columnasVisibles.length}. Exportadas: ${cabecerasExcel.length}`;
+                      resultado = 'OK';
+                    } else {
+                      mensaje = `Exportación completa incorrecta. Faltan columnas visibles: ${faltanVisibles.join(', ') || 'ninguna'}. Columnas exportadas: ${cabecerasExcel.length}. Columnas visibles: ${columnasVisibles.length}. Filas: ${totalFilas}`;
+                      resultado = 'ERROR';
+                    }
+                  }
+
+                  cy.log(`Resultado: ${resultado} - ${mensaje}`);
+
+                  return registrarResultadoAutomatico(
+                    numero,
+                    casoId,
+                    `Exportar ${descripcionExportacion}`,
+                    mensaje,
+                    resultado,
+                    true
+                  );
+                });
               });
-          })
-          .then((nombreArchivo) => {
-            if (!nombreArchivo) {
-              const error = 'No se detectó ningún archivo nuevo descargado';
-              cy.log(`ERROR: ${error}`);
-              return registrarResultadoAutomatico(
-                numero,
-                casoId,
-                `Exportar ${nCaso === 44 ? 'datos visibles' : 'todo'}`,
-                error,
-                'ERROR',
-                true
-              );
-            }
-
-            // Leer el Excel descargado
-            return cy.task('leerUltimoExcelDescargado').then((excelData) => {
-              if (!excelData || !excelData.rows) {
-                const error = 'No se pudo leer el archivo Excel descargado';
-                cy.log(`ERROR: ${error}`);
-                return registrarResultadoAutomatico(
-                  numero,
-                  casoId,
-                  `Exportar ${nCaso === 44 ? 'datos visibles' : 'todo'}`,
-                  error,
-                  'ERROR',
-                  true
-                );
-              }
-
-              const totalFilas = excelData.totalRows;
-              cy.log(`Excel descargado: ${excelData.fileName} con ${totalFilas} filas de datos`);
-
-              // Validar según el caso
-              let resultado = 'OK';
-              let mensaje = `Excel descargado correctamente con ${totalFilas} filas`;
-
-              if (nCaso === 44) {
-                // TC044: Debe tener 100 filas o más (datos visibles)
-                if (totalFilas >= 100) {
-                  mensaje = `Excel descargado correctamente con exactamente ${totalFilas} filas (datos visibles)`;
-                  resultado = 'OK';
-                } else {
-                  mensaje = `Se esperaban 100 filas pero se encontraron ${totalFilas} filas`;
-                  resultado = 'ERROR';
-                }
-              } else if (nCaso === 45) {
-                // TC045: Debe tener más de 100 filas (exportar todo)
-                if (totalFilas > 100) {
-                  mensaje = `Excel descargado correctamente con ${totalFilas} filas (más de 100, exportar todo)`;
-                  resultado = 'OK';
-                } else {
-                  mensaje = `Se esperaban más de 100 filas pero se encontraron ${totalFilas} filas`;
-                  resultado = 'ERROR';
-                }
-              }
-
-              cy.log(`Resultado: ${resultado} - ${mensaje}`);
-
-              return registrarResultadoAutomatico(
-                numero,
-                casoId,
-                `Exportar ${nCaso === 44 ? 'datos visibles' : 'todo'}`,
-                mensaje,
-                resultado,
-                true
-              );
-            });
           });
-        });
       });
   }
 

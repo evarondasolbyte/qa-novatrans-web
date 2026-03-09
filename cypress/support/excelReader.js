@@ -1,25 +1,53 @@
-// === Parser CSV que funciona con formato vertical de Google Sheets ===
+// === Parser CSV que respeta comillas, comas y saltos de línea embebidos ===
 function parseCsvRespectingQuotes(csv) {
   if (csv && csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1); // quita BOM
-  const lines = (csv || '').split(/\r?\n/).filter(l => l.trim() !== '');
-  const rows = lines.map(line => {
-    const cells = [];
-    let cur = '', inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
-        else { inQuotes = !inQuotes; }
-      } else if (ch === ',' && !inQuotes) {
-        cells.push(cur);
-        cur = '';
+
+  const text = String(csv || '');
+  const rows = [];
+  let row = [];
+  let cur = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        cur += '"';
+        i++;
       } else {
-        cur += ch;
+        inQuotes = !inQuotes;
       }
+      continue;
     }
-    cells.push(cur);
-    return cells.map(c => c.trim());
-  });
+
+    if (ch === ',' && !inQuotes) {
+      row.push(cur.trim());
+      cur = '';
+      continue;
+    }
+
+    if ((ch === '\n' || ch === '\r') && !inQuotes) {
+      if (ch === '\r' && next === '\n') i++;
+      row.push(cur.trim());
+      cur = '';
+
+      if (row.some((cell) => cell !== '')) {
+        rows.push(row);
+      }
+      row = [];
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  row.push(cur.trim());
+  if (row.some((cell) => cell !== '')) {
+    rows.push(row);
+  }
+
   return rows;
 }
 
@@ -272,7 +300,6 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
   if (pantallaSafe === 'login') return 'LOGIN';
   if (/(configuración|configuracion).*\(perfiles\)/.test(pantallaSafe) || pantallaSafe === 'configuración-perfiles') return 'CONFIGURACIÓN-PERFILES';
   if (pantallaSafe.includes('ficheros') && (pantallaSafe.includes('clientes') || pantallaSafe === 'ficheros-clientes')) return 'FICHEROS-CLIENTES';
-  // 👇 NUEVO: detectar Ficheros (Proveedores)
   if (
     /ficheros/.test(pantallaSafe) &&
     /(proveedores|proveedor|suppliers|supplier)/.test(pantallaSafe)
@@ -288,26 +315,26 @@ function seleccionarHojaPorPantalla(pantallaSafe) {
     (pantallaSafe.includes('rutas') || pantallaSafe === 'procesos-rutas')
   ) return 'PROCESOS-RUTAS';
 
-  // 👇 NUEVO: detectar Taller y Gastos (Repostajes)
+  //detectar Taller y Gastos (Repostajes)
   if (
     /taller/.test(pantallaSafe) &&
     /gastos/.test(pantallaSafe) &&
     /(repostaje|repostajes)/.test(pantallaSafe)
   ) return 'TALLER Y GASTOS-REPOSTAJES';
 
-  // 👇 NUEVO: detectar Ficheros (Tipos de Vehículo)
+  //detectar Ficheros (Tipos de Vehículo)
   if (
     /ficheros/.test(pantallaSafe) &&
     /(tipos.*veh[íi]culo|tipos.*veh[íi]culos)/.test(pantallaSafe)
   ) return 'FICHEROS-TIPOS DE VEHÍCULO';
 
-  // 👇 NUEVO: detectar Ficheros (Categorías de Conductores)
+  //detectar Ficheros (Categorías de Conductores)
   if (
     /ficheros/.test(pantallaSafe) &&
     /(categor[íi]as.*conductores|categor[íi]as.*conductor)/.test(pantallaSafe)
   ) return 'FICHEROS-CATEGORIAS DE CONDUCTORES';
 
-  // 👇 NUEVO: detectar Ficheros (Multas)
+  //detectar Ficheros (Multas)
   if (
     /ficheros/.test(pantallaSafe) &&
     /(multas|multa)/.test(pantallaSafe)

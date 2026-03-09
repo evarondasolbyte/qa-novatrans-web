@@ -1166,7 +1166,7 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         }
       } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('tarjetas') && casosTarjetasKO.includes(numeroCaso)) {
         // Casos de Tarjetas: TC002-TC008 deben dar ERROR si fallan, pero OK si funcionan en el futuro
-        cy.log(`🚨 TC${numeroCasoFormateado}: Es un caso de Tarjetas problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
+        cy.log(`TC${numeroCasoFormateado}: Es un caso de Tarjetas problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
         // Si funcionan bien (hay resultados filtrados), registrar OK
         if (filasVisibles > 0 && !tieneNoRows) {
           resultado = 'OK';
@@ -1760,7 +1760,7 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
           }
         }
 
-        // ---- TU LÓGICA ORIGINAL (para TODO lo demás) ----
+        // ---- LÓGICA ORIGINAL (para TODO lo demás) ----
         else if (esClientes2 && (numeroCaso === 22 || numeroCaso === 23)) {
           resultado = 'OK';
           if (filasVisibles > 0 && !tieneNoRowsVisible) {
