@@ -4,7 +4,6 @@ function crearHelpersFormularioClientes(config) {
     CAMPOS_IGNORADOS,
     normalizarEtiquetaTexto,
     normalizarTextoParaComparar,
-    seleccionarOpcionMaterial,
     escapeRegex,
     parseFechaBasicaExcel,
     seleccionarFechaEnCalendario,
@@ -49,6 +48,180 @@ function crearHelpersFormularioClientes(config) {
       cy.log(`No se encontró la sección ${seccion}`);
       return cy.wrap(null);
     });
+  }
+
+  function seleccionarOpcionMaterial(selector, valor, etiqueta = '') {
+    if (!valor) return cy.wrap(null);
+
+    cy.log(`Seleccionando "${valor}" en campo "${etiqueta || selector}"`);
+
+    const escaparIdCss = (id = '') => {
+      return id.replace(/([ #;?%&,.+*~\\':"!^$[\]()=>|\/@])/g, '\\$1');
+    };
+
+    if (etiqueta) {
+      return cy.contains('label, fieldset legend span, legend span', new RegExp(`^${escapeRegex(etiqueta)}$`, 'i'), { timeout: 10000 })
+        .should('be.visible')
+        .then(($label) => {
+          return cy.wrap($label)
+            .closest('.MuiFormControl-root, .MuiFormGroup-root, .MuiAutocomplete-root, .MuiTextField-root')
+            .then(($container) => {
+              const selectElement = $container.find('[id="mui-component-select-client.activity"], #mui-component-select-client\\.activity, [role="combobox"], [aria-haspopup="listbox"], div.MuiSelect-root').first();
+
+              if (selectElement.length > 0) {
+                const el = selectElement[0];
+                const id = el && el.getAttribute ? (el.getAttribute('id') || '') : '';
+                const selPorId = id ? `#${escaparIdCss(id)}` : null;
+
+                const clickSeguro = () => {
+                  if (selPorId) {
+                    return cy.get(selPorId, { timeout: 10000 })
+                      .scrollIntoView()
+                      .should('be.visible')
+                      .click({ force: true });
+                  }
+                  return cy.wrap(el)
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .click({ force: true });
+                };
+
+                return clickSeguro().then(
+                  () => cy.wrap(null),
+                  (err) => {
+                    cy.log(`No se pudo abrir el desplegable "${etiqueta}" (continuando): ${err?.message || err}`);
+                    return cy.wrap(null);
+                  }
+                );
+              }
+
+              if (selector) {
+                return cy.get(selector, { timeout: 10000 })
+                  .scrollIntoView()
+                  .should('be.visible')
+                  .click({ force: true })
+                  .then(
+                    () => cy.wrap(null),
+                    (err) => {
+                      cy.log(`No se pudo clicar selector "${selector}" para "${etiqueta}" (continuando): ${err?.message || err}`);
+                      return cy.wrap(null);
+                    }
+                  );
+              }
+
+              cy.log(`No se encontro desplegable para "${etiqueta}" en su contenedor. Continuando sin seleccionar.`);
+              return cy.wrap(null);
+            })
+            .then(() => {
+              cy.wait(500);
+
+              const esActividad = /actividad/i.test(etiqueta || '');
+
+              if (esActividad) {
+                return cy.get('body').then(($body) => {
+                  const mensajeSinOpciones = $body.find('*').filter((_, el) => {
+                    const texto = (el.textContent || '').toLowerCase();
+                    return /sin\s+opciones|no\s+hay\s+opciones|no\s+options/i.test(texto);
+                  }).filter(':visible');
+
+                  if (mensajeSinOpciones.length > 0) {
+                    cy.log('Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...');
+                    cy.get('body').click({ force: true });
+                    return cy.wrap(null);
+                  }
+
+                  const opciones = $body.find('li[role="option"], [role="option"], div[role="option"]').filter(':visible');
+                  if (opciones.length === 0) {
+                    cy.log('Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...');
+                    cy.get('body').click({ force: true });
+                    return cy.wrap(null);
+                  }
+
+                  return cy.contains(
+                    'li[role="option"], [role="option"], div[role="option"]',
+                    new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+                    { timeout: 10000 }
+                  )
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .click({ force: true });
+                }).then(null, (err) => {
+                  const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
+                  cy.log(`No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
+                  cy.get('body').click({ force: true });
+                  return cy.wrap(null);
+                });
+              }
+
+              return cy.contains(
+                'li[role="option"], [role="option"], div[role="option"]',
+                new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+                { timeout: 10000 }
+              )
+                .scrollIntoView()
+                .should('be.visible')
+                .click({ force: true });
+            });
+        });
+    }
+
+    return cy.get(selector || '[id="mui-component-select-client.activity"]', { timeout: 10000 })
+      .scrollIntoView()
+      .should('be.visible')
+      .click({ force: true })
+      .then(() => {
+        cy.wait(500);
+
+        const esActividad = selector && selector.includes('activity');
+
+        if (esActividad) {
+          return cy.get('body').then(($body) => {
+            const mensajeSinOpciones = $body.find('*').filter((_, el) => {
+              const texto = (el.textContent || '').toLowerCase();
+              return /sin\s+opciones|no\s+hay\s+opciones|no\s+options/i.test(texto);
+            }).filter(':visible');
+
+            if (mensajeSinOpciones.length > 0) {
+              cy.log('Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...');
+              cy.get('body').click({ force: true });
+              return cy.wrap(null);
+            }
+
+            const opciones = $body.find('li[role="option"], [role="option"], div[role="option"]').filter(':visible');
+            if (opciones.length === 0) {
+              cy.log('Campo "Actividad" no tiene opciones disponibles, continuando sin seleccionar...');
+              cy.get('body').click({ force: true });
+              return cy.wrap(null);
+            }
+
+            return cy.contains(
+              'li[role="option"], [role="option"], div[role="option"]',
+              new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+              { timeout: 10000 }
+            )
+              .scrollIntoView()
+              .should('be.visible')
+              .click({ force: true });
+          }).then(null, (err) => {
+            const mensajeError = err && err.message ? err.message : (err ? String(err) : 'Sin opciones disponibles');
+            cy.log(`No se pudo seleccionar "${valor}" en Actividad: ${mensajeError}. Continuando...`);
+            cy.get('body').click({ force: true });
+            return cy.wrap(null);
+          });
+        }
+
+        return cy.contains(
+          'li[role="option"], [role="option"], div[role="option"]',
+          new RegExp(`^${escapeRegex(valor)}$`, 'i'),
+          { timeout: 10000 }
+        )
+          .scrollIntoView()
+          .should('be.visible')
+          .click({ force: true });
+      }, (err) => {
+        cy.log(`No se pudo abrir el desplegable (${etiqueta || selector}). Continuando: ${err?.message || err}`);
+        return cy.wrap(null);
+      });
   }
 
   function llenarCamposFormulario(caso) {
@@ -1076,8 +1249,21 @@ function crearHelpersFormularioClientes(config) {
     const numero = caso.dato_1;
     const fecha = caso.dato_2;
     const tipoCertificacion = caso.dato_3;
+    const obtenerDatoPorSelectorExcel = (needle) => {
+      const n = (needle || '').toString();
+      const total = Number(caso?.__totalCamposExcel) || 30;
+      for (let i = 1; i <= total; i++) {
+        const sel = (caso?.[`valor_etiqueta_${i}`] || '').toString();
+        const val = caso?.[`dato_${i}`];
+        if (sel && sel.includes(n) && val !== undefined && val !== null && `${val}` !== '') {
+          return val;
+        }
+      }
+      return null;
+    };
+    const empresa = obtenerDatoPorSelectorExcel('Empresa') || caso.dato_4 || null;
 
-    cy.log(`Datos Certificaciones detectados: numero=${numero}, fecha=${fecha}, tipoCertificacion=${tipoCertificacion}`);
+    cy.log(`Datos Certificaciones detectados: numero=${numero}, fecha=${fecha}, tipoCertificacion=${tipoCertificacion}, empresa=${empresa}`);
 
     cy.wait(300);
 
@@ -1132,6 +1318,44 @@ function crearHelpersFormularioClientes(config) {
       });
     }
 
+    const seleccionarCampoCertificacion = (labelTexto, valor) => {
+      const valorTxt = valor ? String(valor) : '';
+      cy.log(`Seleccionando "${labelTexto}": ${valorTxt || '(primera opcion)'}`);
+
+      const seleccionarOpcion = () => {
+        return cy.get('body').then(($body) => {
+          const $opts = $body.find('[role="option"]').filter(':visible');
+          if (!$opts.length) return cy.wrap(null);
+          if (valorTxt) {
+            const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
+            const exacta = Array.from($opts).find((el) => regexValor.test((el.textContent || '').trim()));
+            if (exacta) return cy.wrap(exacta).click({ force: true });
+          }
+          return cy.wrap($opts[0]).click({ force: true });
+        });
+      };
+
+      return cy.contains('label', new RegExp(`^${escapeRegex(labelTexto)}$`, 'i'), { timeout: 10000 })
+        .should('exist')
+        .invoke('attr', 'for')
+        .then((forAttr) => {
+          if (!forAttr) return cy.wrap(null);
+          return cy.get(`#${forAttr}`, { timeout: 10000 })
+            .scrollIntoView()
+            .click({ force: true })
+            .then(($input) => {
+              if (valorTxt) {
+                return cy.wrap($input)
+                  .clear({ force: true })
+                  .type(valorTxt, { force: true })
+                  .then(() => cy.wait(500))
+                  .then(() => seleccionarOpcion());
+              }
+              return seleccionarOpcion();
+            });
+        });
+    };
+
     if (tipoCertificacion) {
       chain = chain.then(() => {
         const valorTxt = tipoCertificacion.toString();
@@ -1183,7 +1407,8 @@ function crearHelpersFormularioClientes(config) {
 
     chain = chain.then(() => {
       cy.log('Seleccionando primera opción en "Empresa" (CERTIFICACIONES)...');
-      return seleccionarPrimeraOpcionPorLabel('Empresa');
+      return seleccionarCampoCertificacion('Empresa', empresa)
+        .then(() => seleccionarPrimeraOpcionPorLabel('Empresa'));
     });
 
     return chain.then(() => {

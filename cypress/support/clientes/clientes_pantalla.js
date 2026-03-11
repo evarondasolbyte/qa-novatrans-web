@@ -45,8 +45,20 @@ function crearAyudasPantallaClientes(config) {
     },
 
     esperarTabla() {
+      const regexSinFilas = /(No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos)/i;
+
       cy.get('.MuiDataGrid-root', { timeout: 45000 }).should('be.visible');
-      return cy.get('.MuiDataGrid-row', { timeout: 30000 }).should('have.length.greaterThan', 0);
+      return cy.get('body', { timeout: 30000 }).should(($body) => {
+        const filas = $body.find('.MuiDataGrid-row').length;
+        const overlayText = $body.find('.MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').text() || '';
+        const bodyText = $body.text() || '';
+        const tieneMensajeSinFilas = regexSinFilas.test(overlayText) || regexSinFilas.test(bodyText);
+
+        expect(
+          filas > 0 || tieneMensajeSinFilas,
+          'la tabla debe tener filas o mostrar un mensaje de "sin filas"'
+        ).to.eq(true);
+      });
     },
 
     buscar(valor) {

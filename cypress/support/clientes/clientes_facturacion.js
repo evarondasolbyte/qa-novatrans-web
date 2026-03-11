@@ -39,6 +39,10 @@ function crearHelpersFacturacionClientes(config) {
       return null;
     };
 
+    const seleccionarEmpresaFacturacion = (empresaTxt) => {
+      return seleccionarComboFacturacionPorLabel('Empresas', empresaTxt);
+    };
+
     // --- util: buscar en Excel por name attribute ---
     const obtenerDatoPorNameExcel = (nameAttr) => {
       if (!nameAttr) return null;
@@ -339,15 +343,15 @@ function crearHelpersFacturacionClientes(config) {
     };
 
     //  Empresas: click + seleccionar opción (como antes). NO usa id.
-    const seleccionarEmpresaFacturacion = (empresaTxt) => {
-      const valor = String(empresaTxt).trim();
+    const seleccionarComboFacturacionPorLabel = (labelTxt, valorInput) => {
+      const valor = String(valorInput).trim();
       const regexExacto = new RegExp(`^${escapeRegex(valor)}$`, 'i');
       const regexParcial = new RegExp(escapeRegex(valor), 'i');
       const valorNormalizado = normalizarTextoSeleccion(valor);
 
       cy.log(`Seleccionando Empresa (Facturación): "${valor}"`);
 
-      return cy.contains('label', /^Empresas$/i, { timeout: 10000 })
+      return cy.contains('label', new RegExp(`^${escapeRegex(labelTxt)}$`, 'i'), { timeout: 10000 })
         .should('exist')
         .scrollIntoView()
         .parents('.MuiFormControl-root')
@@ -358,7 +362,7 @@ function crearHelpersFacturacionClientes(config) {
             .then(($combo) => {
               const actual = ($combo.text() || $combo.val() || '').toString().trim();
               if (normalizarTextoSeleccion(actual) === valorNormalizado) {
-                cy.log(`Empresa ya seleccionada: "${actual}"`);
+                cy.log(`${labelTxt} ya seleccionado: "${actual}"`);
                 return cy.wrap($combo);
               }
               return cy.wrap($combo).click({ force: true });
@@ -404,16 +408,58 @@ function crearHelpersFacturacionClientes(config) {
         });
     };
 
+    const seleccionarPrimeraOpcionComboFacturacionPorLabel = (labelTxt) => {
+      cy.log(`Seleccionando primera opcion disponible en ${labelTxt}`);
+
+      return cy.contains('label', new RegExp(`^${escapeRegex(labelTxt)}$`, 'i'), { timeout: 10000 })
+        .should('exist')
+        .scrollIntoView()
+        .parents('.MuiFormControl-root')
+        .first()
+        .within(() => {
+          cy.get('[role="combobox"]', { timeout: 10000 })
+            .should('be.visible')
+            .then(($combo) => {
+              const actual = ($combo.text() || $combo.val() || '').toString().trim();
+              if (actual) {
+                cy.log(`${labelTxt} ya tiene valor: "${actual}"`);
+                return cy.wrap($combo);
+              }
+              return cy.wrap($combo).click({ force: true });
+            });
+        })
+        .then(() => {
+          return cy.get('[role="listbox"]', { timeout: 15000 })
+            .first()
+            .should('exist')
+            .then(() => cy.get('body'))
+            .then(($body) => {
+              const $opts = $body.find('[role="option"]').filter(':visible');
+              if (!$opts.length) {
+                cy.log(`No se encontraron opciones visibles para ${labelTxt}`);
+                return cy.wrap(null);
+              }
+
+              return cy.wrap($opts[0])
+                .scrollIntoView()
+                .click({ force: true })
+                .then(() => cy.wait(300));
+            });
+        });
+    };
+
     //  modal "Aplicar a todas las empresas" -> Sí, aplicar
     const aceptarModalAplicarSiExiste = () => {
       return cy.get('body').then(($body) => {
         const $dlg = $body.find('[role="dialog"]:visible');
-        if (!$dlg.length) return cy.wrap(null);
+        if (!$dlg.length) return cy.esperarUIEstable(15000).then(() => cy.wait(500));
 
         // Tu modal tiene botón: "Sí, aplicar"
         return cy.contains('[role="dialog"] button', /sí,\s*aplicar/i, { timeout: 5000 })
           .should('be.visible')
-          .click({ force: true });
+          .click({ force: true })
+          .then(() => cy.esperarUIEstable(15000))
+          .then(() => cy.wait(500));
       });
     };
 
@@ -422,14 +468,24 @@ function crearHelpersFacturacionClientes(config) {
       const valorTxt = String(valor).trim();
       const regexValor = new RegExp(`^${escapeRegex(valorTxt)}$`, 'i');
       const valorNormalizado = normalizarTextoSeleccion(valorTxt);
+      if (
+        /tipo\s+factur/i.test(label) ||
+        /dise.*factura/i.test(label) ||
+        /ccc\s+empresa/i.test(label) ||
+        /c\.\s*venta/i.test(label)
+      ) {
+        return seleccionarComboFacturacionPorLabel(label, valorTxt);
+      }
 
       cy.log(`Autocomplete "${label}" => "${valorTxt}"`);
 
-      return cy.contains('label', new RegExp(`^${escapeRegex(label)}$`, 'i'), { timeout: 10000 })
-        .should('exist')
+      return cy.esperarUIEstable(15000)
+        .then(() => cy.contains('label', new RegExp(`^${escapeRegex(label)}$`, 'i'), { timeout: 10000 }).should('be.visible'))
+        .then(($label) => {
+          const $contenedor = Cypress.$($label).closest('.MuiFormControl-root');
+          return cy.wrap($contenedor.length ? $contenedor[0] : $label[0]);
+        })
         .scrollIntoView()
-        .parents('.MuiFormControl-root')
-        .first()
         .within(() => {
           cy.get('button[type="button"]').then(($buttons) => {
             const $clear = $buttons.filter((_, el) => {
@@ -907,15 +963,17 @@ function crearHelpersFacturacionClientes(config) {
 
     //  2) CCC Empresa (select dentro Configuración de Factura)
     if (cccEmpresa) {
-      chain = chain.then(() => seleccionarAutocompletePorLabel('CCC Empresa', cccEmpresa, { strictExact: true }));
+      chain = chain.then(() => seleccionarComboFacturacionPorLabel('CCC Empresa', cccEmpresa));
+    } else {
+      chain = chain.then(() => seleccionarPrimeraOpcionComboFacturacionPorLabel('CCC Empresa'));
     }
 
     //  3) Tipo Facturación + Diseño Factura (autocompletes)
     if (tipoFacturacion) {
-      chain = chain.then(() => seleccionarAutocompletePorLabel('Tipo Facturación', tipoFacturacion, { strictExact: false }));
+      chain = chain.then(() => seleccionarComboFacturacionPorLabel('Tipo Facturación', tipoFacturacion));
     }
     if (disenoFactura) {
-      chain = chain.then(() => seleccionarAutocompletePorLabel('Diseño Factura', disenoFactura, { strictExact: true }));
+      chain = chain.then(() => seleccionarComboFacturacionPorLabel('Diseño Factura', disenoFactura));
     }
 
     //  4) IVA (tiene name="client.defaultTax")
@@ -952,7 +1010,7 @@ function crearHelpersFacturacionClientes(config) {
 
     //  10) C. Venta (autocomplete)
     if (cVenta) {
-      chain = chain.then(() => seleccionarAutocompletePorLabel('C. Venta', cVenta, { strictExact: true }));
+      chain = chain.then(() => seleccionarComboFacturacionPorLabel('C. Venta', cVenta));
     }
 
     //  11) IBAN (especial; 5 campos separados)

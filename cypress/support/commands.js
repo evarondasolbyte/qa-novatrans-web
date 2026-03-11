@@ -1293,13 +1293,22 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
     }
 
     // Aquí espero a refresco real de la tabla y no a un sleep fijo, para evitar falsos fallos por lentitud.
-    esperarTablaActualizada(15000);
+    const pantallaLowerBusqueda = (nombrePantalla || '').toLowerCase();
+    const nombreCampoFiltroBusqueda = String(filtroEspecifico.dato_1 || '').toLowerCase();
+    const nombreCasoFiltroBusqueda = String(filtroEspecifico.nombre || '').toLowerCase();
+    const esBusquedaNifCifClientes =
+      pantallaLowerBusqueda.includes('clientes') &&
+      (/nif\s*\/\s*cif|nif|cif/.test(nombreCampoFiltroBusqueda) || /nif\s*\/\s*cif|nif|cif/.test(nombreCasoFiltroBusqueda));
+    esperarTablaActualizada(esBusquedaNifCifClientes ? 25000 : 15000);
 
     // Verificar resultados
     cy.get('body').then($body => {
       const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
       const totalFilas = $body.find('.MuiDataGrid-row').length;
-      const tieneNoRows = $body.text().includes('No rows');
+      const textoPantalla = $body.text() || '';
+      const overlayText = $body.find('.MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').text() || '';
+      const tieneNoRows = /No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos/i.test(textoPantalla) ||
+        /No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos/i.test(overlayText);
 
       cy.log(`Resultados del filtro TC${numeroCasoFormateado}:`);
       cy.log(`- Filas visibles: ${filasVisibles}`);
@@ -1308,6 +1317,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
 
       let resultado = 'OK';
       let obtenido = `Se muestran ${filasVisibles} resultados`;
+      const pantallaLower = (nombrePantalla || '').toLowerCase();
+      const esBusquedaNifCifClientesResultado = esBusquedaNifCifClientes;
 
       // Casos específicos de Vehículos: TC012 (caracteres especiales) debe ser OK cuando muestre "No rows"
       const casosVehiculosOKConNoRows = [12];
@@ -1321,7 +1332,10 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados`;
         }
-      } else if (filasVisibles === 0) {
+      } else if (esBusquedaNifCifClientesResultado && (filasVisibles === 0 || tieneNoRows)) {
+        resultado = 'ERROR';
+        obtenido = 'No se muestran resultados para la busqueda por NIF/CIF';
+      } else if (filasVisibles === 0 || tieneNoRows) {
         resultado = 'OK';
         obtenido = 'No se muestran resultados';
       } else {

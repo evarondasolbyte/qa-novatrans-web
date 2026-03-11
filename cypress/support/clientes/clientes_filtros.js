@@ -66,13 +66,17 @@ function crearHelpersFiltrosClientes(config) {
 
   function seleccionarNacionalidad(caso, numero) {
     let textoBuscar = '';
+    let descripcionCaso = 'Seleccionar nacionalidad';
 
-    if (numero === 26) {
+    if (numero === 25) {
       textoBuscar = 'Nacionales|Nationals|Nacionals';
-    } else if (numero === 27) {
+      descripcionCaso = 'Seleccionar nacionales';
+    } else if (numero === 26) {
       textoBuscar = 'U\\.E\\.|UE|EU';
-    } else if (numero === 28) {
+      descripcionCaso = 'Seleccionar U.E.';
+    } else if (numero === 27) {
       textoBuscar = 'Extranjeros|Foreigners|Estrangers';
+      descripcionCaso = 'Seleccionar extranjeros';
     } else {
       cy.log(`Caso ${numero} no tiene nacionalidad definida`);
       return cy.wrap(null);
@@ -89,8 +93,29 @@ function crearHelpersFiltrosClientes(config) {
       clickBotonVisible(/^(Aplicar|Apply)$/i);
       cy.esperarUIEstable(10000);
 
-      cy.log(`Filtro de nacionalidad aplicado para caso ${numero}`);
-      return cy.wrap(null);
+      return cy.get('body').then(($body) => {
+        const textoPantalla = ($body.text() || '').replace(/\s+/g, ' ').trim();
+        const overlayText = $body.find('.MuiDataGrid-overlay, .MuiDataGrid-main, [role="grid"]').text() || '';
+        const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+        const tieneNoRows = /No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos/i.test(textoPantalla) ||
+          /No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos/i.test(overlayText);
+
+        if (numero === 25 && (filasVisibles === 0 || tieneNoRows)) {
+          const mensajeError = 'No se muestran resultados para el filtro de nacionales';
+          cy.log(`ERROR caso ${numero}: ${mensajeError}`);
+          return cy.registrarResultados({
+            numero,
+            nombre: `TC${String(numero).padStart(3, '0')} - ${caso?.nombre || descripcionCaso}`,
+            esperado: 'Deben mostrarse clientes nacionales en la tabla',
+            obtenido: mensajeError,
+            resultado: 'ERROR',
+            pantalla: PANTALLA,
+          });
+        }
+
+        cy.log(`Filtro de nacionalidad aplicado para caso ${numero}`);
+        return cy.wrap(null);
+      });
     });
   }
 
@@ -125,12 +150,7 @@ function crearHelpersFiltrosClientes(config) {
     if (numero === 36) {
       columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
     } else {
-      columna = caso?.valor_etiqueta_1 || caso?.dato_1;
-    }
-
-    if (!columna) {
-      cy.log('Excel no define columna a ocultar');
-      return cy.wrap(null);
+      columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
     }
 
     cy.log(`Caso ${numero}: Ocultando columna "${columna}"`);
@@ -142,12 +162,7 @@ function crearHelpersFiltrosClientes(config) {
     if (numero === 37) {
       columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
     } else {
-      columna = caso?.valor_etiqueta_1 || caso?.dato_1;
-    }
-
-    if (!columna) {
-      cy.log('Excel no define columna a mostrar');
-      return cy.wrap(null);
+      columna = caso?.valor_etiqueta_1 || caso?.dato_1 || 'Código';
     }
 
     cy.log(`Caso ${numero}: Mostrando columna "${columna}"`);
@@ -217,10 +232,16 @@ function crearHelpersFiltrosClientes(config) {
 
       const $objetivo = $botonFueraCalendario.length ? $botonFueraCalendario : $fallback;
 
+      if (!$objetivo.length) {
+        cy.log('No hay boton Aplicar general visible tras el calendario, se omite este paso');
+        return cy.wrap(false);
+      }
+
       return cy.wrap($objetivo)
         .should('be.visible')
         .scrollIntoView()
-        .click({ force: true });
+        .click({ force: true })
+        .then(() => true);
     });
   }
 
@@ -262,17 +283,46 @@ function crearHelpersFiltrosClientes(config) {
       cy.wait('@getVisorFechas', { timeout: 20000 });
       cy.wait(1500);
 
-      cy.log(`${etiquetaCaso}: Pulso el Aplicar del filtro para refrescar la tabla`);
-      clickAplicarFiltroGeneral();
-      cy.wait('@getVisorFechas', { timeout: 20000 });
+      cy.log(`${etiquetaCaso}: Reviso si queda un Aplicar general pendiente`);
+      clickAplicarFiltroGeneral().then((sePulsoAplicarGeneral) => {
+        if (sePulsoAplicarGeneral) {
+          cy.log(`${etiquetaCaso}: Pulso el Aplicar del filtro para refrescar la tabla`);
+          cy.wait('@getVisorFechas', { timeout: 20000 });
+        } else {
+          cy.log(`${etiquetaCaso}: El Aplicar interno ya refresco la tabla, no se repite`);
+        }
+      });
       cy.wait(2000);
       cy.esperarUIEstable(15000);
       cy.get('.MuiDataGrid-root', { timeout: 15000 }).should('be.visible');
       cy.get('.MuiDataGrid-row', { timeout: 15000 }).should('have.length.greaterThan', 0);
       cy.wait(1200);
+      
+      return cy.get('body').then(($body) => {
+        const textoVisible = ($body.text() || '').replace(/\s+/g, ' ').trim();
+        const muestraClavesInternas = /clients\.table\.filters\.dateFrom|clients\.table\.filters\.dateTo/i.test(textoVisible);
+        const tieneDesde = /\bDesde\b/i.test(textoVisible);
+        const tieneHasta = /\bHasta\b/i.test(textoVisible);
 
-      cy.log(`${etiquetaCaso}: Filtro de fechas aplicado y tabla refrescada`);
-      return cy.wrap(null);
+        if (muestraClavesInternas || !tieneDesde || !tieneHasta) {
+          const mensajeError = muestraClavesInternas
+            ? 'El filtro de fechas muestra las claves internas dateFrom/dateTo en vez de "Desde" y "Hasta"'
+            : 'El filtro de fechas no muestra correctamente las etiquetas "Desde" y "Hasta"';
+
+          cy.log(`${etiquetaCaso}: ERROR - ${mensajeError}`);
+          return cy.registrarResultados({
+            numero: numero || 4,
+            nombre: `${etiquetaCaso} - ${caso?.nombre || 'Seleccionar fechas en el filtro'}`,
+            esperado: 'El filtro de fechas debe mostrar "Desde" y "Hasta"',
+            obtenido: mensajeError,
+            resultado: 'ERROR',
+            pantalla: PANTALLA,
+          });
+        }
+
+        cy.log(`${etiquetaCaso}: Filtro de fechas aplicado y tabla refrescada`);
+        return cy.wrap(null);
+      });
     });
   }
 
