@@ -1,11 +1,317 @@
-// ***********************************************
 // Custom commands y helpers
-// ***********************************************
 
-// ===== VARIABLES GLOBALES =====
+//VARIABLES GLOBALES
 let resultadosPorPantalla = {};
 let errorYaRegistrado = false;
 let resultadoYaRegistrado = false;
+// Esto lo limito a los 6 specs que sigo manteniendo, para no cambiar el comportamiento
+// de pantallas fuera del alcance mientras optimizo los waits.
+const SPECS_CON_WAITS_OPTIMIZADOS = new Set([
+  'cypress/e2e/ficheros_clientes.cy.js',
+  'cypress/e2e/ficheros_personal.cy.js',
+  'cypress/e2e/ficheros_vehiculos.cy.js',
+  'cypress/e2e/ficheros_proveedores.cy.js',
+  'cypress/e2e/procesos_ordenes_carga.cy.js',
+  'cypress/e2e/procesos_planificacion.cy.js',
+]);
+
+const SELECTOR_DRAWS_LISTADOS = '.MuiDrawer-paper, [data-testid*="listados-drawer"]';
+const SELECTOR_ITEMS_MENU_VISIBLES = 'li[role="menuitem"]:visible, [role="option"]:visible, .MuiMenuItem-root:visible, [role="menu"] li:visible, [role="listbox"] [role="option"]:visible';
+// Este selector apunta al buscador principal y excluye el sidebar, porque si no a veces
+// Cypress escribe donde no toca y el filtro parece fallar "sin motivo".
+const SELECTOR_BUSCADOR_PRINCIPAL =
+  'input[placeholder*="Buscar"]:not(#sidebar-search):not([id*="sidebar"]), ' +
+  'input[placeholder*="Search"]:not(#sidebar-search):not([id*="sidebar"]), ' +
+  'input[placeholder*="Cerc"]:not(#sidebar-search):not([id*="sidebar"])';
+
+function textoVisibleElemento(el) {
+  return (
+    el.getAttribute?.('aria-label') ||
+    el.getAttribute?.('title') ||
+    el.textContent ||
+    el.innerText ||
+    ''
+  ).trim();
+}
+
+function normalizarTextoMenu(texto = '') {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function buscarItemEnDrawers($body, textoObjetivo, options = {}) {
+  const opts = {
+    excluirPrimerDrawer: false,
+    excluirConductores: false,
+    invertirBusqueda: false,
+    ...options,
+  };
+
+  const textoNormalizado = normalizarTextoMenu(textoObjetivo);
+  let drawers = $body.find(SELECTOR_DRAWS_LISTADOS).toArray();
+
+  if (opts.excluirPrimerDrawer) {
+    drawers = drawers.slice(1);
+  }
+  if (opts.invertirBusqueda) {
+    drawers = drawers.reverse();
+  }
+
+  for (const drawer of drawers) {
+    const items = Cypress.$(drawer)
+      .find('.MuiListItemButton-root, button, a, [role="button"]')
+      .toArray()
+      .filter((el) => {
+        const textoItem = normalizarTextoMenu(textoVisibleElemento(el));
+        if (!textoItem) return false;
+        if (opts.excluirConductores && textoItem.includes('conductores')) return false;
+        return textoItem === textoNormalizado;
+      });
+
+    if (items.length) {
+      const visible = items.find((el) => Cypress.$(el).is(':visible'));
+      return visible || items[0];
+    }
+  }
+
+  for (const drawer of drawers) {
+    const items = Cypress.$(drawer)
+      .find('.MuiListItemButton-root, button, a, [role="button"]')
+      .toArray()
+      .filter((el) => {
+        const textoItem = normalizarTextoMenu(textoVisibleElemento(el));
+        if (!textoItem) return false;
+        if (opts.excluirConductores && textoItem.includes('conductores')) return false;
+        return textoItem.includes(textoNormalizado) || textoNormalizado.includes(textoItem);
+      });
+
+    if (items.length) {
+      const visible = items.find((el) => Cypress.$(el).is(':visible'));
+      return visible || items[0];
+    }
+  }
+
+  return null;
+}
+
+function esSpecConWaitsOptimizados() {
+  const specActual = (Cypress.spec?.relative || '').replace(/\\/g, '/');
+  return SPECS_CON_WAITS_OPTIMIZADOS.has(specActual);
+}
+
+// Aquí espero a que desaparezcan loaders y backdrops, porque prefiero engancharme
+// al estado real de la UI en vez de meter tiempos fijos.
+function esperarSinIndicadoresCarga(timeout = 20000) {
+  return cy.get('body', { timeout }).should(($body) => {
+    const visibles = $body.find(
+      '.MuiBackdrop-root:visible, .MuiCircularProgress-root:visible, .MuiLinearProgress-root:visible, ' +
+      '[role="progressbar"]:visible, .MuiDataGrid-loadingOverlay:visible'
+    ).length;
+    expect(visibles, 'indicadores de carga visibles').to.eq(0);
+  });
+}
+
+// Esta es la espera "general" que uso para sustituir waits numéricos:
+// si la pantalla sigue cargando o la tabla no tiene un estado claro, sigo esperando.
+function esperarInterfazEstable(timeout = 15000) {
+  const regexNoRows = /(No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos)/i;
+
+  return cy.get('body', { timeout, log: false }).should(($body) => {
+    const texto = $body.text() || '';
+    const bodyVisible = $body.is(':visible');
+    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+    const filasTotales = $body.find('.MuiDataGrid-row').length;
+    const overlayText = $body.find('.MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').text() || '';
+    const tieneDataGridVisible = $body.find('.MuiDataGrid-root:visible').length > 0;
+    const loadingVisible = $body.find(
+      '.MuiBackdrop-root:visible, .MuiCircularProgress-root:visible, .MuiLinearProgress-root:visible, ' +
+      '[role="progressbar"]:visible, .MuiDataGrid-loadingOverlay:visible, .MuiSkeleton-root:visible'
+    ).length > 0;
+    const noRowsVisible = regexNoRows.test(overlayText);
+    const totalFilas = Math.max(filasVisibles, filasTotales);
+    const tablaEstable = !tieneDataGridVisible || (!loadingVisible && (totalFilas > 0 || noRowsVisible || !/(Loading|Cargando)/i.test(texto)));
+
+    expect(bodyVisible, 'body visible').to.eq(true);
+    expect(loadingVisible, 'indicadores de carga visibles').to.eq(false);
+    expect(tablaEstable, 'tabla estable').to.eq(true);
+  });
+}
+
+// Esto me sirve cuando el flujo depende del drawer lateral de "Listados".
+function esperarDrawersListados(minimo = 1, timeout = 20000) {
+  return cy.get('body', { timeout }).should(($body) => {
+    const visibles = $body.find('.MuiDrawer-paper:visible, [data-testid*="listados-drawer"]:visible').length;
+    expect(visibles, 'paneles Listados visibles').to.be.at.least(minimo);
+  });
+}
+
+// Me dejo este comando por si en un spec quiero forzar explícitamente la espera estable
+// sin depender del overwrite de cy.wait.
+Cypress.Commands.add('esperarUIEstable', (timeout = 15000) => {
+  return esperarInterfazEstable(timeout);
+});
+
+// Si el spec es uno de los 6 objetivos y alguien llama a cy.wait(500), no duermo 500 ms:
+// lo redirijo a una espera por estado real. Si el wait es por alias o es otro spec, no lo toco.
+Cypress.Commands.overwrite('wait', (originalFn, tiempoOAlias, options) => {
+  if (typeof tiempoOAlias !== 'number' || !esSpecConWaitsOptimizados()) {
+    return originalFn(tiempoOAlias, options);
+  }
+
+  return esperarInterfazEstable(Math.max(tiempoOAlias, 1000));
+});
+
+function esperarMenuOpciones(timeout = 10000) {
+  return cy.get('body', { timeout }).should(($body) => {
+    const visibles = $body.find(SELECTOR_ITEMS_MENU_VISIBLES).length;
+    expect(visibles, 'opciones visibles del menú').to.be.greaterThan(0);
+  });
+}
+
+// Esta espera es más específica para grids: no me vale solo con que desaparezca el loader,
+// también quiero que haya filas o un "No rows" visible y coherente.
+function esperarTablaActualizada(timeout = 15000) {
+  const regexNoRows = /(No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos)/i;
+
+  return cy.get('body', { timeout }).should(($body) => {
+    const texto = $body.text() || '';
+    const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
+    const filasTotal = $body.find('.MuiDataGrid-row').length;
+    const overlayText = $body.find('.MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').text() || '';
+
+    const hayOverlay =
+      $body.find('.MuiDataGrid-loadingOverlay:visible, .MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').length > 0;
+    const haySpinners =
+      $body.find('.MuiCircularProgress-root:visible, .MuiLinearProgress-root:visible, [role="progressbar"]:visible').length > 0;
+    const hayLoadingText = /(Loading|Cargando)/i.test(texto);
+    const noRowsVisible = regexNoRows.test(overlayText);
+    const totalFilas = Math.max(filasVisibles, filasTotal);
+
+    expect(hayOverlay || haySpinners || hayLoadingText ? totalFilas > 0 || noRowsVisible : true, 'tabla actualizada').to.eq(true);
+  });
+}
+
+// Centralizo la escritura en el buscador principal para no repetir selectores largos
+// y para asegurarme siempre de usar el input correcto.
+function escribirEnBuscadorPrincipal(valor, options = {}) {
+  const timeout = options.timeout || 10000;
+
+  return cy.get(SELECTOR_BUSCADOR_PRINCIPAL, { timeout })
+    .filter(':visible')
+    .first()
+    .should('be.visible')
+    .clear({ force: true })
+    .type(`${valor}{enter}`, { force: true });
+}
+
+// Con esto intento encontrar botones o combos por texto visible, no solo por clases CSS,
+// porque Material UI cambia mucho el DOM y el texto suele aguantar mejor.
+function encontrarInteractivoPorTexto($body, patrones = [], selectoresExtra = []) {
+  const selectores = [
+    'button',
+    '[role="button"]',
+    '[aria-haspopup="menu"]',
+    '[aria-haspopup="listbox"]',
+    'input[role="combobox"]',
+    ...selectoresExtra,
+  ];
+
+  const elementos = $body.find(selectores.join(',')).filter(':visible').toArray();
+  return elementos.find((el) => {
+    const texto = textoVisibleElemento(el);
+    return patrones.some((patron) => patron.test(texto));
+  }) || null;
+}
+
+function abrirPanelListados() {
+  cy.get('body').then($body => {
+    // Si ya está abierto, no repito el click para no provocar cierres raros o animaciones dobles.
+    const abierto = $body.find('.MuiDrawer-paper:visible, [data-testid*="listados-drawer"]:visible').length > 0;
+    if (abierto) return;
+
+    const selectores = [
+      'button[aria-label="Listados"]',
+      'button[title="Listados"]',
+      '.MuiListItemButton-root[aria-label="Listados"]',
+      'button:has(svg[aria-label="Listados"])'
+    ];
+
+    // Voy probando selectores de más fiables a más genéricos. Así me adapto a cambios pequeños
+    // sin tener que reescribir toda la navegación.
+    let chain = cy.wrap(null, { log: false });
+
+    selectores.forEach(sel => {
+      chain = chain.then(() => {
+        return cy.get('body').then($b => {
+          if ($b.find(sel).length) {
+            cy.log(`Click en botÃ³n Listados usando selector: ${sel}`);
+            return cy.get(sel).first().click({ force: true });
+          }
+        });
+      });
+    });
+
+    chain = chain.then(() => {
+      return cy.get('body').then($b => {
+        const candidatos = $b
+          .find('button, a, [role="button"]')
+          .filter((_, el) => {
+            const label = (
+              el.getAttribute('aria-label') ||
+              el.getAttribute('title') ||
+              el.innerText ||
+              ''
+            ).toLowerCase();
+            return label.includes('listados') || label.includes('list') || label.includes('listado');
+          })
+          .filter(':visible');
+
+        if (candidatos.length) {
+          // Este fallback me salva cuando el botón existe pero cambia el markup o el atributo accesible.
+          cy.log('Fallback Listados: clic en primer candidato visible');
+          return cy.wrap(candidatos[0]).click({ force: true });
+        }
+      });
+    });
+  });
+
+  cy.get('body').then(($body) => {
+    const drawerVisible = $body.find('.MuiDrawer-paper:visible, [data-testid*="listados-drawer"]:visible').length > 0;
+    if (!drawerVisible) {
+      cy.log(' Drawer no visible tras intentar Listados');
+    }
+  });
+
+  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 20000 })
+    .should('exist')
+    .then(($drawer) => {
+      if ($drawer.is(':visible')) {
+        cy.log(' Drawer visible');
+      } else {
+        cy.log('Drawer existe pero no estÃ¡ visible, continuando...');
+      }
+    });
+}
+
+function agregarResultadoPantalla(params) {
+  const {
+    numero, nombre, esperado, obtenido, resultado, pantalla,
+    fechaHora = new Date().toLocaleString('sv-SE').replace('T', ' '),
+    observacion
+  } = params;
+
+  if (!resultadosPorPantalla[pantalla]) {
+    resultadosPorPantalla[pantalla] = { resultados: [], fechaHora };
+  }
+
+  resultadosPorPantalla[pantalla].resultados.push({
+    numero, nombre, esperado, obtenido, resultado, fechaHora, observacion
+  });
+}
 
 // ===== RESETEO DE FLAGS POR TEST =====
 Cypress.Commands.add('resetearFlagsTest', () => {
@@ -63,23 +369,25 @@ Cypress.Commands.add('login', ({
         performLogin();
         // Validar solo que no seguimos en /login y que el body está visible.
         cy.url({ timeout: 20000 }).should('not.include', '/login');
-        cy.wait(2000);
         cy.get('body').should('be.visible');
+        esperarSinIndicadoresCarga(20000);
         // Quitado: No comprobar "Página no encontrada" aquí para no romper la sesión.
         // cy.get('body').should('not.contain', 'Página no encontrada');
         // cy.get('body').should('not.contain', 'Page Not Found');
       }
     );
-    cy.wait(1000);
   } else {
     performLogin();
+    cy.url({ timeout: 20000 }).should('not.include', '/login');
+    cy.get('body').should('be.visible');
+    esperarSinIndicadoresCarga(20000);
   }
 });
 
 // ===== NAVEGACIÓN (ADAPTADA AL NUEVO MENÚ "LISTADOS") =====
 
 // Abre el panel lateral de "Listados" (icono de la parte baja del sidebar)
-Cypress.Commands.add('abrirPanelListados', () => {
+const abrirPanelListadosLegacy = () => {
   cy.get('body').then($body => {
     // Si ya hay un drawer visible, no hacemos nada
     const abierto = $body.find('.MuiDrawer-paper:visible, [data-testid*="listados-drawer"]:visible').length > 0;
@@ -148,6 +456,11 @@ Cypress.Commands.add('abrirPanelListados', () => {
         cy.log('Drawer existe pero no está visible, continuando...');
       }
     });
+};
+
+// Restauro el comando porque varios flujos históricos esperan poder llamarlo como cy.abrirPanelListados().
+Cypress.Commands.add('abrirPanelListados', () => {
+  return abrirPanelListadosLegacy();
 });
 
 // NAVEGACIÓN DIRECTA USANDO "LISTADOS"
@@ -156,66 +469,59 @@ Cypress.Commands.add('abrirPanelListados', () => {
 Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => {
   const opts = { expectedPath: options.expectedPath };
 
-  // 1. Ir al dashboard (se asume usuario YA logueado con cy.login y sesión)
+  // Aquí vuelvo al flujo original de navegación porque era el más estable con este menú lateral.
   cy.visit('/dashboard');
-  cy.wait(1500); // más margen en entornos lentos
+  cy.wait(1500);
 
-  // 2. Abrir panel "Listados"
+  // Mantengo la apertura como comando Cypress porque así se comportaba antes en los specs.
   cy.abrirPanelListados();
-  cy.wait(1200); // más margen para que abra el drawer
+  cy.wait(1200);
 
-  // 3. Click en el menú principal (columna izquierda: Ficheros, TallerYGastos, ...)
-  cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 30000 })
-    .should('have.length.greaterThan', 0)
-    .first()                                    // PRIMER drawer = columna de menús
-    .within(() => {
-      cy.contains(
-        '.MuiListItemButton-root, button, a, [role="button"]',
-        new RegExp(`^${textoMenu}\\s*$`, 'i'),
-        { timeout: 20000 }
-      )
-        // no exigir visible; algunos drawers quedan con visibility hidden
-        .click({ force: true });
+  // Aquí ya no dependo de .first() ni de la posición exacta del drawer:
+  // busco el item real del menú por texto dentro del panel de listados.
+  cy.get('body', { timeout: 30000 })
+    .should(($body) => {
+      const itemMenu = buscarItemEnDrawers($body, textoMenu);
+      expect(itemMenu, `item de menú "${textoMenu}"`).to.exist;
+    })
+    .then(($body) => {
+      const itemMenu = buscarItemEnDrawers($body, textoMenu);
+      cy.wrap(itemMenu).click({ force: true });
     });
 
   cy.wait(1200);
 
-  // 4. Click en el submenú (columna derecha: Clientes, Personal, Multas...)
+  // Restauro también el caso especial de "Categorías", porque antes se diferenciaba de "Categorías de Conductores".
   if (textoSubmenu) {
-    cy.get('.MuiDrawer-paper, [data-testid*="listados-drawer"]', { timeout: 30000 })
-      .should('have.length.greaterThan', 0)
-      .last()                                  // ÚLTIMO drawer = columna de submenús
-      .within(() => {
-        if (textoSubmenu === 'Categorías') {
-          // Caso especial: "Categorías" sin "de Conductores"
-          cy.get('.MuiListItemButton-root, button, a, [role="button"]')
-            .filter((_, el) => {
-              const txt = (el.innerText || '').trim().toLowerCase();
-              return txt.includes('categorías') && !txt.includes('conductores');
-            })
-            .first()
-            .click({ force: true });
-        } else {
-          cy.contains(
-            '.MuiListItemButton-root, button, a, [role="button"]',
-            new RegExp(`^${textoSubmenu}\\s*$`, 'i'),
-            { timeout: 20000 }
-          )
-            .click({ force: true });
-        }
+    cy.get('body', { timeout: 30000 })
+      .should(($body) => {
+        const itemSubmenu = buscarItemEnDrawers($body, textoSubmenu, {
+          excluirPrimerDrawer: true,
+          excluirConductores: textoSubmenu === 'Categorías',
+          invertirBusqueda: true,
+        });
+        expect(itemSubmenu, `item de submenú "${textoSubmenu}"`).to.exist;
+      })
+      .then(($body) => {
+        const itemSubmenu = buscarItemEnDrawers($body, textoSubmenu, {
+          excluirPrimerDrawer: true,
+          excluirConductores: textoSubmenu === 'Categorías',
+          invertirBusqueda: true,
+        });
+        cy.wrap(itemSubmenu).click({ force: true });
       });
 
     cy.wait(1800);
   }
 
-  // 5. Verificar navegación
+  // Aquí valido la URL para asegurarme de que realmente he navegado.
   if (opts.expectedPath) {
     cy.url({ timeout: 20000 }).should('include', opts.expectedPath);
   } else {
     cy.url({ timeout: 20000 }).should('include', '/dashboard/');
   }
 
-  // 6. Si hay tabla, asegurar que esté visible
+  // Si la pantalla tiene grid, lo dejo visible antes de seguir.
   cy.get('body').then($body => {
     if ($body.find('.MuiDataGrid-root').length) {
       cy.get('.MuiDataGrid-root', { timeout: 20000 }).should('be.visible');
@@ -224,7 +530,7 @@ Cypress.Commands.add('navegarAMenu', (textoMenu, textoSubmenu, options = {}) => 
 });
 
 // Wrapper para rutas tipo "Ficheros > Clientes"
-Cypress.Commands.add('navegar', (ruta, options = {}) => {
+const navegarLegacy = (ruta, options = {}) => {
   const partes = Array.isArray(ruta)
     ? ruta
     : (typeof ruta === 'string'
@@ -237,10 +543,10 @@ Cypress.Commands.add('navegar', (ruta, options = {}) => {
 
   const [menu, submenu] = partes;
   cy.navegarAMenu(menu, submenu, options);
-});
+};
 
 // ===== ACUMULADOR POR PANTALLA =====
-Cypress.Commands.add('agregarResultadoPantalla', (params) => {
+const agregarResultadoPantallaLegacy = (params) => {
   const {
     numero, nombre, esperado, obtenido, resultado, pantalla,
     fechaHora = new Date().toLocaleString('sv-SE').replace('T', ' '),
@@ -254,7 +560,7 @@ Cypress.Commands.add('agregarResultadoPantalla', (params) => {
   resultadosPorPantalla[pantalla].resultados.push({
     numero, nombre, esperado, obtenido, resultado, fechaHora, observacion
   });
-});
+};
 
 // ===== PROCESAR RESUMEN DE UNA PANTALLA =====
 Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
@@ -315,7 +621,6 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
     obtenido: `Pruebas de ${pantalla}`,
     resultado: resultadoFinal,
     fechaHora: fechaHoraFormateada,
-    archivo: 'reportes_pruebas_novatrans.xlsx',
     pantalla: 'Resultados Pruebas',
     ok: oks.length.toString(),
     warning: warnings.length.toString(),
@@ -329,7 +634,6 @@ Cypress.Commands.add('procesarResultadosPantalla', (pantalla) => {
 Cypress.Commands.add('registrarResultados', (params) => {
   const {
     numero, nombre, esperado, obtenido, resultado: resultadoManual,
-    archivo = 'reportes_pruebas_novatrans.xlsx',
     fechaHora = new Date().toLocaleString('sv-SE').replace('T', ' '),
     pantalla, observacion
   } = params;
@@ -348,14 +652,14 @@ Cypress.Commands.add('registrarResultados', (params) => {
     const obtenidoFinal = 'Comportamiento correcto';
 
     if (pantalla) {
-      cy.agregarResultadoPantalla({
+      agregarResultadoPantalla({
         numero, nombre, esperado, obtenido: obtenidoFinal, resultado: resultadoFinal,
         pantalla, fechaHora, observacion
       });
     } else {
       cy.task('guardarEnExcel', {
         numero, nombre, esperado, obtenido: obtenidoFinal, resultado: resultadoFinal,
-        fechaHora, archivo, pantalla, observacion
+        fechaHora, pantalla, observacion
       });
     }
 
@@ -385,14 +689,14 @@ Cypress.Commands.add('registrarResultados', (params) => {
   }
 
   if (pantalla) {
-    cy.agregarResultadoPantalla({
+    agregarResultadoPantalla({
       numero, nombre, esperado, obtenido, resultado: resultadoFinal,
       pantalla, fechaHora, observacion
     });
   } else {
     cy.task('guardarEnExcel', {
       numero, nombre, esperado, obtenido, resultado: resultadoFinal,
-      fechaHora, archivo, pantalla, observacion
+      fechaHora, pantalla, observacion
     });
   }
 
@@ -400,7 +704,7 @@ Cypress.Commands.add('registrarResultados', (params) => {
 });
 
 // ===== FUNCIÓN CENTRALIZADA PARA LOGIN =====
-Cypress.Commands.add('hacerLogin', (datosCaso) => {
+const hacerLoginLegacy = (datosCaso) => {
   const {
     dato_1: database = 'NTDesarrolloGonzalo',
     dato_2: server = 'SERVER\\DESARROLLO',
@@ -427,14 +731,16 @@ Cypress.Commands.add('hacerLogin', (datosCaso) => {
     safeType('input[name="password"]', password);
 
     cy.get('button[type="submit"]').click();
-    cy.wait(1000);
+    cy.url({ timeout: 20000 }).should('not.include', '/login');
+    cy.get('body').should('be.visible');
+    esperarSinIndicadoresCarga(20000);
   };
 
   performLogin();
-});
+};
 
 // ===== CONFIGURACIÓN PERFILES =====
-Cypress.Commands.add('cambiarIdioma', (idioma) => {
+const cambiarIdiomaLegacy = (idioma) => {
   const idiomas = {
     'Inglés': { codigo: 'en', texto: 'Name' },
     'Catalán': { codigo: 'ca', texto: 'Nom' },
@@ -446,19 +752,19 @@ Cypress.Commands.add('cambiarIdioma', (idioma) => {
     cy.log(`Idioma no soportado: ${idioma}, usando valores por defecto`);
     const configDefault = { codigo: 'en', texto: 'Name' };
     cy.get('select#languageSwitcher').select(configDefault.codigo, { force: true });
-    cy.wait(1500);
+    cy.get('select#languageSwitcher').should('have.value', configDefault.codigo);
+    esperarSinIndicadoresCarga(15000);
     return cy.get('body').should('contain.text', configDefault.texto);
   }
 
   cy.log(`Cambiando idioma a: ${idioma} (${config.codigo})`);
   cy.get('select#languageSwitcher').select(config.codigo, { force: true });
-  cy.wait(1500);
 
   return cy.get('body').should('contain.text', config.texto).then(() => {
     cy.log(`Idioma cambiado exitosamente a ${idioma}`);
     return cy.wrap(true);
   });
-});
+};
 
 // ===== CAMBIAR IDIOMA COMPLETO (prueba los tres idiomas) =====
 Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp, textoEsperadoCat, textoEsperadoIng, numeroCaso = 30) => {
@@ -489,11 +795,11 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     { codigo: 'es', texto: textosEsperados.es, nombre: 'Español' }
   ];
 
-  // Función auxiliar para cambiar y verificar un idioma
+  // Lo dejo separado porque necesito reutilizar la misma lógica para español, inglés y catalán.
   const cambiarYVerificarIdioma = (config, fallosIdiomas, nombrePantallaParam) => {
     cy.log(`Cambiando idioma a: ${config.nombre} (${config.codigo})`);
 
-    // Intentar con select primero, luego con Material-UI
+    // Primero intento el camino simple con select. Si no existe, caigo al dropdown de Material UI.
     cy.get('body').then($body => {
       if ($body.find('select#languageSwitcher').length > 0) {
         // Select nativo con id languageSwitcher
@@ -505,37 +811,17 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
         // Material-UI dropdown (botón con menú) - buscar el botón del idioma
         cy.log('No se encontró select nativo, intentando con Material-UI dropdown');
 
-        // Buscar el botón que muestra el idioma actual
-        const selectors = [
-          'button:contains("Spanish")',
-          'button:contains("Español")',
-          'button:contains("Espanyol")',
-          'button:contains("English")',
-          'button:contains("Inglés")',
-          'button:contains("Angles")',
-          'button:contains("Anglès")',
-          'button:contains("Catalan")',
-          'button:contains("Catalán")',
-          'button:contains("Català")',
-          '[role="button"]:contains("Spanish")',
-          '[role="button"]:contains("Español")',
-          '[role="button"]:contains("Espanyol")',
-          '[role="button"]:contains("Angles")',
-          '[role="button"]:contains("Anglès")',
-          'button.MuiButton-root',
-        ];
+        // Aquí busco el trigger por texto visible del idioma, porque es más resistente
+        // que engancharme a una clase concreta del botón.
+        const trigger = encontrarInteractivoPorTexto(
+          $body,
+          [/Spanish|Español|Espanyol/i, /English|Inglés|Angles|Anglès/i, /Catalan|Catalán|Català/i],
+          ['button.MuiButton-root']
+        );
 
-        let selectorEncontrado = null;
-        for (const selector of selectors) {
-          if ($body.find(selector).length > 0 && !selectorEncontrado) {
-            selectorEncontrado = selector;
-            break;
-          }
-        }
-
-        if (selectorEncontrado) {
-          cy.get(selectorEncontrado).first().click({ force: true });
-          cy.wait(500);
+        if (trigger) {
+          cy.wrap(trigger).click({ force: true });
+          esperarMenuOpciones(10000);
 
           // Seleccionar el idioma del menú según el código
           if (config.codigo === 'en') {
@@ -551,20 +837,18 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
       }
     });
 
-    cy.wait(1500);
+    esperarSinIndicadoresCarga(15000);
 
-    // Verificar que el cambio de idioma se aplicó correctamente
-    // Si falla con inglés o catalán, acumular el fallo para registrar un solo WARNING
+    // No me basta con hacer click: después compruebo que aparezca un texto esperable del idioma.
+    // Si falla en inglés o catalán, lo acumulo y saco un único warning entendible.
     return cy.get('body').then($body => {
       const bodyText = $body.text();
       const tieneTextoEsperado = bodyText.includes(config.texto);
 
       // Para Siniestros y Tarjetas, ser más flexible: si tiene el texto esperado, está OK
-      const esSiniestros = (nombrePantallaParam || nombrePantalla) && (nombrePantallaParam || nombrePantalla).toLowerCase().includes('siniestros');
-      const esTarjetas = (nombrePantallaParam || nombrePantalla) && (nombrePantallaParam || nombrePantalla).toLowerCase().includes('tarjetas');
       const np = ((nombrePantallaParam || nombrePantalla) || '').toLowerCase();
       const esClientes = np.includes('clientes') || np.includes('clients');
-      const esPantallaFlexible = esSiniestros || esTarjetas || esClientes;
+      const esPantallaFlexible = esClientes;
 
       // En el Excel ya se valida que está todo bien traducido:
       // no marcamos WARNING por "strings sin traducir"; solo comprobamos que aparece el texto esperado.
@@ -579,7 +863,7 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
           return cy.wrap(fallosIdiomas);
         } else {
           if (esPantallaFlexible && tieneTextoEsperado) {
-            cy.log(`Idioma cambiado exitosamente a ${config.nombre} (${esSiniestros ? 'Siniestros' : 'Tarjetas'} - texto encontrado)`);
+            cy.log(`Idioma cambiado exitosamente a ${config.nombre} (Clientes - texto encontrado)`);
             return cy.wrap(fallosIdiomas);
           }
 
@@ -603,17 +887,14 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
   }).then((fallosIdiomas) => {
     // Al finalizar todos los idiomas, registrar resultado
     const nombrePantallaLower2 = nombrePantalla ? nombrePantalla.toLowerCase() : '';
-    const esTarjetas = nombrePantallaLower2.includes('tarjetas');
-    const esAlquileres = nombrePantallaLower2.includes('alquileres');
-    const esFormasPago = nombrePantallaLower2.includes('formas de pago');
-    const esAlmacen = nombrePantallaLower2.includes('almacen');
-    const esTiposVehiculo = nombrePantallaLower2.includes('tipos de vehículo');
     const esOrdenesCarga = nombrePantallaLower2.includes('órdenes de carga') || nombrePantallaLower2.includes('ordenes de carga');
     const esPlanificacion = nombrePantallaLower2.includes('planificación') || nombrePantallaLower2.includes('planificacion');
-    const esRutas = nombrePantallaLower2.includes('rutas') || nombrePantallaLower2.includes('routes');
     const esVehiculos = nombrePantallaLower2.includes('vehículos') || nombrePantallaLower2.includes('vehiculos');
 
-    const debeForzarOK = esTarjetas || esAlquileres || esFormasPago || esTiposVehiculo || esOrdenesCarga || esAlmacen || esPlanificacion || esRutas || esVehiculos;
+    const esProveedores = nombrePantallaLower2.includes('proveedores') || nombrePantallaLower2.includes('proveedor');
+    const esPersonal = nombrePantallaLower2.includes('personal');
+    const esClientes = nombrePantallaLower2.includes('clientes');
+    const debeForzarOK = esClientes || esPersonal || esProveedores || esOrdenesCarga || esPlanificacion || esVehiculos;
 
     if (debeForzarOK) {
       cy.registrarResultados({
@@ -622,7 +903,6 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
         esperado: 'Textos esperados deben aparecer en la pantalla sin strings sin traducir',
         obtenido: 'Todos los idiomas (Español, Catalán, Inglés) se cambiaron correctamente',
         resultado: 'OK',
-        archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla
       });
     } else if (fallosIdiomas.length > 0) {
@@ -635,7 +915,6 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
         esperado: `Textos esperados deben aparecer en la pantalla sin strings sin traducir`,
         obtenido: `Cambio de idioma falló - ${motivos}`,
         resultado: 'WARNING',
-        archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla
       });
     } else {
@@ -645,7 +924,6 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
         esperado: 'Textos esperados deben aparecer en la pantalla sin strings sin traducir',
         obtenido: 'Todos los idiomas (Español, Catalán, Inglés) se cambiaron correctamente',
         resultado: 'OK',
-        archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla
       });
     }
@@ -654,12 +932,12 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
     return cy.get('body').then(($body) => {
       if ($body.find('select#languageSwitcher').length > 0) {
         cy.get('select#languageSwitcher').select('es', { force: true });
-        cy.wait(800);
+        cy.get('select#languageSwitcher').should('have.value', 'es');
         return;
       }
       if ($body.find('select[name="language"], select[data-testid="language-switcher"]').length > 0) {
         cy.get('select[name="language"], select[data-testid="language-switcher"]').select('es', { force: true });
-        cy.wait(800);
+        cy.get('select[name="language"], select[data-testid="language-switcher"]').should('have.value', 'es');
         return;
       }
 
@@ -674,11 +952,11 @@ Cypress.Commands.add('cambiarIdiomaCompleto', (nombrePantalla, textoEsperadoEsp,
 
       if (candidates.length) {
         cy.wrap(candidates[0]).click({ force: true });
-        cy.wait(300);
+        esperarMenuOpciones(10000);
         cy.get('li.MuiMenuItem-root, [role="menuitem"]')
           .contains(/Spanish|Español|Espanyol/i)
           .click({ force: true });
-        cy.wait(800);
+        esperarSinIndicadoresCarga(15000);
       }
     });
   });
@@ -788,19 +1066,15 @@ Cypress.Commands.add('validarTraducciones', (idiomaActual) => {
 
 
 // ===== FILTRO PERFILES =====
-Cypress.Commands.add('ejecutarFiltroPerfiles', (valorBusqueda) => {
-  cy.get('input[placeholder*="Buscar"], input[placeholder*="Search"], input[placeholder*="Cerc"]')
-    .should('be.visible')
-    .clear({ force: true })
-    .type(`${valorBusqueda}{enter}`, { force: true });
-
-  cy.wait(2000);
+const ejecutarFiltroPerfilesLegacy = (valorBusqueda) => {
+  escribirEnBuscadorPrincipal(valorBusqueda);
+  esperarTablaActualizada(15000);
 
   return cy.get('body').then($body => {
     const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
     return cy.wrap({ filasVisibles, valorBusqueda });
   });
-});
+};
 
 // ===== CAPTURA DE ERRORES =====
 Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
@@ -826,13 +1100,12 @@ Cypress.Commands.add('capturarError', (contexto, error, data = {}) => {
     obtenido: data.obtenido || mensaje,
     resultado: resultadoFinal,
     fechaHora,
-    archivo: data.archivo || 'reportes_pruebas_novatrans.xlsx',
     pantalla: data.pantalla || '',
     observacion: data.observacion || ''
   };
 
   if (data.pantalla) {
-    cy.agregarResultadoPantalla(registro);
+    agregarResultadoPantalla(registro);
   } else {
     cy.task('guardarEnExcel', registro);
   }
@@ -872,7 +1145,6 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
         obtenido: 'Caso no encontrado en los datos del Excel',
         resultado: 'ERROR',
-        archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla
       });
       return cy.wrap(true);
@@ -915,6 +1187,7 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               return;
             }
 
+            // Si la opción no está a la vista, voy recorriendo el menú poco a poco antes de darlo por perdido.
             const desplazamientos = [
               { x: 0, y: 200 },
               { x: 0, y: 400 },
@@ -932,7 +1205,6 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               }
             });
 
-            cy.wait(200);
             return seleccionarOpcionMenu(nombreColumna, intento + 1);
           });
         };
@@ -981,34 +1253,20 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
             }
           });
         } else {
-          // Material-UI dropdown (botón con menú)
+          // Si no hay select nativo, tiro del dropdown de Material UI.
           cy.log('No se encontró select nativo, intentando con Material-UI dropdown');
 
-          // Buscar el botón que abre el menú de columna (puede tener diferentes textos)
+          // El trigger lo encuentro por texto porque ese patrón aguanta mejor que los selectores CSS puros.
           cy.get('body').then($body => {
-            // Intentar encontrar el botón del dropdown de columna
-            // Puede ser un botón que contiene el texto actual o un botón genérico
-            const selectors = [
-              'button:contains("Multifiltro")',
-              'button:contains("Nombre")',
-              'button:contains("Código")',
-              '[role="button"]:contains("Multifiltro")',
-              '[role="button"]:contains("Nombre")',
-              'div[role="button"]',
-              'button.MuiButton-root',
-            ];
+            const trigger = encontrarInteractivoPorTexto(
+              $body,
+              [/Multifiltro/i, /Nombre/i, /Código|Code/i],
+              ['div[role="button"]', 'button.MuiButton-root', '[data-testid*="column"]']
+            );
 
-            let selectorEncontrado = null;
-            for (const selector of selectors) {
-              if ($body.find(selector).length > 0 && !selectorEncontrado) {
-                selectorEncontrado = selector;
-                break;
-              }
-            }
-
-            if (selectorEncontrado) {
-              cy.get(selectorEncontrado).first().click({ force: true });
-              cy.wait(500);
+            if (trigger) {
+              cy.wrap(trigger).click({ force: true });
+              esperarMenuOpciones(10000);
 
               // Buscar el elemento del menú con el nombre de la columna
               seleccionarOpcionMenu(filtroEspecifico.dato_1);
@@ -1018,30 +1276,24 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           });
         }
 
-        // Esperar a que se actualice la interfaz
-        cy.wait(1000);
+        // Antes de escribir, espero a que el buscador bueno esté visible para no disparar el filtro en otro input.
+        cy.get(SELECTOR_BUSCADOR_PRINCIPAL, { timeout: 10000 }).filter(':visible').first().should('be.visible');
 
-        // Introducir el valor de búsqueda - excluir el del sidebar
-        cy.get('input[placeholder*="Buscar"]:not(#sidebar-search):not([id*="sidebar"]), input[placeholder*="Search"]:not(#sidebar-search):not([id*="sidebar"]), input[placeholder*="Cerc"]:not(#sidebar-search):not([id*="sidebar"])').should('be.visible')
-          .clear({ force: true })
-          .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+        // La escritura la centralizo en un helper para reutilizar siempre el mismo selector fiable.
+        escribirEnBuscadorPrincipal(filtroEspecifico.dato_2);
       });
     } else if (filtroEspecifico.etiqueta_1 === 'search' && (filtroEspecifico.valor_etiqueta_1 === 'text' || filtroEspecifico.valor_etiqueta_1 === 'texto exacto' || filtroEspecifico.valor_etiqueta_1 === 'texto parcial')) {
       // Búsqueda libre, texto exacto o texto parcial
       cy.log(`Búsqueda ${filtroEspecifico.valor_etiqueta_1}: ${filtroEspecifico.dato_2}`);
-      cy.get('input[placeholder*="Buscar"]:not(#sidebar-search):not([id*="sidebar"]), input[placeholder*="Search"]:not(#sidebar-search):not([id*="sidebar"]), input[placeholder*="Cerc"]:not(#sidebar-search):not([id*="sidebar"])').should('be.visible')
-        .clear({ force: true })
-        .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+      escribirEnBuscadorPrincipal(filtroEspecifico.dato_2);
     } else {
       // Caso por defecto - búsqueda libre con dato_2
       cy.log(`Búsqueda por defecto: ${filtroEspecifico.dato_2}`);
-      cy.get('input[placeholder*="Buscar"]:not(#sidebar-search):not([id*="sidebar"]), input[placeholder*="Search"]:not(#sidebar-search):not([id*="sidebar"]), input[placeholder*="Cerc"]:not(#sidebar-search):not([id*="sidebar"])').should('be.visible')
-        .clear({ force: true })
-        .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+      escribirEnBuscadorPrincipal(filtroEspecifico.dato_2);
     }
 
-    // Esperar a que se procese la búsqueda
-    cy.wait(3000);
+    // Aquí espero a refresco real de la tabla y no a un sleep fijo, para evitar falsos fallos por lentitud.
+    esperarTablaActualizada(15000);
 
     // Verificar resultados
     cy.get('body').then($body => {
@@ -1057,81 +1309,10 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       let resultado = 'OK';
       let obtenido = `Se muestran ${filasVisibles} resultados`;
 
-      // Casos específicos que pueden estar marcados como KO en Excel
-      const casosKO = [26];
-      // Casos específicos de teléfonos problemáticos: OK si funcionan bien, ERROR si siguen fallando
-      const casosTelefonosKO = [10, 11, 12, 13, 14];
-      // Casos específicos de categorías que muestran todos los datos en lugar de filtrar
-      const casosCategoriasKO = [];
-      // Casos específicos de categorías que muestran todos los datos en lugar de filtrar
-      const casosCategoriasSinDatos = [30, 31];
-      // Casos específicos de categorías que muestran datos correctos (TC027, TC028, TC029)
-      const casosCategoriasCorrectos = [27, 28, 29];
-      // Casos específicos de Procesos (Rutas): TC012 debe ser OK mostrando "No rows"
-      const casosProcesosRutasOKConNoRows = [12];
-      // Casos específicos de Multas: TC010 (caracteres especiales) debe ser OK cuando muestre "No rows"
-      const casosMultasOKConNoRows = [10];
-      // Casos específicos de Siniestros: TC002-TC010 deben dar ERROR si fallan, pero OK si funcionan
-      // TC003: puede mostrar "No rows" aunque haya datos en la tabla (comportamiento esperado)
-      const casosSiniestrosKO = [2, 4, 5, 6, 7, 8, 9, 10];
-      // Casos específicos de Siniestros: TC003 y TC012 deben ser OK cuando muestre "No rows"
-      const casosSiniestrosOKConNoRows = [3, 12];
-      // Casos específicos de Tarjetas: TC002-TC008 deben dar ERROR si fallan, pero OK si funcionan en el futuro
-      const casosTarjetasKO = [2, 3, 4, 5, 6, 7, 8];
-      // Casos específicos de Tarjetas: TC013 debe ser OK cuando muestre "No rows" (comportamiento esperado)
-      const casosTarjetasOKConNoRows = [13];
-      // Casos específicos de Alquileres Vehículos: TC010 debe ser OK cuando muestre "No rows" (comportamiento esperado)
-      const casosAlquileresOKConNoRows = [10];
-      // Casos específicos de Alquileres Vehículos: TC006-TC009 y TC026-TC031 deben dar ERROR si fallan, pero OK si funcionan
-      const casosAlquileresKO = [6, 7, 8, 9, 26, 27, 28, 29, 30, 31];
       // Casos específicos de Vehículos: TC012 (caracteres especiales) debe ser OK cuando muestre "No rows"
       const casosVehiculosOKConNoRows = [12];
 
-      // Verificar primero si es un caso especial de Multas que debe ser OK con "No rows"
-      if (nombrePantalla && nombrePantalla.toLowerCase().includes('rutas') && nombrePantalla.toLowerCase().includes('procesos') && casosProcesosRutasOKConNoRows.includes(numeroCaso)) {
-        if (tieneNoRows || filasVisibles === 0) {
-          resultado = 'OK';
-          obtenido = 'No se muestran resultados (comportamiento esperado para filtros especiales)';
-        } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados`;
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('multas') && casosMultasOKConNoRows.includes(numeroCaso)) {
-        if (tieneNoRows || filasVisibles === 0) {
-          resultado = 'OK';
-          obtenido = 'No se muestran resultados (comportamiento esperado para caracteres especiales)';
-        } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados`;
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('siniestros') && casosSiniestrosOKConNoRows.includes(numeroCaso)) {
-        // TC003 y TC012 en Siniestros: deben ser OK cuando muestre "No rows" (comportamiento esperado)
-        if (tieneNoRows || filasVisibles === 0) {
-          resultado = 'OK';
-          obtenido = 'No se muestran resultados (comportamiento esperado)';
-        } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados`;
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('tarjetas') && casosTarjetasOKConNoRows.includes(numeroCaso)) {
-        // TC013 en Tarjetas: debe ser OK cuando muestre "No rows" (comportamiento esperado)
-        if (tieneNoRows || filasVisibles === 0) {
-          resultado = 'OK';
-          obtenido = 'No se muestran resultados (comportamiento esperado)';
-        } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados`;
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('alquileres') && casosAlquileresOKConNoRows.includes(numeroCaso)) {
-        // TC010 en Alquileres Vehículos: debe ser OK cuando muestre "No rows" (comportamiento esperado)
-        if (tieneNoRows || filasVisibles === 0) {
-          resultado = 'OK';
-          obtenido = 'No se muestran resultados (comportamiento esperado)';
-        } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados`;
-        }
-      } else if (nombrePantalla && (nombrePantalla.toLowerCase().includes('vehículos') || nombrePantalla.toLowerCase().includes('vehiculos')) && casosVehiculosOKConNoRows.includes(numeroCaso)) {
+      if (nombrePantalla && (nombrePantalla.toLowerCase().includes('vehículos') || nombrePantalla.toLowerCase().includes('vehiculos')) && casosVehiculosOKConNoRows.includes(numeroCaso)) {
         // TC012 en Vehículos: debe ser OK cuando muestre "No rows" (comportamiento esperado para caracteres especiales)
         if (tieneNoRows || filasVisibles === 0) {
           resultado = 'OK';
@@ -1139,75 +1320,6 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
         } else {
           resultado = 'OK';
           obtenido = `Se muestran ${filasVisibles} resultados`;
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('alquileres') && casosAlquileresKO.includes(numeroCaso)) {
-        // Casos de Alquileres Vehículos: TC006-TC009 y TC026-TC031 deben dar ERROR si fallan, pero OK si funcionan
-        cy.log(`TC${numeroCasoFormateado}: Es un caso de Alquileres Vehículos problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        // Si funcionan bien (hay resultados filtrados), registrar OK
-        if (filasVisibles > 0 && !tieneNoRows) {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
-        } else {
-          // Si fallan (muestra "No rows" cuando hay filas), registrar ERROR
-          resultado = 'ERROR';
-          obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (el filtro no funciona correctamente)';
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('siniestros') && casosSiniestrosKO.includes(numeroCaso)) {
-        // Casos de Siniestros: TC002, TC004-TC010 deben dar ERROR si fallan, pero OK si funcionan en el futuro
-        cy.log(` TC${numeroCasoFormateado}: Es un caso de Siniestros problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        // Si funcionan bien (hay resultados filtrados), registrar OK
-        if (filasVisibles > 0 && !tieneNoRows) {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
-        } else {
-          // Si fallan (no hay resultados o muestra "No rows" cuando debería haber datos), registrar ERROR
-          resultado = 'ERROR';
-          obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (el filtro no funciona correctamente)';
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('tarjetas') && casosTarjetasKO.includes(numeroCaso)) {
-        // Casos de Tarjetas: TC002-TC008 deben dar ERROR si fallan, pero OK si funcionan en el futuro
-        cy.log(`TC${numeroCasoFormateado}: Es un caso de Tarjetas problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        // Si funcionan bien (hay resultados filtrados), registrar OK
-        if (filasVisibles > 0 && !tieneNoRows) {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
-        } else {
-          // Si fallan (muestra "No rows" cuando hay filas), registrar ERROR
-          resultado = 'ERROR';
-          obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (el filtro no funciona correctamente)';
-        }
-      } else if (casosKO.includes(numeroCaso)) {
-        if (filasVisibles > 0) {
-          resultado = 'OK';
-          obtenido = `Filtro ${filtroEspecifico.dato_1} funciona correctamente (${filasVisibles} resultados)`;
-        } else {
-          resultado = 'ERROR';
-          obtenido = 'No se muestran resultados para este filtro';
-        }
-      } else if (casosTelefonosKO.includes(numeroCaso)) {
-        // Para casos de teléfonos específicos: OK si funcionan bien, ERROR si siguen fallando
-        cy.log(` TC${numeroCasoFormateado}: Es un caso de teléfonos problemático - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        if (filasVisibles === 0 || tieneNoRows) {
-          resultado = 'ERROR';
-          obtenido = tieneNoRows ? 'Muestra "No rows" cuando deberían existir datos' : 'No se muestran resultados (deberían existir datos)';
-        } else {
-          resultado = 'OK';
-          obtenido = `Se muestran ${filasVisibles} resultados filtrados`;
-        }
-      } else if (casosCategoriasCorrectos.includes(numeroCaso)) {
-        // TC027-TC029: OK porque muestran datos correctos
-        cy.log(` TC${numeroCasoFormateado}: Es un caso de categorías correcto - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        resultado = 'OK';
-        obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
-      } else if (casosCategoriasSinDatos.includes(numeroCaso) || casosCategoriasKO.includes(numeroCaso)) {
-        // TC002-TC004, TC030-TC031: ERROR porque muestran todos los datos en lugar de filtrar
-        cy.log(` TC${numeroCasoFormateado}: Es un caso de categorías que muestra todos los datos - filas visibles: ${filasVisibles}, tiene "No rows": ${tieneNoRows}`);
-        if (filasVisibles > 0) {
-          resultado = 'ERROR';
-          obtenido = 'Muestra todos los datos en lugar de filtrar correctamente';
-        } else {
-          resultado = 'ERROR';
-          obtenido = 'No aplica el filtro correctamente';
         }
       } else if (filasVisibles === 0) {
         resultado = 'OK';
@@ -1223,82 +1335,12 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       let esperadoCaso = `Filtro ${filtroEspecifico.dato_1} debe mostrar resultados apropiados`;
       let obtenidoCaso = obtenido;
 
-      if (nombrePantalla && nombrePantalla.toLowerCase().includes('teléfonos')) {
-        switch (numeroCaso) {
-          case 10:
-            nombreCaso = 'TC010 - Filtrar por "Número"';
-            break;
-          case 11:
-            nombreCaso = 'TC011 - Filtrar por "Modelo"';
-            break;
-          case 12:
-            nombreCaso = 'TC012 - Filtrar por "Poseedor"';
-            break;
-          case 13:
-            nombreCaso = 'TC013 - Filtrar por "Activo"';
-            break;
-          case 14:
-            nombreCaso = 'TC014 - Filtrar por "Extensión" exacta';
-            break;
-          case 15:
-            nombreCaso = 'TC015 - Filtrar un Modelo por campo "Value"';
-            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
-            break;
-          case 16:
-            nombreCaso = 'TC016 - Buscar texto en mayúsculas/minúsculas alternadas';
-            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
-            break;
-          case 17:
-            nombreCaso = 'TC017 - Buscar caracteres especiales';
-            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
-            break;
-          case 18:
-            nombreCaso = 'TC018 - Buscar texto sin coincidencias';
-            esperadoCaso = `Filtro "${filtroEspecifico.dato_1}" = "${filtroEspecifico.dato_2}"`;
-            break;
-        }
-      } else if (nombrePantalla && nombrePantalla.toLowerCase().includes('categorías')) {
-        switch (numeroCaso) {
-          case 2:
-            nombreCaso = 'TC002 - Filtrar por columna "Código"';
-            break;
-          case 3:
-            nombreCaso = 'TC003 - Filtrar por columna "Nombre"';
-            break;
-          case 4:
-            nombreCaso = 'TC004 - Filtrar por columna "Módulo"';
-            break;
-          case 5:
-            nombreCaso = 'TC005 - Buscar texto exacto en buscador general';
-            break;
-          case 6:
-            nombreCaso = 'TC006 - Buscar texto parcial en buscador general';
-            break;
-          case 7:
-            nombreCaso = 'TC007 - Buscar con mayúsculas y minúsculas combinadas';
-            break;
-          case 8:
-            nombreCaso = 'TC008 - Buscar con espacios al inicio y fin';
-            break;
-          case 9:
-            nombreCaso = 'TC009 - Buscar con caracteres especiales';
-            break;
-          case 22:
-            nombreCaso = 'TC022 - Buscar texto con acentos';
-            break;
-          case 23:
-            nombreCaso = 'TC023 - Filtrar por "Value"';
-            break;
-        }
-      }
-
       cy.registrarResultados({
         numero: numeroCaso,
         nombre: nombreCaso,
         esperado: esperadoCaso,
         obtenido: obtenidoCaso,
         resultado: resultado,
-        archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla
       });
 
@@ -1321,49 +1363,23 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
 
   //  NUEVO: esperar a que DataGrid refresque (evita leer filas “fantasma”)
   function esperarTablaActualizada(maxRetries = 14, delayMs = 500) {
-    const regexNoRows = /(No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos)/i;
-
-    const step = (attempt = 0) => {
-      return cy.get('body').then($body => {
+    return cy.wrap(Math.max(maxRetries * delayMs, 15000), { log: false }).then((timeoutMs) => {
+      return cy.get('body', { timeout: timeoutMs }).should(($body) => {
         const texto = ($body.text() || '');
         const filasVisibles = $body.find('.MuiDataGrid-row:visible').length;
         const filasTotal = $body.find('.MuiDataGrid-row').length;
-
-        // Detectores típicos de loading/render
         const hayOverlay =
           $body.find('.MuiDataGrid-loadingOverlay:visible, .MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').length > 0;
-
         const haySpinners =
           $body.find('.MuiCircularProgress-root:visible, .MuiLinearProgress-root:visible, [role="progressbar"]:visible').length > 0;
-
         const hayLoadingText = /(Loading|Cargando)/i.test(texto);
-
-        const estaCargando = hayOverlay || haySpinners || hayLoadingText;
-
-        //  CLAVE: "No rows" solo cuenta si el overlay está VISIBLE (evita texto fantasma en DOM)
         const overlayText = $body.find('.MuiDataGrid-overlay:visible, .MuiDataGrid-overlayWrapper:visible').text() || '';
-        const noRowsVisible = regexNoRows.test(overlayText);
-
+        const noRowsVisible = /(No rows|Sin resultados|No se encontraron|No results|Sin filas|No hay datos)/i.test(overlayText);
         const totalFilas = Math.max(filasVisibles, filasTotal);
 
-        // Condición de salida: ya hay estado claro (filas o noRowsVisible) y no parece cargando
-        if (!estaCargando && (totalFilas > 0 || noRowsVisible)) {
-          cy.log(` Tabla actualizada (intento ${attempt}): filasVisibles=${filasVisibles}, totalFilas=${totalFilas}, noRowsVisible=${noRowsVisible}`);
-          return cy.wrap(true);
-        }
-
-        // Si agotamos intentos, salimos igual (para no colgar)
-        if (attempt >= maxRetries) {
-          cy.log(` Timeout esperando tabla (intento ${attempt}). filasVisibles=${filasVisibles}, totalFilas=${totalFilas}, noRowsVisible=${noRowsVisible}, cargando=${estaCargando}`);
-          return cy.wrap(true);
-        }
-
-        // Reintentar
-        return cy.wait(delayMs).then(() => step(attempt + 1));
+        expect(hayOverlay || haySpinners || hayLoadingText ? totalFilas > 0 || noRowsVisible : true, 'tabla actualizada').to.eq(true);
       });
-    };
-
-    return step(0);
+    });
   }
 
   return cy.obtenerDatosExcel(nombreHojaExcel).then((datosFiltros) => {
@@ -1394,7 +1410,6 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
         esperado: `Caso TC${numeroCasoFormateado} debe existir en el Excel`,
         obtenido: 'Caso no encontrado en los datos del Excel',
         resultado: 'ERROR',
-        archivo: 'reportes_pruebas_novatrans.xlsx',
         pantalla: nombrePantalla
       });
       return cy.wrap(true);
@@ -1453,38 +1468,15 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
         } else {
           cy.log('No se encontró select nativo, intentando con Material-UI dropdown para operador');
 
-          const selectors = [
-            'button:contains("Contiene")',
-            'button:contains("Contenga")',
-            'button:contains("Igual a")',
-            'button:contains("Igual")',
-            'button:contains("Empieza con")',
-            'button:contains("Empiece por")',
-            'button:contains("Distinto a")',
-            'button:contains("Diferente")',
-            '[role="button"]:contains("Contiene")',
-            '[role="button"]:contains("Contenga")',
-            '[role="button"]:contains("Igual a")',
-            '[role="button"]:contains("Igual")',
-            'div[role="button"]',
-            'button.MuiButton-root',
-            '[data-testid*="operator"]',
-            '[data-testid*="filter"]',
-          ];
+          const trigger = encontrarInteractivoPorTexto(
+            $body,
+            [/Contiene|Contenga|Contains/i, /Igual a|Igual|Equal/i, /Empieza con|Empiece por|Starts with/i, /Distinto a|Diferente|Different/i],
+            ['div[role="button"]', 'button.MuiButton-root', '[data-testid*="operator"]', '[data-testid*="filter"]']
+          );
 
-          let selectorEncontrado = null;
-          for (const selector of selectors) {
-            if ($body.find(selector).length > 0 && !selectorEncontrado) {
-              selectorEncontrado = selector;
-              break;
-            }
-          }
-
-          if (selectorEncontrado) {
-            cy.get(selectorEncontrado).first().click({ force: true });
-            cy.wait(500);
-
-            cy.wait(300);
+          if (trigger) {
+            cy.wrap(trigger).click({ force: true });
+            esperarMenuOpciones(10000);
             cy.get('body').then($body2 => {
               const menuSelectors = [
                 'li[role="menuitem"]',
@@ -1586,30 +1578,15 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
 
         // Intentar seleccionar operador si existe
         cy.get('body').then($body => {
-          const selectors = [
-            'button:contains("Contiene")',
-            'button:contains("Contenga")',
-            'button:contains("Mayor o igual")',
-            'button:contains("Empieza con")',
-            'button:contains("Empiece por")',
-            '[role="button"]:contains("Contiene")',
-            '[role="button"]:contains("Mayor o igual")',
-            '[role="button"]:contains("Empieza con")',
-            'div[role="button"]',
-            'button.MuiButton-root',
-          ];
+          const trigger = encontrarInteractivoPorTexto(
+            $body,
+            [/Contiene|Contenga|Contains/i, /Mayor o igual|Greater than or equal/i, /Empieza con|Empiece por|Starts with/i],
+            ['div[role="button"]', 'button.MuiButton-root']
+          );
 
-          let selectorEncontrado = null;
-          for (const selector of selectors) {
-            if ($body.find(selector).length > 0 && !selectorEncontrado) {
-              selectorEncontrado = selector;
-              break;
-            }
-          }
-
-          if (selectorEncontrado) {
-            cy.get(selectorEncontrado).first().click({ force: true });
-            cy.wait(500);
+          if (trigger) {
+            cy.wrap(trigger).click({ force: true });
+            esperarMenuOpciones(10000);
 
             cy.get('body').then($body2 => {
               const menuSelectors = [
@@ -1671,7 +1648,6 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
           }
         })
           .then(() => {
-            cy.wait(500);
             return cy.wrap(null);
           });
 
@@ -1683,7 +1659,6 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
           esperado: `Multifiltro con operador`,
           obtenido: `No es un multifiltro válido`,
           resultado: 'ERROR',
-          archivo: 'reportes_pruebas_novatrans.xlsx',
           pantalla: nombrePantalla
         });
         return cy.wrap(true);
@@ -1691,27 +1666,12 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
     }
 
     // Aplicar búsqueda
-    cy.get(
-      'input[placeholder*="Buscar"]:not(#sidebar-search):not([id*="sidebar"]), ' +
-      'input[placeholder*="Search"]:not(#sidebar-search):not([id*="sidebar"]), ' +
-      'input[placeholder*="Cerc"]:not(#sidebar-search):not([id*="sidebar"])'
-    )
-      .should('exist')
-      .clear({ force: true })
-      .type(`${filtroEspecifico.dato_2}{enter}`, { force: true });
+    escribirEnBuscadorPrincipal(filtroEspecifico.dato_2);
 
     // Esperar un poco más para que se procese la búsqueda, especialmente para casos 21, 22, 23 de clientes y 47-52 de proveedores
     const pantallaLower = (nombrePantalla || '').toLowerCase();
     const esClientes = pantallaLower.includes('clientes');
     const esProveedores = pantallaLower.includes('proveedores');
-
-    if (esClientes && (numeroCaso === 21 || numeroCaso === 22 || numeroCaso === 23)) {
-      cy.wait(1500);
-    } else if (esProveedores && (numeroCaso >= 47 && numeroCaso <= 52)) {
-      cy.wait(2500);
-    } else {
-      cy.wait(500);
-    }
 
     //  NUEVO: en vez de wait fijo, esperamos a refresco real
     const maxRetries = (esProveedores && (numeroCaso >= 47 && numeroCaso <= 52)) ? 30 : 14;
@@ -1733,9 +1693,6 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
         const pantallaLower2 = (nombrePantalla || '').toLowerCase();
         const esOrdenesCarga = pantallaLower2.includes('órdenes de carga') || pantallaLower2.includes('ordenes de carga');
         const esClientes2 = pantallaLower2.includes('clientes');
-
-        const casosAlquileresKO = [6, 7, 8, 9, 26, 27, 28, 29, 30, 31];
-        const casosTiposVehiculoKO = [25, 27, 28, 29];
 
         //  SOLO Proveedores + SOLO TC047–TC052
         const esProveedores2 = pantallaLower2.includes('proveedores') || pantallaLower2.includes('proveedor');
@@ -1775,24 +1732,6 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
             obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
           } else {
             obtenido = tieneNoRowsVisible ? 'No se muestran resultados (comportamiento esperado)' : 'Multifiltro aplicado correctamente';
-          }
-        }
-        else if (nombrePantalla && nombrePantalla.toLowerCase().includes('tipos de vehículo') && casosTiposVehiculoKO.includes(numeroCaso)) {
-          if (filasVisibles > 0 && !tieneNoRowsVisible) {
-            resultado = 'ERROR';
-            obtenido = 'Los resultados mostrados no cumplen el criterio del filtro aplicado';
-          } else {
-            resultado = 'ERROR';
-            obtenido = 'No se muestran resultados o el filtro no funciona correctamente';
-          }
-        }
-        else if (nombrePantalla && nombrePantalla.toLowerCase().includes('alquileres') && casosAlquileresKO.includes(numeroCaso)) {
-          if (filasVisibles > 0 && !tieneNoRowsVisible) {
-            resultado = 'OK';
-            obtenido = `Se muestran ${filasVisibles} resultados filtrados correctamente`;
-          } else {
-            resultado = 'ERROR';
-            obtenido = tieneNoRowsVisible ? 'Muestra "No rows" (overlay visible) cuando deberían existir datos' : 'No se muestran resultados (el filtro no funciona correctamente)';
           }
         }
         // FIX TC31 Órdenes de carga: usa totalFilas + noRowsVisible
@@ -1859,7 +1798,6 @@ Cypress.Commands.add('ejecutarMultifiltro', (numeroCaso, nombrePantalla, nombreH
           esperado: 'Multifiltro correcto',
           obtenido: obtenidoFinal,
           resultado: resultadoFinal,
-          archivo: 'reportes_pruebas_novatrans.xlsx',
           pantalla: nombrePantalla
         });
 

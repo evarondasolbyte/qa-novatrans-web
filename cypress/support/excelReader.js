@@ -52,7 +52,7 @@ function parseCsvRespectingQuotes(csv) {
 }
 
 // Helpers
-const safe  = (v) => (v ?? '').toString().trim();
+const safe = (v) => (v ?? '').toString().trim();
 const lower = (v) => safe(v).toLowerCase();
 
 // --- Mapa de GIDs por hoja ---
@@ -63,19 +63,19 @@ const SHEET_GIDS = {
   'FICHEROS-PROVEEDORES': '1258242411',
   'PROCESOS-PRESUPUESTOS': '1905879024',
   'PROCESOS-PLANIFICACION': '357769061',
-  'TALLER Y GASTOS-REPOSTAJES': '431734268',      
-  'FICHEROS-TIPOS DE VEHÍCULO': '299624855',      
-  'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',      
-  'FICHEROS-MULTAS': '523458683',      
-  'FICHEROS-SINIESTROS': '1011892651',    
-  'FICHEROS-TARJETAS': '1774716711',   
+  'TALLER Y GASTOS-REPOSTAJES': '431734268',
+  'FICHEROS-TIPOS DE VEHÍCULO': '299624855',
+  'FICHEROS-CATEGORIAS DE CONDUCTORES': '137760382',
+  'FICHEROS-MULTAS': '523458683',
+  'FICHEROS-SINIESTROS': '1011892651',
+  'FICHEROS-TARJETAS': '1774716711',
   'FICHEROS-TELEFONOS': '77961009',
-  'FICHEROS-CATEGORIAS': '1927208168', 
-  'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',     
-  'FICHEROS-FORMAS DE PAGO': '756254621',     
+  'FICHEROS-CATEGORIAS': '1927208168',
+  'FICHEROS-ALQUILERES VEHÍCULOS': '1440227046',
+  'FICHEROS-FORMAS DE PAGO': '756254621',
   'ALMACEN-FAMILIAS SUBFAMILIAS ALMACENES': '96321178',
   'ALMACEN-ARTICULOS': '934160481',
-  'ALMACEN-PEDIDOS': '1704715399', 
+  'ALMACEN-PEDIDOS': '1704715399',
   'PROCESOS-ORDENES DE CARGA': '817274383',
   'PROCESOS-RUTAS': '433035856',
   'FICHEROS-PERSONAL': '316490626',
@@ -107,13 +107,13 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
         const rows = parseCsvRespectingQuotes(res.body);
         // normaliza ancho: usar el máximo de columnas de todas las filas, no solo la primera
         const COLS = rows.reduce((max, row) => Math.max(max, row ? row.length : 0), rows[0] ? rows[0].length : 18);
-        
+
         const fixed = rows.map(r => {
           const row = Array.from(r);
           while (row.length < COLS) row.push('');
           return row.slice(0, COLS);
         });
-        
+
         // Reparación específica para TC022 y TC023: buscar datos en toda la fila
         const lines = res.body.split(/\r?\n/);
         for (let i = 0; i < fixed.length; i++) {
@@ -130,14 +130,14 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
               });
               return encontrados;
             };
-            
+
             // SOLUCIÓN DIRECTA: Si los campos están vacíos, asignar valores conocidos del Excel
             // Esto es un workaround específico para TC022 y TC023 que no se leen correctamente del CSV
             const necesitaReparacion = (!fixed[i][8] || fixed[i][8].trim() === '') || (!fixed[i][11] || fixed[i][11].trim() === '');
-            
+
             if (necesitaReparacion) {
-              console.log(`[ExcelReader] ⚠️ ${caso} tiene campos vacíos. Asignando valores directamente del Excel.`);
-              
+              console.log(`[ExcelReader] ${caso} tiene campos vacíos. Asignando valores directamente del Excel.`);
+
               if (caso === 'TC022') {
                 // Valores conocidos del Excel para TC022 (según la imagen proporcionada)
                 if (!fixed[i][6] || fixed[i][6].trim() === '') fixed[i][6] = 'id';
@@ -146,7 +146,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
                 if (!fixed[i][9] || fixed[i][9].trim() === '') fixed[i][9] = 'id';
                 if (!fixed[i][10] || fixed[i][10].trim() === '') fixed[i][10] = 'search';
                 if (!fixed[i][11] || fixed[i][11].trim() === '') fixed[i][11] = '10';
-                console.log(`[ExcelReader] ✅ TC022 reparado: etiqueta_1="id", valor_etiqueta_1="operator", dato_1="Mayor o igual que", etiqueta_2="id", valor_etiqueta_2="search", dato_2="10"`);
+                console.log(`[ExcelReader] TC022 reparado: etiqueta_1="id", valor_etiqueta_1="operator", dato_1="Mayor o igual que", etiqueta_2="id", valor_etiqueta_2="search", dato_2="10"`);
               } else if (caso === 'TC023') {
                 // Valores conocidos del Excel para TC023 (según la imagen proporcionada)
                 if (!fixed[i][6] || fixed[i][6].trim() === '') fixed[i][6] = 'id';
@@ -155,7 +155,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
                 if (!fixed[i][9] || fixed[i][9].trim() === '') fixed[i][9] = 'id';
                 if (!fixed[i][10] || fixed[i][10].trim() === '') fixed[i][10] = 'search';
                 if (!fixed[i][11] || fixed[i][11].trim() === '') fixed[i][11] = 'Rosa';
-                console.log(`[ExcelReader] ✅ TC023 reparado: etiqueta_1="id", valor_etiqueta_1="operator", dato_1="Empieza con", etiqueta_2="id", valor_etiqueta_2="search", dato_2="Rosa"`);
+                console.log(`[ExcelReader] TC023 reparado: etiqueta_1="id", valor_etiqueta_1="operator", dato_1="Empieza con", etiqueta_2="id", valor_etiqueta_2="search", dato_2="Rosa"`);
               }
             } else {
               // Si los campos ya tienen valores, intentar buscar y reparar solo los que faltan
@@ -163,7 +163,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
               if (caso === 'TC022') {
                 const mayorEncontrado = buscarEnFila('Mayor');
                 const diezEncontrado = buscarEnFila('10');
-                
+
                 if ((!fixed[i][8] || fixed[i][8].trim() === '') && mayorEncontrado.length > 0) {
                   const valor = mayorEncontrado[0].valor;
                   if (valor.includes('Mayor') || valor.includes('igual')) {
@@ -171,18 +171,18 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
                     if (!fixed[i][7] || fixed[i][7].trim() === '') fixed[i][7] = 'operator';
                   }
                 }
-                
+
                 if ((!fixed[i][11] || fixed[i][11].trim() === '') && diezEncontrado.length > 0) {
                   fixed[i][11] = diezEncontrado[0].valor;
                   if (!fixed[i][10] || fixed[i][10].trim() === '') fixed[i][10] = 'search';
                 }
               }
-              
+
               // Para TC023: buscar "Empieza con" y "Rosa"
               if (caso === 'TC023') {
                 const empiezaEncontrado = buscarEnFila('Empieza');
                 const rosaEncontrado = buscarEnFila('Rosa');
-                
+
                 if ((!fixed[i][8] || fixed[i][8].trim() === '') && empiezaEncontrado.length > 0) {
                   const valor = empiezaEncontrado[0].valor;
                   if (valor.includes('Empieza') || valor.includes('Empiece')) {
@@ -190,14 +190,14 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
                     if (!fixed[i][7] || fixed[i][7].trim() === '') fixed[i][7] = 'operator';
                   }
                 }
-                
+
                 if ((!fixed[i][11] || fixed[i][11].trim() === '') && rosaEncontrado.length > 0) {
                   fixed[i][11] = rosaEncontrado[0].valor;
                   if (!fixed[i][10] || fixed[i][10].trim() === '') fixed[i][10] = 'search';
                 }
               }
             }
-            
+
             // Si dato_2 (índice 11, columna L) todavía está vacío después de la búsqueda, intentar reparar desde CSV raw
             if (!fixed[i][11] || fixed[i][11].trim() === '') {
               // Función helper para parsear una línea CSV
@@ -219,7 +219,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
                 cells.push(cur.trim());
                 return cells;
               };
-              
+
               // Intentar primero con la línea actual
               if (lines[i]) {
                 const cells = parsearLinea(lines[i]);
@@ -228,7 +228,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
                 console.log(`  - dato_2 (celda 11): "${cells[11] || ''}"`);
                 console.log(`  - dato_1 (celda 8): "${cells[8] || ''}"`);
                 console.log(`  - valor_etiqueta_1 (celda 7): "${cells[7] || ''}"`);
-                
+
                 // Si no encontramos dato_2, buscar en filas adyacentes (hasta 3 filas arriba y abajo)
                 if (cells.length <= 11 || !cells[11] || cells[11].trim() === '') {
                   console.log(`[ExcelReader] dato_2 no encontrado en fila ${i + 1}, buscando en filas adyacentes...`);
@@ -283,7 +283,7 @@ Cypress.Commands.add('leerDatosGoogleSheets', (hoja = 'Datos') => {
             }
           }
         }
-        
+
         return fixed.length > 1 ? cy.wrap(fixed) : cy.wrap([]);
       }
       cy.log(`Error leyendo CSV (${res.status}) -> ${url}`);
@@ -429,21 +429,21 @@ function mapHeaderIndexes(headers) {
   const find = (regexArr) =>
     headers.findIndex(h => regexArr.some(r => r.test(h)));
 
-  idx.pantalla      = find([/^\s*pantalla\s*$/i]);
+  idx.pantalla = find([/^\s*pantalla\s*$/i]);
   idx.funcionalidad = find([/^\s*funcionalidad\s*$/i]);
-  idx.caso          = find([/^\s*n.?°?\s*caso\s*$/i, /^\s*caso\s*$/i]);
-  idx.nombre        = find([/^\s*nombre\s*$/i]);
-  idx.prioridad     = find([/^\s*prioridad\s*$/i]);
-  idx.funcion       = find([/^\s*funci[oó]n\s*$/i, /^\s*function\s*$/i]);
+  idx.caso = find([/^\s*n.?°?\s*caso\s*$/i, /^\s*caso\s*$/i]);
+  idx.nombre = find([/^\s*nombre\s*$/i]);
+  idx.prioridad = find([/^\s*prioridad\s*$/i]);
+  idx.funcion = find([/^\s*funci[oó]n\s*$/i, /^\s*function\s*$/i]);
 
   const maxCampos = detectarMaxCampos(headers);
   idx.maxCampos = Math.max(maxCampos, 4);
 
   // etiquetas/valores/datos dinámicos
   for (let n = 1; n <= idx.maxCampos; n++) {
-    idx[`etiqueta_${n}`]       = find([new RegExp(`^\\s*etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`etiqueta_${n}`] = find([new RegExp(`^\\s*etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
     idx[`valor_etiqueta_${n}`] = find([new RegExp(`^\\s*valor[_\\s-]?etiqueta[_\\s-]?${n}\\s*$`, 'i')]);
-    idx[`dato_${n}`]           = find([new RegExp(`^\\s*dato[_\\s-]?${n}\\s*$`, 'i')]);
+    idx[`dato_${n}`] = find([new RegExp(`^\\s*dato[_\\s-]?${n}\\s*$`, 'i')]);
   }
   return idx;
 }
@@ -455,13 +455,13 @@ function buildCaso(fila, idx) {
   if (!/^TC\d+$/i.test(casoRaw)) return null;
 
   const caso = {
-    pantalla:      get('pantalla'),
+    pantalla: get('pantalla'),
     funcionalidad: get('funcionalidad'),
-    caso:          casoRaw,                       // "TC001"
-    nombre:        get('nombre'),
-    prioridad:     get('prioridad'),
+    caso: casoRaw,                       // "TC001"
+    nombre: get('nombre'),
+    prioridad: get('prioridad'),
     // 👇 IMPORTANTE: ya no forzamos "tc###" si no toca.
-    funcion:       normalizeMaybeTc(get('funcion'))
+    funcion: normalizeMaybeTc(get('funcion'))
   };
 
   const totalCampos = idx.maxCampos || 4;
@@ -483,7 +483,7 @@ function buildCaso(fila, idx) {
     console.log(`  - Valores en esas posiciones: fila[${idx.etiqueta_2}]="${fila[idx.valor_etiqueta_2]}", fila[${idx.valor_etiqueta_2}]="${fila[idx.valor_etiqueta_2]}", fila[${idx.dato_2}]="${fila[idx.dato_2]}"`);
     console.log(`  - Valores leídos: etiqueta_2="${caso.etiqueta_2}", valor_etiqueta_2="${caso.valor_etiqueta_2}", dato_2="${caso.dato_2}"`);
     console.log(`  - Fila completa (${fila.length} elementos):`, fila);
-    
+
     // Buscar los datos en toda la fila
     const buscarEnFila = (texto) => {
       const indices = [];
@@ -494,7 +494,7 @@ function buildCaso(fila, idx) {
       });
       return indices;
     };
-    
+
     if (casoRaw === 'TC022') {
       console.log(`  - Buscando "Mayor" o "igual" en la fila:`, buscarEnFila('Mayor'));
       console.log(`  - Buscando "10" en la fila:`, buscarEnFila('10'));
@@ -517,7 +517,7 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
 
     const headers = (filas[0] || []).map(safe);
     const idx = mapHeaderIndexes(headers);
-    
+
     // Log detallado de headers para casos 22 y 23
     console.log(`[ExcelReader] Headers detectados (${headers.length} columnas):`);
     headers.forEach((h, i) => {
@@ -527,7 +527,7 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
       }
     });
     console.log(`[ExcelReader] Índices mapeados para dato_2: ${idx.dato_2} (columna ${idx.dato_2 >= 0 ? String.fromCharCode(65 + idx.dato_2) : 'NO ENCONTRADA'})`);
-    
+
     // Buscar las filas que contienen TC021, TC022 y TC023 para comparar
     const buscarFilaTC = (tc) => {
       for (let i = 0; i < filas.length; i++) {
@@ -538,11 +538,11 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
       }
       return null;
     };
-    
+
     const filaTC021 = buscarFilaTC('TC021');
     const filaTC022 = buscarFilaTC('TC022');
     const filaTC023 = buscarFilaTC('TC023');
-    
+
     // Log comparativo: TC021 funciona, TC022 y TC023 no
     if (filaTC021) {
       console.log(`[ExcelReader] TC021 (FUNCIONA) encontrado en índice ${filaTC021.indice} (fila Excel ${filaTC021.indice + 1}):`);
@@ -550,7 +550,7 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
       console.log(`  - dato_2 (índice ${idx.dato_2}): "${filaTC021.fila[idx.dato_2] || ''}"`);
       console.log(`  - valor_etiqueta_1 (índice ${idx.valor_etiqueta_1}): "${filaTC021.fila[idx.valor_etiqueta_1] || ''}"`);
     }
-    
+
     if (filaTC022) {
       console.log(`[ExcelReader] TC022 (NO FUNCIONA) encontrado en índice ${filaTC022.indice} (fila Excel ${filaTC022.indice + 1}):`);
       console.log(`  - Fila completa (primeros 15 elementos):`, filaTC022.fila.slice(0, 15));
@@ -570,7 +570,7 @@ Cypress.Commands.add('obtenerDatosExcel', (pantalla) => {
       console.log(`  - Buscando "Mayor" en toda la fila:`, buscarEnFila('Mayor'));
       console.log(`  - Buscando "10" en toda la fila:`, buscarEnFila('10'));
     }
-    
+
     if (filaTC023) {
       console.log(`[ExcelReader] TC023 (NO FUNCIONA) encontrado en índice ${filaTC023.indice} (fila Excel ${filaTC023.indice + 1}):`);
       console.log(`  - Fila completa (primeros 15 elementos):`, filaTC023.fila.slice(0, 15));

@@ -2429,12 +2429,12 @@
               });
             }
 
-            const fila = Array.from(filas).find((el) => {
+            const hayFilaConNota = Array.from(filas).some((el) => {
               const t = (el.innerText || el.textContent || '').toLowerCase();
               return t.includes(String(nota).toLowerCase());
             });
 
-            if (!fila) {
+            if (!hayFilaConNota) {
               return registrarResultado({
                 resultado: 'ERROR',
                 esperado: `Encontrar fila que contenga la Nota="${nota}"`,
@@ -2442,14 +2442,47 @@
               });
             }
 
-            return cy.wrap(fila)
+            return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
+              .should('have.length.greaterThan', 0)
+              .first()
+              .should(($fila) => {
+                const textoFila = ($fila.text() || '').toLowerCase();
+                expect(textoFila, `la primera fila filtrada debe contener la nota ${nota}`).to.include(String(nota).toLowerCase());
+              })
               .scrollIntoView({ block: 'center' })
-              .dblclick({ force: true })
-              .then(() => cy.wait(1200));
+              .click('center', { force: true })
+              .within(() => {
+                // Selecciono la fila de forma explicita.
+                cy.get('[data-field="__check__"], input[type="checkbox"]', { timeout: 10000 })
+                  .first()
+                  .click({ force: true });
+              })
+              .then(() => cy.wait(1000))
+              .then(() =>
+                cy.contains('button, a', /Editar|Edit/i, { timeout: 20000 })
+                  .should('be.visible')
+                  .click({ force: true })
+              )
+              .then(() => cy.wait(1200))
+              .then(() =>
+                cy.get('body').then(($b) => {
+                  const enFormulario =
+                    $b.find('[role="tablist"]:visible').length > 0 ||
+                    $b.find('input[name="clientCode"]:visible').length > 0;
+
+                  if (enFormulario) return cy.wrap(null);
+
+                  return cy.get('.MuiDataGrid-row:visible', { timeout: 10000 })
+                    .first()
+                    .scrollIntoView({ block: 'center' })
+                    .click('center', { force: true })
+                    .dblclick({ force: true });
+                })
+              );
           });
         })
         .then(() => cy.wait(1500))
-        .then(() => cy.url().should('include', '/dashboard/'));
+        .then(() => cy.get('[role="tablist"], input[name="clientCode"]', { timeout: 20000 }).should('exist'));
     };
 
     // -------------------------
@@ -2541,57 +2574,79 @@
       checks.push({ tipo: 'label_input', nombre: 'Destinatario', esperado: 'con valor' });
       checks.push({ tipo: 'label_input', nombre: 'Gestor Tráfico', esperado: 'con valor' });
 
-      // Ejecutar verificaciones
-      return cy.wrap({ vacios: [] }).then((acc) => {
-        return checks.reduce((chain, c) => {
-          return chain.then((state) => {
-            const esCampoTransporte =
-              c.tipo === 'select_purchasePrice' ||
-              (c.tipo === 'name' && esCampoTransportePorName('name', c.nombre));
+      const checksGenerales = checks.filter((c) => {
+        const esCampoTransporte =
+          c.tipo === 'select_purchasePrice' ||
+          (c.tipo === 'name' && esCampoTransportePorName('name', c.nombre));
 
-            const prepararPantalla = esCampoTransporte
-              ? () => abrirPestana('Transporte + Tarificación')
-              : () => abrirPestana('Datos Generales').then(() => abrirDatosAmpliadosSiCerrado());
-
-            return prepararPantalla().then(() => {
-            if (c.tipo === 'name') {
-              return obtenerValorCampoPorName(c.nombre).then((v) => {
-                const ok = !!String(v || '').trim();
-                if (!ok) state.vacios.push(`name="${c.nombre}"`);
-                return state;
-              });
-            }
-
-            if (c.tipo === 'select_purchasePrice') {
-              // el combobox tiene id fijo en DOM: mui-component-select-purchasePrice
-              return obtenerValorSelectMUIPorId('mui-component-select-purchasePrice').then((txt) => {
-                const t = String(txt || '').trim();
-                if (!t) state.vacios.push('purchasePrice (Precio)');
-                return state;
-              });
-            }
-
-            if (c.tipo === 'select_confirmed') {
-              return obtenerValorSelectMUIPorId('mui-component-select-confirmed').then((txt) => {
-                const t = String(txt || '').trim();
-                if (!t) state.vacios.push('confirmed (Confirmado)');
-                return state;
-              });
-            }
-
-            if (c.tipo === 'label_input') {
-              return obtenerValorAutocompletePorLabel(c.nombre).then((v) => {
-                const ok = !!String(v || '').trim();
-                if (!ok) state.vacios.push(`label="${c.nombre}"`);
-                return state;
-              });
-            }
-
-            return state;
-            });
-          });
-        }, cy.wrap(acc));
+        return !esCampoTransporte;
       });
+
+      const checksTransporte = checks.filter((c) => {
+        const esCampoTransporte =
+          c.tipo === 'select_purchasePrice' ||
+          (c.tipo === 'name' && esCampoTransportePorName('name', c.nombre));
+
+        return esCampoTransporte;
+      });
+
+      const ejecutarBloqueChecks = (listaChecks, prepararPantalla, estadoInicial) =>
+        prepararPantalla().then(() => {
+          return listaChecks.reduce((chain, c) => {
+            return chain.then((state) => {
+              if (c.tipo === 'name') {
+                return obtenerValorCampoPorName(c.nombre).then((v) => {
+                  const ok = !!String(v || '').trim();
+                  if (!ok) state.vacios.push(`name="${c.nombre}"`);
+                  return state;
+                });
+              }
+
+              if (c.tipo === 'select_purchasePrice') {
+                return obtenerValorSelectMUIPorId('mui-component-select-purchasePrice').then((txt) => {
+                  const t = String(txt || '').trim();
+                  if (!t) state.vacios.push('purchasePrice (Precio)');
+                  return state;
+                });
+              }
+
+              if (c.tipo === 'select_confirmed') {
+                return obtenerValorSelectMUIPorId('mui-component-select-confirmed').then((txt) => {
+                  const t = String(txt || '').trim();
+                  if (!t) state.vacios.push('confirmed (Confirmado)');
+                  return state;
+                });
+              }
+
+              if (c.tipo === 'label_input') {
+                return obtenerValorAutocompletePorLabel(c.nombre).then((v) => {
+                  const ok = !!String(v || '').trim();
+                  if (!ok) state.vacios.push(`label="${c.nombre}"`);
+                  return state;
+                });
+              }
+
+              return state;
+            });
+          }, cy.wrap(estadoInicial));
+        });
+
+      // Primero verifico generales y ampliados; cuando acabe, paso a transporte.
+      return cy.wrap({ vacios: [] })
+        .then((estado) =>
+          ejecutarBloqueChecks(
+            checksGenerales,
+            () => abrirPestana('Datos Generales').then(() => abrirDatosAmpliadosSiCerrado()),
+            estado
+          )
+        )
+        .then((estado) =>
+          ejecutarBloqueChecks(
+            checksTransporte,
+            () => abrirPestana('Transporte + Tarificación'),
+            estado
+          )
+        );
     };
 
     const buscarYVerificarPlanificacionGuardadaCaso55 = (obj) => {
