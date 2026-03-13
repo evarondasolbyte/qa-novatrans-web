@@ -10,6 +10,7 @@
   const { crearHelperExportacionExcel } = require('../support/exportacion/exportacion_excel');
   const { crearHelperOrdenacionPaginada } = require('../support/listados/ordenacion_paginada');
   const { crearHelperPersistenciaColumnas } = require('../support/listados/persistencia_columnas');
+  const { crearHelpersAccionesRegistro } = require('../support/listados/acciones_registro');
   const {
     normalizarId,
     normalizarEtiquetaTexto,
@@ -224,6 +225,16 @@
     llenarFormularioDocumentos,
     verificarPestanaConFilas,
     registrarResultadoAutomatico,
+  });
+
+  const {
+    editarSeleccionado: editarClienteHelper,
+    eliminarSeleccionado: seleccionarFilaYPulsarEliminarHelper,
+  } = crearHelpersAccionesRegistro({
+    UI,
+    formPathIncludes: '/dashboard/clients/form',
+    onEditSelected: editarCliente,
+    onDeleteSelected: seleccionarFilaYPulsarEliminar,
   });
 
   const { exportarExcelVisible, exportarExcelCompleto } = crearHelperExportacionExcel({
@@ -538,70 +549,70 @@
 
   function obtenerFuncionPorNumero(numero) {
     switch (numero) {
-      // case 1:
-      //   return { fn: () => UI.abrirPantalla() };
-      // case 2:
-      // case 3:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 4:
-      //   return { fn: seleccionarFechasFiltro };
-      // case 5:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 6:
-      // case 7:
-      // case 8:
-      // case 9:
-      // case 10:
-      // case 11:
-      // case 12:
-      // case 13:
-      // case 14:
-        // return { fn: anadirCliente };
-      // case 15:
-      // case 16:
-      //   return { fn: editarCliente };
-      // case 17:
-      //   // Seleccionar fila, confirmar eliminación y validar borrado o aviso de vinculación
-      //   return { fn: seleccionarFilaYPulsarEliminar };
-      // case 18:
-      //   return { fn: scrollTablaClientes };
-      // case 19:
-      //   return { fn: cambiarIdiomasClientes };
-      // case 20:
-      // case 21:
-      // case 22:
-      //   return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
-      // case 23:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 24:
-      //   return { fn: seleccionarPrimerCliente };
-      // case 25:
-      // case 26:
-      // case 27:
-        // return { fn: seleccionarNacionalidad };
-      // case 28:
-      //   return { fn: ejecutarFiltroIndividualExcel };
-      // case 29:
-      // case 30:
-      // case 31:
-      // case 32:
-      //     return { fn: ordenarColumnaDesdeExcel };
-      // case 33:
-      //   return { fn: ocultarColumnaDesdeExcel };
-      // case 34:
-      //   return { fn: mostrarColumnaDesdeExcel };
-      // case 35:
-      //   return { fn: ordenarColumnaDesdeExcel };
-      // case 36:
-      //   return { fn: abrirFormularioDesdeExcel };
-      // case 37:
-      //   return { fn: guardarFiltroDesdeExcel };
-      // case 38:
-      //   return { fn: limpiarFiltroDesdeExcel };
-      // case 39:
-      //   return { fn: seleccionarFiltroGuardadoDesdeExcel };
-      // case 40:
-      //   return { fn: TC040Helper };
+      case 1:
+        return { fn: () => UI.abrirPantalla() };
+      case 2:
+      case 3:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 4:
+        return { fn: seleccionarFechasFiltro };
+      case 5:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 6:
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+        return { fn: anadirCliente };
+      case 15:
+      case 16:
+        return { fn: editarClienteHelper };
+      case 17:
+        // Seleccionar fila, confirmar eliminación y validar borrado o aviso de vinculación
+        return { fn: seleccionarFilaYPulsarEliminarHelper };
+      case 18:
+        return { fn: scrollTablaClientes };
+      case 19:
+        return { fn: cambiarIdiomasClientes };
+      case 20:
+      case 21:
+      case 22:
+        return { fn: ejecutarMultifiltroExcel, autoRegistro: true };
+      case 23:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 24:
+        return { fn: seleccionarPrimerCliente };
+      case 25:
+      case 26:
+      case 27:
+        return { fn: seleccionarNacionalidad };
+      case 28:
+        return { fn: ejecutarFiltroIndividualExcel };
+      case 29:
+      case 30:
+      case 31:
+      case 32:
+          return { fn: ordenarColumnaDesdeExcel };
+      case 33:
+        return { fn: ocultarColumnaDesdeExcel };
+      case 34:
+        return { fn: mostrarColumnaDesdeExcel };
+      case 35:
+        return { fn: ordenarColumnaDesdeExcel };
+      case 36:
+        return { fn: abrirFormularioDesdeExcel };
+      case 37:
+        return { fn: guardarFiltroDesdeExcel };
+      case 38:
+        return { fn: limpiarFiltroDesdeExcel };
+      case 39:
+        return { fn: seleccionarFiltroGuardadoDesdeExcel };
+      case 40:
+        return { fn: TC040Helper };
       case 41:
         return { fn: exportarExcelVisible, autoRegistro: true };
       case 42:

@@ -1,18 +1,18 @@
 const { crearHelperIdiomasPantalla } = require('../idiomas/idiomas_global');
 
-function crearHelpersIdiomasClientes(config) {
+function crearHelpersIdiomasPersonal(config) {
   const { cambiarIdiomas } = crearHelperIdiomasPantalla({
     ...config,
-    abrirFormularioNuevo: config.abrirFormularioNuevoCliente,
-    numeroCasoPorDefecto: 19,
+    abrirFormularioNuevo: config.abrirFormularioNuevoPersonal,
+    numeroCasoPorDefecto: 55,
     nombreCasoPorDefecto: 'Tabla responde al cambiar idioma',
   });
 
   return {
-    cambiarIdiomasClientes: cambiarIdiomas,
+    cambiarIdiomasPersonal: cambiarIdiomas,
   };
 }
 
 module.exports = {
-  crearHelpersIdiomasClientes,
+  crearHelpersIdiomasPersonal,
 };

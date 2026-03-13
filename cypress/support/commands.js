@@ -1150,10 +1150,16 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
       return cy.wrap(true);
     }
 
+    const pantallaLowerFiltro = String(nombrePantalla || '').toLowerCase();
+    const columnaFiltro =
+      pantallaLowerFiltro.includes('personal') && Number(numeroCaso) === 7
+        ? 'Empresa'
+        : filtroEspecifico.dato_1;
+
     cy.log(` Caso encontrado: TC${numeroCasoFormateado}`);
     cy.log(` Datos completos del caso:`, JSON.stringify(filtroEspecifico, null, 2));
-    cy.log(` Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${filtroEspecifico.dato_1}`);
-    cy.log(`Datos del filtro: columna="${filtroEspecifico.dato_1}", valor="${filtroEspecifico.dato_2}"`);
+    cy.log(` Ejecutando TC${numeroCasoFormateado}: ${filtroEspecifico.valor_etiqueta_1} - ${columnaFiltro}`);
+    cy.log(`Datos del filtro: columna="${columnaFiltro}", valor="${filtroEspecifico.dato_2}"`);
     cy.log(` Etiquetas: etiqueta_1="${filtroEspecifico.etiqueta_1}", valor_etiqueta_1="${filtroEspecifico.valor_etiqueta_1}"`);
 
     // Verificar si es un caso de búsqueda con columna
@@ -1164,15 +1170,17 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
           const maxIntentos = 6;
           const normalizar = (txt = '') => txt.trim().toLowerCase();
           const objetivo = normalizar(nombreColumna);
-          const coincide = (txt = '') => {
+          const coincideExacto = (txt = '') => normalizar(txt) === objetivo;
+          const coincideParcial = (txt = '') => {
             const valor = normalizar(txt);
-            return valor === objetivo ||
-              valor.includes(objetivo) ||
-              objetivo.includes(valor);
+            return valor.includes(objetivo) || objetivo.includes(valor);
           };
 
           return cy.get('li[role="menuitem"], [role="option"]').then($items => {
-            const item = Array.from($items).find(el => coincide(el.textContent || ''));
+            const items = Array.from($items);
+            const itemExacto = items.find((el) => coincideExacto(el.textContent || ''));
+            const itemParcial = items.find((el) => coincideParcial(el.textContent || ''));
+            const item = itemExacto || itemParcial;
             if (item) {
               cy.wrap(item)
                 .scrollIntoView({ duration: 200, easing: 'linear' })
@@ -1216,8 +1224,9 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
             cy.log(`Opciones dropdown: ${options.join(', ')}`);
             let columnaEncontrada = null;
 
-            switch (filtroEspecifico.dato_1) {
+            switch (columnaFiltro) {
               case 'Nombre': columnaEncontrada = options.find(o => /Nombre|Name/i.test(o)); break;
+              case 'Empresa': columnaEncontrada = options.find(o => /^Empresa$/i.test(o)); break;
               case 'Todos': columnaEncontrada = options.find(o => /Todos|All/i.test(o)); break;
               case 'Número': columnaEncontrada = options.find(o => /Número|Number/i.test(o)); break;
               case 'Modelo': columnaEncontrada = options.find(o => /Modelo|Model/i.test(o)); break;
@@ -1239,8 +1248,8 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               case 'Kms': columnaEncontrada = options.find(o => /Kms?|Kil[oó]metros|Kilometers/i.test(o)); break;
               default:
                 columnaEncontrada = options.find(opt =>
-                  opt.toLowerCase().includes(filtroEspecifico.dato_1.toLowerCase()) ||
-                  filtroEspecifico.dato_1.toLowerCase().includes(opt.toLowerCase())
+                  opt.toLowerCase().includes(String(columnaFiltro || '').toLowerCase()) ||
+                  String(columnaFiltro || '').toLowerCase().includes(opt.toLowerCase())
                 );
             }
 
@@ -1248,7 +1257,7 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               cy.wrap($select).select(columnaEncontrada);
               cy.log(`Columna seleccionada: ${columnaEncontrada}`);
             } else {
-              cy.log(`Columna "${filtroEspecifico.dato_1}" no encontrada, usando primera opción`);
+              cy.log(`Columna "${columnaFiltro}" no encontrada, usando primera opción`);
               cy.wrap($select).select(1);
             }
           });
@@ -1269,7 +1278,7 @@ Cypress.Commands.add('ejecutarFiltroIndividual', (numeroCaso, nombrePantalla, no
               esperarMenuOpciones(10000);
 
               // Buscar el elemento del menú con el nombre de la columna
-              seleccionarOpcionMenu(filtroEspecifico.dato_1);
+              seleccionarOpcionMenu(columnaFiltro);
             } else {
               cy.log('No se encontró el botón del dropdown de columna');
             }
